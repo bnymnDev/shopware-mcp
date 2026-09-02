@@ -1,0 +1,55 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "293a4b5c6d7e8f01020304050607080a",
+      "customerNumber": "10001",
+      "email": "max@example.com",
+      "firstName": "Max",
+      "lastName": "Mustermann",
+      "title": null,
+      "birthday": "1990-05-04",
+      "group": {
+        "name": "Standard customer group",
+        "translated": { "name": "Standard customer group" }
+      },
+      "salesChannel": { "name": "Storefront", "translated": { "name": "Storefront" } },
+      "active": true,
+      "guest": false,
+      "orderCount": 3,
+      "lastOrderDate": "2024-06-01T09:15:00.000+00:00",
+      "defaultBillingAddressId": "7e8f01020304050607080a0b0c0d0e0f",
+      "defaultShippingAddressId": "8f01020304050607080a0b0c0d0e0f10",
+      "defaultPaymentMethodId": "5c6d7e8f01020304050607080a0b0c0d",
+      "lastPaymentMethod": {
+        "name": "Invoice",
+        "distinguishableName": "Invoice | Storefront",
+        "translated": { "name": "Invoice", "distinguishableName": "Invoice | Storefront" }
+      },
+      "addresses": [
+        {
+          "id": "7e8f01020304050607080a0b0c0d0e0f",
+          "firstName": "Max",
+          "lastName": "Mustermann",
+          "street": "Musterstr. 1",
+          "zipcode": "12345",
+          "city": "Berlin",
+          "country": { "translated": { "name": "Deutschland" }, "iso": "DE" }
+        },
+        {
+          "id": "8f01020304050607080a0b0c0d0e0f10",
+          "firstName": "Erika",
+          "lastName": "Mustermann",
+          "street": "Lieferweg 2",
+          "zipcode": "54321",
+          "city": "Hamburg",
+          "country": { "translated": { "name": "Deutschland" }, "iso": "DE" }
+        }
+      ],
+      "password": "$2y$10$hashedpasswordshouldneverleak",
+      "createdAt": "2023-01-01T00:00:00.000+00:00",
+      "updatedAt": "2024-06-10T07:00:00.000+00:00",
+      "apiAlias": "customer"
+    }
+  ]
+}

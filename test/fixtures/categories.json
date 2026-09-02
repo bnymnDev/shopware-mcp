@@ -1,0 +1,33 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "id": "0718293a4b5c6d7e8f01020304050607",
+      "name": "Catalogue #1",
+      "translated": { "name": "Catalogue #1" },
+      "parentId": null,
+      "level": 1,
+      "path": null,
+      "type": "page",
+      "active": true,
+      "visible": true,
+      "childCount": 1,
+      "productAssignmentType": "product",
+      "apiAlias": "category"
+    },
+    {
+      "id": "18293a4b5c6d7e8f0102030405060708",
+      "name": "Bags",
+      "translated": { "name": "Bags" },
+      "parentId": "0718293a4b5c6d7e8f01020304050607",
+      "level": 2,
+      "path": "|0718293a4b5c6d7e8f01020304050607|",
+      "type": "page",
+      "active": true,
+      "visible": true,
+      "childCount": 0,
+      "productAssignmentType": "product",
+      "apiAlias": "category"
+    }
+  ]
+}

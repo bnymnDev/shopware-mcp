@@ -1,0 +1,83 @@
+{
+  "total": 42,
+  "data": [
+    {
+      "id": "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+      "versionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "_uniqueIdentifier": "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+      "productNumber": "SW10001",
+      "name": null,
+      "translated": { "name": "Aerodynamic Bronze Bag", "description": "<p>Stylish bag</p>" },
+      "parentId": null,
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "gross": 119.0,
+          "net": 100.0,
+          "linked": true,
+          "listPrice": { "gross": 149.0, "net": 125.21, "linked": true }
+        },
+        {
+          "currencyId": "6d7e8f01020304050607080a0b0c0d0e",
+          "gross": 129.0,
+          "net": 108.4,
+          "linked": true
+        }
+      ],
+      "stock": 12,
+      "availableStock": 10,
+      "available": true,
+      "active": true,
+      "manufacturerId": "e5f60718293a4b5c6d7e8f0102030405",
+      "manufacturer": {
+        "id": "e5f60718293a4b5c6d7e8f0102030405",
+        "name": "Acme",
+        "translated": { "name": "Acme" }
+      },
+      "categories": [
+        {
+          "id": "18293a4b5c6d7e8f0102030405060708",
+          "name": "Bags",
+          "translated": { "name": "Bags" }
+        }
+      ],
+      "cover": {
+        "id": "c0ffee0000000000000000000000c0de",
+        "media": {
+          "id": "c0ffee00000000000000000000000001",
+          "url": "https://shop.test/media/bag.jpg"
+        }
+      },
+      "customFields": { "my_plugin_flag": true },
+      "extensions": { "foreignKeys": { "apiAlias": "product_foreign_keys_extension" } },
+      "ean": "4006381333931",
+      "apiAlias": "product"
+    },
+    {
+      "id": "b2c3d4e5f60718293a4b5c6d7e8f0102",
+      "productNumber": "SW10002",
+      "name": "Fantastic Steel Shirt",
+      "translated": { "name": "Fantastic Steel Shirt" },
+      "parentId": null,
+      "childCount": 2,
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "gross": 29.99,
+          "net": 25.2,
+          "linked": true
+        }
+      ],
+      "stock": 0,
+      "availableStock": 0,
+      "available": false,
+      "active": true,
+      "manufacturer": null,
+      "categories": [],
+      "cover": null,
+      "customFields": null,
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": []
+}

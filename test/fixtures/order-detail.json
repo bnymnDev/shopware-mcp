@@ -1,0 +1,103 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "f60718293a4b5c6d7e8f010203040506",
+      "orderNumber": "10042",
+      "orderDateTime": "2024-06-01T09:15:00.000+00:00",
+      "amountTotal": 149.99,
+      "amountNet": 126.04,
+      "shippingTotal": 4.99,
+      "taxStatus": "gross",
+      "customerComment": "Please ring twice",
+      "currency": { "isoCode": "EUR" },
+      "salesChannelId": "3a4b5c6d7e8f01020304050607080a0b",
+      "salesChannel": { "name": "Storefront", "translated": { "name": "Storefront" } },
+      "billingAddressId": "7e8f01020304050607080a0b0c0d0e0f",
+      "stateMachineState": { "technicalName": "in_progress", "name": "In progress" },
+      "orderCustomer": {
+        "customerId": "293a4b5c6d7e8f01020304050607080a",
+        "firstName": "Max",
+        "lastName": "Mustermann",
+        "email": "max@example.com",
+        "customerNumber": "10001"
+      },
+      "addresses": [
+        {
+          "id": "7e8f01020304050607080a0b0c0d0e0f",
+          "firstName": "Max",
+          "lastName": "Mustermann",
+          "company": null,
+          "street": "Musterstr. 1",
+          "zipcode": "12345",
+          "city": "Berlin",
+          "phoneNumber": null,
+          "country": { "name": "Deutschland", "translated": { "name": "Deutschland" }, "iso": "DE" }
+        }
+      ],
+      "lineItems": [
+        {
+          "id": "cccc000000000000000000000000000b",
+          "position": 2,
+          "type": "promotion",
+          "label": "Summer sale",
+          "quantity": 1,
+          "unitPrice": -10.0,
+          "totalPrice": -10.0,
+          "productId": null,
+          "referencedId": "4b5c6d7e8f01020304050607080a0b0c",
+          "payload": { "code": "SUMMER" }
+        },
+        {
+          "id": "cccc000000000000000000000000000a",
+          "position": 1,
+          "type": "product",
+          "label": "Aerodynamic Bronze Bag",
+          "quantity": 1,
+          "unitPrice": 119.0,
+          "totalPrice": 119.0,
+          "productId": "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+          "referencedId": "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+          "payload": { "productNumber": "SW10001", "customFields": {} }
+        }
+      ],
+      "transactions": [
+        {
+          "id": "aaaa000000000000000000000000000b",
+          "createdAt": "2024-06-01T09:20:00.000+00:00",
+          "amount": { "totalPrice": 149.99 },
+          "stateMachineState": { "technicalName": "paid" },
+          "paymentMethod": {
+            "name": "PayPal",
+            "distinguishableName": "PayPal | Storefront",
+            "translated": { "name": "PayPal", "distinguishableName": "PayPal | Storefront" }
+          }
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "bbbb000000000000000000000000000a",
+          "trackingCodes": ["DHL123"],
+          "shippingDateEarliest": "2024-06-03T00:00:00.000+00:00",
+          "shippingDateLatest": "2024-06-05T00:00:00.000+00:00",
+          "shippingCosts": { "totalPrice": 4.99 },
+          "stateMachineState": { "technicalName": "shipped" },
+          "shippingMethod": { "name": "DHL", "translated": { "name": "DHL" } },
+          "shippingOrderAddress": {
+            "id": "8f01020304050607080a0b0c0d0e0f10",
+            "firstName": "Erika",
+            "lastName": "Mustermann",
+            "street": "Lieferweg 2",
+            "zipcode": "54321",
+            "city": "Hamburg",
+            "country": { "translated": { "name": "Deutschland" }, "iso": "DE" }
+          }
+        }
+      ],
+      "createdAt": "2024-06-01T09:15:00.000+00:00",
+      "updatedAt": "2024-06-02T08:00:00.000+00:00",
+      "customFields": { "erp_id": "X-1" },
+      "apiAlias": "order"
+    }
+  ]
+}

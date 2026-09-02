@@ -1,0 +1,31 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "id": "eeee000000000000000000000000000a",
+      "name": "SwagPayPal",
+      "label": "PayPal",
+      "translated": { "label": "PayPal" },
+      "version": "9.5.0",
+      "upgradeVersion": "9.6.1",
+      "active": true,
+      "installedAt": "2024-01-01T00:00:00.000+00:00",
+      "author": "Shopware",
+      "managedByComposer": true,
+      "apiAlias": "plugin"
+    },
+    {
+      "id": "eeee000000000000000000000000000b",
+      "name": "SwagPlatformDemoData",
+      "label": "Demo data",
+      "translated": { "label": "Demo data" },
+      "version": "2.0.1",
+      "upgradeVersion": null,
+      "active": false,
+      "installedAt": null,
+      "author": "Shopware",
+      "managedByComposer": false,
+      "apiAlias": "plugin"
+    }
+  ]
+}

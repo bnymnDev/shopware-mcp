@@ -1,0 +1,10 @@
+{
+  "total": 1,
+  "data": [{ "id": "a1b2c3d4e5f60718293a4b5c6d7e8f01", "apiAlias": "product" }],
+  "aggregations": {
+    "byCategory": {
+      "buckets": [{ "key": "18293a4b5c6d7e8f0102030405060708", "count": 7 }],
+      "apiAlias": "byCategory_aggregation"
+    }
+  }
+}

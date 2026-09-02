@@ -1,0 +1,5 @@
+{
+  "error": "invalid_client",
+  "error_description": "Client authentication failed",
+  "message": "Client authentication failed"
+}

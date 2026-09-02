@@ -1,0 +1,29 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "293a4b5c6d7e8f01020304050607080a",
+      "customerNumber": "10001",
+      "email": "max@example.com",
+      "firstName": "Max",
+      "lastName": "Mustermann",
+      "company": null,
+      "group": {
+        "id": "cfbd5018d38d41d8adca10d94fc8bdd6",
+        "name": "Standard customer group",
+        "translated": { "name": "Standard customer group" }
+      },
+      "active": true,
+      "guest": false,
+      "orderCount": 3,
+      "orderTotalAmount": 420.5,
+      "lastOrderDate": "2024-06-01T09:15:00.000+00:00",
+      "lastLogin": "2024-06-10T07:00:00.000+00:00",
+      "salesChannelId": "3a4b5c6d7e8f01020304050607080a0b",
+      "createdAt": "2023-01-01T00:00:00.000+00:00",
+      "password": "$2y$10$hashedpasswordshouldneverleak",
+      "customFields": null,
+      "apiAlias": "customer"
+    }
+  ]
+}

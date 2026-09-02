@@ -1,0 +1,15 @@
+{
+  "version": "6.6.10.3",
+  "versionRevision": "9e2c5b0f3c1d4a7e8f6b5c4d3e2f1a0b",
+  "adminWorker": {
+    "enableAdminWorker": true,
+    "enableQueueStatsWorker": true,
+    "transports": ["async"]
+  },
+  "bundles": {
+    "Framework": { "css": [], "js": [], "type": "plugin" },
+    "Storefront": { "css": [], "js": [], "type": "plugin" },
+    "SwagPayPal": { "css": [], "js": [], "type": "plugin" }
+  },
+  "settings": { "enableUrlFeature": true }
+}

@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "status": "404",
+      "code": "FRAMEWORK__RESOURCE_NOT_FOUND",
+      "title": "Not Found",
+      "detail": "The \"product\" entity with id \"deadbeef\" does not exist."
+    }
+  ]
+}

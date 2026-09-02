@@ -1,0 +1,49 @@
+{
+  "total": 3,
+  "data": [
+    {
+      "id": "f60718293a4b5c6d7e8f010203040506",
+      "versionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "orderNumber": "10042",
+      "orderDateTime": "2024-06-01T09:15:00.000+00:00",
+      "amountTotal": 149.99,
+      "amountNet": 126.04,
+      "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+      "currency": { "id": "b7d2554b0ce847cd82f3ac9bd1c0dfca", "isoCode": "EUR" },
+      "salesChannelId": "3a4b5c6d7e8f01020304050607080a0b",
+      "stateMachineState": {
+        "id": "9999999999999999999999999999aaaa",
+        "technicalName": "in_progress",
+        "name": "In progress"
+      },
+      "orderCustomer": {
+        "customerId": "293a4b5c6d7e8f01020304050607080a",
+        "firstName": "Max",
+        "lastName": "Mustermann",
+        "email": "max@example.com",
+        "customerNumber": "10001"
+      },
+      "transactions": [
+        {
+          "id": "aaaa000000000000000000000000000a",
+          "createdAt": "2024-06-01T09:15:01.000+00:00",
+          "stateMachineState": { "technicalName": "cancelled" }
+        },
+        {
+          "id": "aaaa000000000000000000000000000b",
+          "createdAt": "2024-06-01T09:20:00.000+00:00",
+          "stateMachineState": { "technicalName": "paid" }
+        }
+      ],
+      "deliveries": [
+        {
+          "id": "bbbb000000000000000000000000000a",
+          "stateMachineState": { "technicalName": "open" }
+        }
+      ],
+      "updatedAt": "2024-06-02T08:00:00.000+00:00",
+      "customFields": null,
+      "apiAlias": "order"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "name": "Deutsch",
+      "locale": { "id": "9a3f1e2b4c5d6e7f8091a2b3c4d5e6f7", "code": "de-DE" },
+      "apiAlias": "language"
+    }
+  ]
+}

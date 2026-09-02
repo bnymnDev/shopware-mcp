@@ -1,0 +1,35 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "4b5c6d7e8f01020304050607080a0b0c",
+      "name": "Summer sale",
+      "translated": { "name": "Summer sale" },
+      "active": true,
+      "validFrom": "2024-06-01T00:00:00.000+00:00",
+      "validUntil": "2024-08-31T23:59:59.000+00:00",
+      "code": "SUMMER",
+      "useCodes": true,
+      "useIndividualCodes": false,
+      "individualCodePattern": null,
+      "useSetGroups": false,
+      "priority": 1,
+      "exclusive": false,
+      "maxRedemptionsGlobal": 1000,
+      "maxRedemptionsPerCustomer": 1,
+      "orderCount": 12,
+      "discounts": [
+        {
+          "id": "dddd000000000000000000000000000a",
+          "scope": "cart",
+          "type": "percentage",
+          "value": 10.0,
+          "maxValue": null,
+          "considerAdvancedRules": false
+        }
+      ],
+      "customFields": null,
+      "apiAlias": "promotion"
+    }
+  ]
+}

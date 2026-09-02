@@ -1,0 +1,12 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "5c6d7e8f01020304050607080a0b0c0d",
+      "name": "PayPal",
+      "distinguishableName": "PayPal | Storefront",
+      "translated": { "name": "PayPal", "distinguishableName": "PayPal | Storefront" },
+      "apiAlias": "payment_method"
+    }
+  ]
+}
