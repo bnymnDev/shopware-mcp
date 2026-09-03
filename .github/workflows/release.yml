@@ -62,13 +62,18 @@ jobs:
 
   docker:
     needs: release
-    if: needs.release.outputs.published == 'true'
+    # workflow_dispatch also lets this run alone, to repair a partially failed release.
+    if: needs.release.outputs.published == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v7
+      - name: Lowercase the image name
+        id: image
+        # Container repository names must be lowercase, the GitHub owner is not.
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -80,12 +85,12 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ needs.release.outputs.version }}
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ needs.release.outputs.version }}
 
   mcp-registry:
     needs: release
-    if: needs.release.outputs.published == 'true'
+    if: needs.release.outputs.published == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read

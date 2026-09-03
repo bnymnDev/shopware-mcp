@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
   "name": "io.github.bnymndev/shopware-mcp",
-  "description": "Shopware 6 Admin API for AI agents: products, orders, customers, stock, audits, sales reports. Safe by default.",
+  "description": "Query and safely manage a Shopware 6 shop: products, orders, customers, stock, audits, reports.",
   "repository": {
     "url": "https://github.com/bnymnDev/shopware-mcp",
     "source": "github"

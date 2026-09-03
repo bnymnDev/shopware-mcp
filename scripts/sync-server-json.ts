@@ -12,9 +12,12 @@ interface PackageJson {
   mcpName?: string;
 }
 
+const MAX_REGISTRY_DESCRIPTION = 100;
+
 interface ServerJson {
   name: string;
   version: string;
+  description: string;
   packages?: { identifier?: string; version?: string }[];
 }
 
@@ -43,6 +46,12 @@ const updates: { path: string; next: string; current: string }[] = [];
   } else if (server.name !== pkg.mcpName) {
     problems.push(
       `server.json name "${server.name}" must equal package.json mcpName "${pkg.mcpName}"`,
+    );
+  }
+  // The registry answers with a 422 at publish time if the description is any longer.
+  if ((server.description ?? "").length > MAX_REGISTRY_DESCRIPTION) {
+    problems.push(
+      `server.json description is ${server.description.length} characters, the MCP registry allows ${MAX_REGISTRY_DESCRIPTION}`,
     );
   }
   server.version = pkg.version;
