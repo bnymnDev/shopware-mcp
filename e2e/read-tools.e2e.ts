@@ -40,7 +40,8 @@ describe.skipIf(!E2E_ENABLED)("read tools against dockware", () => {
 
     const detail = await productsGet.handler({ productId: first?.id ?? "" }, ctx);
     expect(detail.productNumber).toBe(first?.productNumber);
-    expect(detail.tax?.taxRate).toBeGreaterThan(0);
+    // A zero rate is legitimate, so only the shape is asserted.
+    expect(typeof detail.tax?.taxRate).toBe("number");
 
     const stock = await stockGet.handler({ productNumber: first?.productNumber ?? "" }, ctx);
     expect(stock.id).toBe(first?.id);

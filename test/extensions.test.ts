@@ -138,9 +138,11 @@ describe("merqo tools", () => {
         operations: { ok: 1, warn: 1, critical: 1, neutral: 0 },
       },
     });
+    // The hub keys its plugin map by name, exactly as a real 6.7 shop returns it.
     expect(health.plugins).toEqual([
       { name: "MerqoHub", version: "0.1.0", active: true },
       { name: "MerqoVault", version: "0.2.0", active: true },
+      { name: "MerqoMigrate", version: "0.1.0", active: false },
     ]);
     expect(health.operations[0]).toEqual({
       id: "resilience",
@@ -231,7 +233,16 @@ describe("merqo tools", () => {
       email: "max@example.com",
       amount: 149.99,
       state: "abandoned",
-      lineItems: [{ label: "Aerodynamic Bronze Bag", quantity: 1, price: 119 }],
+      lineItems: [
+        {
+          label: "Aerodynamic Bronze Bag",
+          type: "product",
+          productId: "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+          quantity: 1,
+          unitPrice: 119,
+          totalPrice: 119,
+        },
+      ],
     });
     expect(JSON.stringify(page)).not.toContain("SECRETCARTTOKEN");
   });

@@ -36,6 +36,13 @@ pnpm lint && pnpm typecheck
 
 `pnpm test:e2e` runs against a real Shopware in Docker (`dockware/dev`). See `docs/self-hosting.md` for the compose setup; CI runs these nightly.
 
+Without Docker it also works natively, which is useful in restricted environments: install MariaDB
+and PHP with the usual Shopware extensions, `composer create-project shopware/production:^6.7`,
+`bin/console system:install --basic-setup`, then serve it with `php -S 127.0.0.1:8000 -t public
+public/index.php` and point `SHOPWARE_URL` at it. The suite creates its own integration through the
+Admin API. Extension tools are exercised only when the matching plugins are installed, so the run
+stays green on a plain shop.
+
 ## Releasing
 
 Releases are automated. You never publish by hand.

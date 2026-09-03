@@ -9,7 +9,17 @@
       "salesChannelId": "3a4b5c6d7e8f01020304050607080a0b",
       "amount": 149.99,
       "state": "abandoned",
-      "lineItems": [{ "label": "Aerodynamic Bronze Bag", "quantity": 1, "price": 119.0 }],
+      "lineItems": [
+        {
+          "id": "li-1",
+          "referencedId": "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+          "type": "product",
+          "label": "Aerodynamic Bronze Bag",
+          "quantity": 1,
+          "unitPrice": 119.0,
+          "totalPrice": 119.0
+        }
+      ],
       "lastActivityAt": "2026-09-02T10:00:00.000+00:00",
       "abandonedAt": "2026-09-02T12:00:00.000+00:00",
       "recoveredAt": null,

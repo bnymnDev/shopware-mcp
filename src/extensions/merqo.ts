@@ -22,6 +22,20 @@ function mapCheck(check: Raw) {
   };
 }
 
+/** The hub returns its plugin map keyed by plugin name; older shapes may send a list. */
+function mapPlugins(
+  value: unknown,
+): { name: string | null; version: string | null; active: boolean | null }[] {
+  const entries = raw(value)
+    ? Object.entries(raw(value) as Raw).map(([name, entry]) => ({ name, entry: raw(entry) ?? {} }))
+    : rawList(value).map((entry) => ({ name: str(entry.name), entry }));
+  return entries.map(({ name, entry }) => ({
+    name: typeof name === "string" ? name : null,
+    version: str(entry.version),
+    active: bool(entry.active),
+  }));
+}
+
 function countByStatus(checks: { status: string | null }[]) {
   const counts: Record<string, number> = { ok: 0, warn: 0, critical: 0, neutral: 0 };
   for (const check of checks) {
@@ -57,11 +71,7 @@ export const merqoHealth = defineTool({
       generatedAt: str(body.generatedAt),
       shopwareVersion: str(body.shopware),
       phpVersion: str(body.php),
-      plugins: rawList(body.merqoPlugins).map((plugin) => ({
-        name: str(plugin.name),
-        version: str(plugin.version),
-        active: bool(plugin.active),
-      })),
+      plugins: mapPlugins(body.merqoPlugins),
       summary: {
         compliance: countByStatus(compliance),
         operations: countByStatus(operations),
@@ -198,9 +208,12 @@ export const merqoAbandonedCarts = defineTool({
           amount: num(snapshot.amount),
           state: str(snapshot.state),
           lineItems: rawList(snapshot.lineItems).map((item) => ({
-            label: str(item.label) ?? str(item.name),
+            label: str(item.label),
+            type: str(item.type),
+            productId: str(item.referencedId),
             quantity: num(item.quantity),
-            price: num(item.price),
+            unitPrice: num(item.unitPrice),
+            totalPrice: num(item.totalPrice),
           })),
           lastActivityAt: str(snapshot.lastActivityAt),
           abandonedAt: str(snapshot.abandonedAt),
