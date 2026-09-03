@@ -92,20 +92,12 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
       includes: { order_line_item: ["id"] },
       aggregations: [
         {
-          name: "topByOrders",
+          name: "topProducts",
           type: "terms",
           field: "productId",
           limit: input.topProducts,
           sort: { field: "_count", order: "DESC" },
           aggregation: { name: "quantity", type: "sum", field: "quantity" },
-        },
-        {
-          name: "topRevenue",
-          type: "terms",
-          field: "productId",
-          limit: input.topProducts,
-          sort: { field: "_count", order: "DESC" },
-          aggregation: { name: "revenue", type: "sum", field: "totalPrice" },
         },
       ],
     }),
@@ -113,13 +105,34 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
 
   const orderCount = orders.total;
   const totalRevenue = round2(sumOf(orders.aggregations.revenue));
-  const revenueByKey = new Map(
-    bucketsOf(lineItems.aggregations, "topRevenue").map((bucket) => [bucket.key, bucket.nested]),
-  );
-  const topBuckets = bucketsOf(lineItems.aggregations, "topByOrders").filter(
+  const topBuckets = bucketsOf(lineItems.aggregations, "topProducts").filter(
     (bucket) => bucket.key,
   );
   const productIds = topBuckets.map((bucket) => bucket.key as string);
+  // Revenue is resolved for exactly these ids, so a tie in the top-N list cannot drop a value.
+  const revenueByKey = new Map<string | null, unknown>();
+  if (productIds.length > 0) {
+    const revenueResult = await client.search<Raw>("order-line-item", {
+      page: 1,
+      limit: 1,
+      "total-count-mode": 0,
+      filter: [...lineItemFilters, equalsAny("productId", productIds)],
+      includes: { order_line_item: ["id"] },
+      aggregations: [
+        {
+          name: "revenue",
+          type: "terms",
+          field: "productId",
+          limit: productIds.length,
+          aggregation: { name: "revenue", type: "sum", field: "totalPrice" },
+        },
+      ],
+    });
+    for (const bucket of bucketsOf(revenueResult.aggregations, "revenue")) {
+      revenueByKey.set(bucket.key, bucket.nested);
+    }
+  }
+
   const products =
     productIds.length > 0
       ? await client.search<Raw>(
@@ -180,7 +193,7 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
         productId: bucket.key,
         productNumber: str(product?.productNumber),
         name: translated(product ?? null, "name"),
-        ordersContaining: bucket.count,
+        lineItemCount: bucket.count,
         quantity: sumOf(bucket.nested),
         revenue: round2(sumOf(revenueByKey.get(bucket.key))),
       };

@@ -46,15 +46,28 @@ describe("sales_report", () => {
       },
     ]);
     expect((orderBody.aggregations as unknown[]).length).toBe(10);
-    expect(lastSearch("order-line-item").body).toMatchObject({
+    const lineItemCalls = searchRequests("order-line-item");
+    expect(lineItemCalls[0]?.body).toMatchObject({
       aggregations: [
         expect.objectContaining({
-          name: "topByOrders",
+          name: "topProducts",
           type: "terms",
           field: "productId",
           limit: 10,
         }),
-        expect.objectContaining({ name: "topRevenue" }),
+      ],
+    });
+    // Revenue is resolved against the exact ids from the first pass, never a second top-N list.
+    expect(lineItemCalls[1]?.body).toMatchObject({
+      filter: expect.arrayContaining([
+        expect.objectContaining({
+          type: "equalsAny",
+          field: "productId",
+          value: ["a1b2c3d4e5f60718293a4b5c6d7e8f01", "b2c3d4e5f60718293a4b5c6d7e8f0102"],
+        }),
+      ]),
+      aggregations: [
+        expect.objectContaining({ name: "revenue", type: "terms", field: "productId" }),
       ],
     });
     expect(lastSearch("product").body).toMatchObject({
@@ -90,7 +103,7 @@ describe("sales_report", () => {
       productId: "a1b2c3d4e5f60718293a4b5c6d7e8f01",
       productNumber: "SW10001",
       name: "Aerodynamic Bronze Bag",
-      ordersContaining: 3,
+      lineItemCount: 3,
       quantity: 5,
       revenue: 595,
     });
