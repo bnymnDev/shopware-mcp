@@ -145,3 +145,53 @@ describe("ShopwareClient", () => {
     expect(requests.filter((r) => r.path === "/api/search/currency")).toHaveLength(1);
   });
 });
+
+describe("ShopwareClient resilience", () => {
+  it("sends a user agent and the optional language header", async () => {
+    const client = new ShopwareClient({
+      ...testConfig(),
+      languageId: "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+    });
+    await client.request("/api/_info/version");
+    const request = requests.find((r) => r.path === "/api/_info/version");
+    expect(request?.headers["user-agent"]).toMatch(
+      /^shopware-mcp\/\d+\.\d+\.\d+ \(\+https:\/\/github\.com\//,
+    );
+    expect(request?.headers["sw-language-id"]).toBe("2fbb5fe2e29a4d70aa5854ce7ce3e20b");
+  });
+
+  it("retries once on 429/503 honouring Retry-After, then fails", async () => {
+    let calls = 0;
+    const sleeps: number[] = [];
+    mock.use(
+      http.get(`${SHOP_URL}/api/_info/version`, () => {
+        calls += 1;
+        if (calls === 1) {
+          return HttpResponse.json(
+            { errors: [] },
+            { status: 429, headers: { "retry-after": "2" } },
+          );
+        }
+        return HttpResponse.json({ version: "6.6.0.0" });
+      }),
+    );
+    const client = new ShopwareClient(testConfig(), undefined, async (ms) => {
+      sleeps.push(ms);
+    });
+    expect(await client.request<{ version: string }>("/api/_info/version")).toEqual({
+      version: "6.6.0.0",
+    });
+    expect(sleeps).toEqual([2000]);
+
+    mock.use(
+      http.get(`${SHOP_URL}/api/_info/version`, () =>
+        HttpResponse.json({ errors: [{ code: "BUSY", detail: "later" }] }, { status: 503 }),
+      ),
+    );
+    await expect(client.request("/api/_info/version")).rejects.toMatchObject({
+      status: 503,
+      code: "BUSY",
+    });
+    expect(sleeps).toEqual([2000, 500]);
+  });
+});

@@ -28,7 +28,10 @@ export function registerResources(server: McpServer, ctx: ToolContext): void {
     },
     async (uri) => {
       try {
-        return jsonContents(uri, await fetchShopInfo(ctx.client));
+        return jsonContents(
+          uri,
+          await fetchShopInfo(ctx.client, { writeEnabled: ctx.config.allowWrite }),
+        );
       } catch (error) {
         return jsonContents(uri, toErrorShape(error));
       }

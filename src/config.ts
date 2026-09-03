@@ -38,6 +38,14 @@ const envSchema = z.object({
     emptyToUndefined,
     z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
   ),
+  SHOPWARE_LANGUAGE_ID: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .regex(/^[0-9a-f]{32}$/i, "SHOPWARE_LANGUAGE_ID must be a 32-char hex UUID")
+      .transform((value) => value.toLowerCase())
+      .optional(),
+  ),
   SHOPWARE_MCP_LOG_LEVEL: z.preprocess(
     (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
     z.preprocess(emptyToUndefined, z.enum(["error", "warn", "info", "debug"]).default("error")),
@@ -49,6 +57,8 @@ export interface Config {
   url: string;
   clientId: string;
   clientSecret: string;
+  /** Optional `sw-language-id` for translated fields; defaults to the shop's default language. */
+  languageId?: string;
   /** When false, write tools are not registered at all. */
   allowWrite: boolean;
   defaultLimit: number;
@@ -92,6 +102,7 @@ export function loadConfig(
     url: values.SHOPWARE_URL,
     clientId: values.SHOPWARE_CLIENT_ID,
     clientSecret: values.SHOPWARE_CLIENT_SECRET,
+    languageId: values.SHOPWARE_LANGUAGE_ID,
     allowWrite: overrides.allowWrite ?? values.SHOPWARE_MCP_ALLOW_WRITE,
     defaultLimit: values.SHOPWARE_MCP_DEFAULT_LIMIT,
     maxLimit: MAX_LIMIT,

@@ -19,6 +19,10 @@ export interface ShopInfo {
   };
   defaultLanguage: { id: string; name: string | null; locale: string | null };
   adminWorkerEnabled: boolean | null;
+  /** Whether this MCP server was started with write access. */
+  writeEnabled: boolean;
+  /** Language the server reads translated fields in (null = shop default). */
+  languageId: string | null;
   warnings?: string[];
 }
 
@@ -32,7 +36,10 @@ function describeError(error: unknown): string {
   return error instanceof ShopwareMcpError ? `${error.code}: ${error.detail}` : String(error);
 }
 
-export async function fetchShopInfo(client: ShopwareClient): Promise<ShopInfo> {
+export async function fetchShopInfo(
+  client: ShopwareClient,
+  options: { writeEnabled?: boolean; languageId?: string } = {},
+): Promise<ShopInfo> {
   const [version, config, currency, language] = await Promise.allSettled([
     client.request<Raw>("/api/_info/version"),
     client.request<Raw>("/api/_info/config"),
@@ -82,6 +89,8 @@ export async function fetchShopInfo(client: ShopwareClient): Promise<ShopInfo> {
       locale: str(raw(languageEntity?.locale)?.code),
     },
     adminWorkerEnabled,
+    writeEnabled: options.writeEnabled ?? false,
+    languageId: options.languageId ?? null,
   };
   if (warnings.length > 0) info.warnings = warnings;
   return info;
@@ -92,8 +101,12 @@ export const shopInfo = defineTool({
   title: "Shop info",
   description:
     "Get basic facts about the connected Shopware shop: version, edition (Community/Commercial), " +
-    "default currency and default language. Use it first to orient yourself or to confirm the " +
-    "connection works. Returns a single JSON object.",
+    "default currency and default language, plus whether write tools are enabled on this " +
+    "server. Use it first to orient yourself or to confirm the connection works. Returns one object.",
   inputSchema: {},
-  handler: (_input, ctx) => fetchShopInfo(ctx.client),
+  handler: (_input, ctx) =>
+    fetchShopInfo(ctx.client, {
+      writeEnabled: ctx.config.allowWrite,
+      languageId: ctx.config.languageId,
+    }),
 });

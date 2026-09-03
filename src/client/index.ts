@@ -1,6 +1,7 @@
 import type { Config } from "../config.js";
 import { fromHttpResponse, networkError, notFound, ShopwareMcpError } from "../errors.js";
 import { logger } from "../logger.js";
+import { NAME, VERSION } from "../version.js";
 import { TokenProvider } from "./auth.js";
 import { type Criteria, equals } from "./criteria.js";
 import { defaultFetch, type FetchLike, parseBody } from "./fetch.js";
@@ -28,6 +29,13 @@ export interface CurrencyInfo {
   name: string | null;
 }
 
+/** Identifies this client in shop access logs; helps operators see which integration calls them. */
+export const USER_AGENT = `${NAME}/${VERSION} (+https://github.com/bnymnDev/shopware-mcp)`;
+
+/** Status codes that are worth exactly one retry after a short pause. */
+const TRANSIENT_STATUSES = new Set([429, 502, 503, 504]);
+const MAX_RETRY_DELAY_MS = 5_000;
+
 /** Headers to resolve variant/parent inheritance for product reads. */
 export const INHERITANCE_HEADERS: Record<string, string> = { "sw-inheritance": "true" };
 
@@ -39,12 +47,17 @@ export class ShopwareClient {
   readonly baseUrl: string;
   private readonly auth: TokenProvider;
   private currencyCache: Promise<Map<string, CurrencyInfo>> | undefined;
+  private schemaCache: Promise<Record<string, Raw>> | undefined;
+  private readonly languageId: string | undefined;
 
   constructor(
-    config: Pick<Config, "url" | "clientId" | "clientSecret">,
+    config: Pick<Config, "url" | "clientId" | "clientSecret"> & Partial<Pick<Config, "languageId">>,
     private readonly fetchImpl: FetchLike = defaultFetch,
+    private readonly sleep: (ms: number) => Promise<void> = (ms) =>
+      new Promise((resolve) => setTimeout(resolve, ms)),
   ) {
     this.baseUrl = config.url;
+    this.languageId = config.languageId;
     this.auth = new TokenProvider(config, fetchImpl);
   }
 
@@ -53,15 +66,21 @@ export class ShopwareClient {
   }
 
   async request<T = unknown>(path: string, options: RequestOptions = {}): Promise<T> {
-    return this.send<T>(path, options, false);
+    return this.send<T>(path, options, { authRetried: false, transientRetried: false });
   }
 
-  private async send<T>(path: string, options: RequestOptions, retried: boolean): Promise<T> {
+  private async send<T>(
+    path: string,
+    options: RequestOptions,
+    state: { authRetried: boolean; transientRetried: boolean },
+  ): Promise<T> {
     const token = await this.auth.getToken();
     const method = options.method ?? "GET";
     const headers: Record<string, string> = {
       accept: "application/json",
+      "user-agent": USER_AGENT,
       authorization: `Bearer ${token}`,
+      ...(this.languageId ? { "sw-language-id": this.languageId } : {}),
       ...(options.body !== undefined ? { "content-type": "application/json" } : {}),
       ...options.headers,
     };
@@ -79,11 +98,18 @@ export class ShopwareClient {
     }
     logger.debug("request", { method, path, status: response.status, ms: Date.now() - startedAt });
 
-    if (response.status === 401 && !retried) {
+    if (response.status === 401 && !state.authRetried) {
       // Drain the body so the connection is released, then refresh the token once and retry.
       await response.text().catch(() => undefined);
       this.auth.invalidate();
-      return this.send<T>(path, options, true);
+      return this.send<T>(path, options, { ...state, authRetried: true });
+    }
+    if (TRANSIENT_STATUSES.has(response.status) && !state.transientRetried) {
+      await response.text().catch(() => undefined);
+      const delay = retryDelayMs(response.headers.get("retry-after"));
+      logger.debug("transient error, retrying once", { status: response.status, delay });
+      await this.sleep(delay);
+      return this.send<T>(path, options, { ...state, transientRetried: true });
     }
     const body = await parseBody(response);
     if (!response.ok) throw fromHttpResponse(response.status, body);
@@ -173,6 +199,22 @@ export class ShopwareClient {
     return map;
   }
 
+  /**
+   * Entity schema from `/api/_info/entity-schema.json`, cached for the lifetime of the client.
+   * Keys are snake_case entity names (e.g. `order_line_item`).
+   */
+  entitySchema(): Promise<Record<string, Raw>> {
+    if (!this.schemaCache) {
+      this.schemaCache = this.request<Record<string, Raw>>("/api/_info/entity-schema.json").catch(
+        (error: unknown) => {
+          this.schemaCache = undefined;
+          throw error;
+        },
+      );
+    }
+    return this.schemaCache;
+  }
+
   async currencyCode(id: string | null | undefined): Promise<string | null> {
     if (!id) return null;
     try {
@@ -185,6 +227,15 @@ export class ShopwareClient {
       throw error;
     }
   }
+}
+
+function retryDelayMs(retryAfter: string | null): number {
+  if (!retryAfter) return 500;
+  const seconds = Number(retryAfter);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.min(seconds * 1000, MAX_RETRY_DELAY_MS);
+  const at = Date.parse(retryAfter);
+  if (Number.isNaN(at)) return 500;
+  return Math.max(0, Math.min(at - Date.now(), MAX_RETRY_DELAY_MS));
 }
 
 function translatedName(entity: Raw): string | null {
