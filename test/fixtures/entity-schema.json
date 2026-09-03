@@ -1,0 +1,34 @@
+{
+  "product": {
+    "entity": "product",
+    "properties": {
+      "id": { "type": "uuid", "flags": { "primary_key": true, "required": true } },
+      "productNumber": { "type": "string", "flags": { "required": true } },
+      "name": { "type": "string", "flags": { "translatable": true } },
+      "stock": { "type": "int", "flags": { "required": true } },
+      "manufacturer": {
+        "type": "association",
+        "relation": "many_to_one",
+        "entity": "product_manufacturer"
+      },
+      "categories": { "type": "association", "relation": "many_to_many", "entity": "category" }
+    }
+  },
+  "customer": {
+    "entity": "customer",
+    "properties": {
+      "id": { "type": "uuid", "flags": { "primary_key": true } },
+      "email": { "type": "string", "flags": { "required": true } },
+      "password": { "type": "password", "flags": {} },
+      "group": { "type": "association", "relation": "many_to_one", "entity": "customer_group" }
+    }
+  },
+  "user": { "entity": "user", "properties": { "id": { "type": "uuid", "flags": {} } } },
+  "product_manufacturer": {
+    "entity": "product_manufacturer",
+    "properties": {
+      "id": { "type": "uuid", "flags": {} },
+      "name": { "type": "string", "flags": { "translatable": true } }
+    }
+  }
+}

@@ -9,7 +9,9 @@ import type { ToolContext, ToolDefinition } from "./tools/types.js";
 import { NAME, VERSION } from "./version.js";
 
 export const SERVER_INSTRUCTIONS =
-  "Tools for a Shopware 6 shop via its Admin API. Read tools return compact JSON with " +
+  "Tools for a Shopware 6 shop via its Admin API. Start with shop_info; use shop_audit for a " +
+  "health overview and sales_report for figures. entity_search/entity_schema reach any other " +
+  "entity. Read tools return compact JSON with " +
   "{ total, page, limit, items } for searches (limit max 50). Filters use Shopware Criteria " +
   "semantics: { type: equals|contains|range|equalsAny, field, value }. Write tools exist only " +
   "when the server was started with write access, and every write defaults to dryRun=true, " +

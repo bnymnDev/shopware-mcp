@@ -1,0 +1,19 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "e5f60718293a4b5c6d7e8f0102030405",
+      "_uniqueIdentifier": "e5f60718293a4b5c6d7e8f0102030405",
+      "versionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "name": "Acme",
+      "translated": { "name": "Acme" },
+      "link": "https://acme.example",
+      "media": {
+        "id": "c0ffee00000000000000000000000009",
+        "url": "https://shop.test/media/acme.png"
+      },
+      "extensions": { "foreignKeys": {} },
+      "apiAlias": "product_manufacturer"
+    }
+  ]
+}

@@ -111,6 +111,10 @@ export function defaultHandlers(): HttpHandler[] {
       await capture(request);
       return HttpResponse.json(fixture("info-config"));
     }),
+    http.get(`${SHOP_URL}/api/_info/entity-schema.json`, async ({ request }) => {
+      await capture(request);
+      return HttpResponse.json(fixture<JsonBodyType>("entity-schema"));
+    }),
     http.get(`${SHOP_URL}/api/_action/extension/installed`, async ({ request }) => {
       await capture(request);
       return HttpResponse.json(fixture("extensions-installed"));
