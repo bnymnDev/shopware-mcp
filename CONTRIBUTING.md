@@ -44,6 +44,11 @@ Releases are automated. You never publish by hand.
 2. When it lands on `main`, the Release workflow opens a "chore: release" pull request that bumps the version and updates the changelog. `pnpm release:version` also syncs `server.json` and `manifest.json` to the new version.
 3. Merging that pull request publishes everything in one run: the npm package (with provenance), a GitHub release with the `shopware-mcp.mcpb` desktop extension attached, the `ghcr.io` image, and the entry in the [MCP registry](https://registry.modelcontextprotocol.io) via GitHub OIDC.
 
+The version pull request needs "Allow GitHub Actions to create and approve pull requests" under
+Settings, Actions, General, Workflow permissions. Without it the workflow reports that Actions may
+not create pull requests, and a maintainer can instead run `pnpm release:version` locally and push,
+which publishes on the next run.
+
 The workflow refuses to publish while the repository is private, and CI verifies that `docs/tools.md`, `server.json` and `manifest.json` are in sync with the code and the version.
 
 `pnpm pack:mcpb` builds the self-contained bundle and packs `shopware-mcp.mcpb` locally if you want to test the desktop extension before a release.
