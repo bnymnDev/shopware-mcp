@@ -1,6 +1,8 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { afterEach, describe, expect, it } from "vitest";
+import { z } from "zod";
+import { extensionPacks } from "../src/extensions/index.js";
 import { createServer } from "../src/server.js";
 import { readTools, tools, writeTools } from "../src/tools/index.js";
 import { createContext, mock, searchHandler } from "./helpers/shopware.js";
@@ -110,5 +112,38 @@ describe("MCP server", () => {
     });
     expect(prompt.messages[0]?.content).toMatchObject({ type: "text" });
     expect(JSON.stringify(prompt.messages[0]?.content)).toContain("10042");
+  });
+});
+
+describe("tool schemas stay portable", () => {
+  /**
+   * `type: ["string", "number"]` is legal JSON Schema, but several MCP clients read `type` as a
+   * single string and then reject the tool or drop the constraint. Every union must therefore
+   * reach the wire as `anyOf` branches with one `type` each.
+   */
+  function arrayTypedPaths(node: unknown, path = "input"): string[] {
+    if (Array.isArray(node)) {
+      return node.flatMap((entry, index) => arrayTypedPaths(entry, `${path}[${index}]`));
+    }
+    if (typeof node !== "object" || node === null) return [];
+    const found: string[] = [];
+    for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+      if (key === "type" && Array.isArray(value))
+        found.push(`${path}.type=${JSON.stringify(value)}`);
+      else found.push(...arrayTypedPaths(value, `${path}.${key}`));
+    }
+    return found;
+  }
+
+  it("never emits an array-valued type, for any tool", () => {
+    const every = [
+      ...tools,
+      ...extensionPacks.flatMap((pack) => pack.tools.map((entry) => entry.tool)),
+    ];
+    const offenders = every.flatMap((tool) =>
+      arrayTypedPaths(z.toJSONSchema(z.object(tool.inputSchema), { io: "input" }), tool.name),
+    );
+    expect(offenders).toEqual([]);
+    expect(every.length).toBeGreaterThan(15);
   });
 });

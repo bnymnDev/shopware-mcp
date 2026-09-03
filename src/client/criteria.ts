@@ -5,14 +5,30 @@ import { MAX_LIMIT } from "../config.js";
  * Agent-facing input schemas (shared by every search tool)
  * ---------------------------------------------------------------------------------------- */
 
-const scalar = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+/**
+ * Each branch carries a description on purpose: without it zod collapses a primitive-only union
+ * into `type: ["string", …]`, and several MCP clients read `type` as a single string and then
+ * reject the tool or silently drop the constraint.
+ */
+const scalar = z.union([
+  z.string().describe("text"),
+  z.number().describe("number"),
+  z.boolean().describe("true or false"),
+  z.null().describe("null"),
+]);
+
+const scalarList = z
+  .array(z.union([z.string().describe("text"), z.number().describe("number")]))
+  .describe("list of values");
+
+const bound = z.union([z.number().describe("number"), z.string().describe("ISO date")]);
 
 const rangeValue = z
   .object({
-    gte: z.union([z.number(), z.string()]).optional(),
-    gt: z.union([z.number(), z.string()]).optional(),
-    lte: z.union([z.number(), z.string()]).optional(),
-    lt: z.union([z.number(), z.string()]).optional(),
+    gte: bound.optional(),
+    gt: bound.optional(),
+    lte: bound.optional(),
+    lt: bound.optional(),
   })
   .describe("Range bounds; dates as ISO strings, e.g. { gte: '2024-01-01' }");
 
@@ -25,7 +41,7 @@ export const filterSchema = z.object({
     .min(1)
     .describe("Entity field; dot-path for associations, e.g. 'manufacturer.name'"),
   value: z
-    .union([scalar, z.array(z.union([z.string(), z.number()])), rangeValue])
+    .union([scalar, scalarList, rangeValue])
     .describe(
       "equals: scalar; contains: string; equalsAny: array; range: { gte?, gt?, lte?, lt? }",
     ),
