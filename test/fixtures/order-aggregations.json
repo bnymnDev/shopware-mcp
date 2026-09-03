@@ -1,0 +1,27 @@
+{
+  "total": 3,
+  "data": [{ "id": "f60718293a4b5c6d7e8f010203040506", "apiAlias": "order" }],
+  "aggregations": {
+    "revenue": { "sum": 449.97, "apiAlias": "revenue_aggregation" },
+    "net": { "sum": 378.13, "apiAlias": "net_aggregation" },
+    "shipping": { "sum": 14.97, "apiAlias": "shipping_aggregation" },
+    "byState": {
+      "buckets": [{ "key": "in_progress", "count": 2 }, { "key": "completed", "count": 1 }]
+    },
+    "byPayment": { "buckets": [{ "key": "paid", "count": 3 }] },
+    "byDelivery": { "buckets": [{ "key": "open", "count": 2 }, { "key": "shipped", "count": 1 }] },
+    "byCurrency": { "buckets": [{ "key": "EUR", "count": 3, "result": { "sum": 449.97 } }] },
+    "bySalesChannel": {
+      "buckets": [{ "key": "Storefront", "count": 3, "revenue": { "sum": 449.97 } }]
+    },
+    "byPaymentMethod": {
+      "buckets": [{ "key": "PayPal", "count": 2 }, { "key": "Invoice", "count": 1 }]
+    },
+    "timeline": {
+      "buckets": [
+        { "key": "2024-06-01 00:00:00", "count": 2, "result": { "sum": 299.98 } },
+        { "key": "2024-06-02 00:00:00", "count": 1, "result": { "sum": 149.99 } }
+      ]
+    }
+  }
+}
