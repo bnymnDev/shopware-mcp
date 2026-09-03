@@ -17,13 +17,22 @@
   "documentation": "https://github.com/bnymnDev/shopware-mcp/blob/main/docs/quickstart.md",
   "support": "https://github.com/bnymnDev/shopware-mcp/issues",
   "license": "MIT",
-  "keywords": ["shopware", "ecommerce", "shop", "orders", "products", "admin-api"],
+  "keywords": [
+    "shopware",
+    "ecommerce",
+    "shop",
+    "orders",
+    "products",
+    "admin-api"
+  ],
   "server": {
     "type": "node",
     "entry_point": "dist/bundle/index.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/dist/bundle/index.js"],
+      "args": [
+        "${__dirname}/dist/bundle/index.js"
+      ],
       "env": {
         "SHOPWARE_URL": "${user_config.shopware_url}",
         "SHOPWARE_CLIENT_ID": "${user_config.client_id}",
@@ -42,7 +51,7 @@
     "client_id": {
       "type": "string",
       "title": "Integration access key ID",
-      "description": "Admin \u2192 Settings \u2192 System \u2192 Integrations",
+      "description": "Admin → Settings → System → Integrations",
       "required": true
     },
     "client_secret": {
@@ -147,19 +156,27 @@
     {
       "name": "order_summary",
       "description": "Summarize one order for a support reply",
-      "arguments": ["orderNumber"],
+      "arguments": [
+        "orderNumber"
+      ],
       "text": "Load order ${arguments.orderNumber} with orders_get and write a short, friendly support summary: date, items, total, payment and delivery state, tracking codes and shipping address. Flag anything that looks stuck."
     },
     {
       "name": "low_stock_report",
       "description": "List active products below a stock threshold",
-      "arguments": ["threshold"],
+      "arguments": [
+        "threshold"
+      ],
       "text": "Use products_search with a range filter stock < ${arguments.threshold} and active = true, includeVariants = true, sorted by stock ascending. Produce a table with product number, name, stock, available stock and manufacturer, and end with the total count."
     }
   ],
   "prompts_generated": false,
   "compatibility": {
-    "platforms": ["darwin", "win32", "linux"],
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ],
     "runtimes": {
       "node": ">=22.0.0"
     }

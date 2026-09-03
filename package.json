@@ -30,10 +30,11 @@
     "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
     "docs:tools": "tsx scripts/gen-tool-docs.ts",
     "changeset": "changeset",
-    "version": "changeset version",
     "release": "pnpm build && changeset publish",
     "prepublishOnly": "pnpm build",
-    "pack:mcpb": "pnpm build && npx -y @anthropic-ai/mcpb pack . shopware-mcp.mcpb"
+    "pack:mcpb": "pnpm build && npx -y @anthropic-ai/mcpb pack . shopware-mcp.mcpb",
+    "sync:server": "tsx scripts/sync-server-json.ts",
+    "release:version": "changeset version && tsx scripts/sync-server-json.ts"
   },
   "keywords": [
     "mcp",

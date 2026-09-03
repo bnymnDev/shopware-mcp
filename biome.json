@@ -6,7 +6,16 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!dist", "!node_modules", "!coverage", "!pnpm-lock.yaml", "!CHANGELOG.md"]
+    "includes": [
+      "**",
+      "!dist",
+      "!node_modules",
+      "!coverage",
+      "!pnpm-lock.yaml",
+      "!CHANGELOG.md",
+      "!server.json",
+      "!manifest.json"
+    ]
   },
   "formatter": {
     "enabled": true,

@@ -85,3 +85,19 @@ Every request carries `User-Agent: shopware-mcp/<version> (+repo url)` so operat
 ## Two build outputs
 
 `dist/index.js` keeps dependencies external for npm. `dist/bundle/index.js` inlines everything for the Claude Desktop extension (`.mcpb`), which has no package manager at install time.
+
+## Two build outputs, one release pipeline
+
+`dist/index.js` keeps dependencies external for npm; `dist/bundle/index.js` inlines everything for the Claude Desktop extension, which has no package manager at install time. One push to `main` publishes npm, the GitHub release with the `.mcpb` attached, the container image and the MCP registry entry.
+
+## The MCP registry entry is published from CI
+
+`mcp-publisher login github-oidc` authenticates the workflow as the repository owner, so the `io.github.bnymndev` namespace is proven without a personal token and nobody needs the CLI on their machine. The registry verifies ownership by reading `mcpName` from the published npm package, which is why the job waits for npm to serve the new version first.
+
+## Generated manifests are excluded from the formatter
+
+`server.json` and `manifest.json` are written by `scripts/sync-server-json.ts`, which keeps their versions equal to `package.json`. The formatter would re-wrap them and fight the sync check, so they are excluded from Biome and owned by the script instead.
+
+## Publishing is blocked while the repository is private
+
+npm provenance requires a public repository, and a package whose repository link 404s looks abandoned. The release job therefore skips itself unless the repository is public, and `workflow_dispatch` exists so a release can be started deliberately.

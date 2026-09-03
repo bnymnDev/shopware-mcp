@@ -28,7 +28,7 @@ Agent:  → shop_audit {}
 | **Safe by default** | Write tools are not registered unless you pass `--allow-write`. Every write defaults to `dryRun: true`. Credentials never appear in output, logs or errors. Secrets are scrubbed from every entity payload. |
 | **Built for agents** | Compact JSON with `total` for paging, LLM-written tool descriptions, Shopware Criteria filters 1:1 (no invented DSL), `fields` to opt into raw data like `customFields`. |
 | **Runs anywhere** | `npx`, Docker, Claude Desktop extension (`.mcpb`), stdio and Streamable HTTP. Shopware 6.6+. |
-| **Solid** | Token cache with early refresh, one retry on 401 and on 429/5xx, exact totals, 90+ unit tests against mocked Admin API responses, nightly e2e against dockware. |
+| **Solid** | Token cache with early refresh, one retry on 401 and on 429/5xx, exact totals, 80+ unit tests against mocked Admin API responses, nightly e2e against dockware, npm releases signed with build provenance. |
 
 ## Install
 
@@ -69,6 +69,10 @@ claude mcp add shopware \
   -e SHOPWARE_CLIENT_SECRET=... \
   -- npx -y shopware-mcp
 ```
+
+### MCP registry
+
+Listed as `io.github.bnymndev/shopware-mcp`, so hosts that read the [official registry](https://registry.modelcontextprotocol.io) can install it by name.
 
 ### Cursor / other MCP hosts
 

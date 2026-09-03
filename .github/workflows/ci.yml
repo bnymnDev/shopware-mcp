@@ -9,16 +9,20 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         node: [22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
@@ -27,6 +31,29 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm docs:tools --check
+      - name: Generated files are up to date
+        run: |
+          pnpm docs:tools --check
+          pnpm sync:server --check
       - name: Smoke-test the CLI
-        run: node dist/index.js --help
+        run: |
+          node dist/index.js --help
+          node dist/bundle/index.js --version
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build the Claude Desktop extension
+        run: pnpm pack:mcpb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shopware-mcp-mcpb
+          path: shopware-mcp.mcpb
+          if-no-files-found: error

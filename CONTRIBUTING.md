@@ -36,9 +36,17 @@ pnpm lint && pnpm typecheck
 
 `pnpm test:e2e` runs against a real Shopware in Docker (`dockware/dev`). See `docs/self-hosting.md` for the compose setup; CI runs these nightly.
 
-## Releasing the desktop extension
+## Releasing
 
-`pnpm pack:mcpb` builds the self-contained bundle and packs `shopware-mcp.mcpb` from `manifest.json`; the release workflow attaches it to the GitHub release.
+Releases are automated. You never publish by hand.
+
+1. Add a changeset with your change: `pnpm changeset`.
+2. When it lands on `main`, the Release workflow opens a "chore: release" pull request that bumps the version and updates the changelog. `pnpm release:version` also syncs `server.json` and `manifest.json` to the new version.
+3. Merging that pull request publishes everything in one run: the npm package (with provenance), a GitHub release with the `shopware-mcp.mcpb` desktop extension attached, the `ghcr.io` image, and the entry in the [MCP registry](https://registry.modelcontextprotocol.io) via GitHub OIDC.
+
+The workflow refuses to publish while the repository is private, and CI verifies that `docs/tools.md`, `server.json` and `manifest.json` are in sync with the code and the version.
+
+`pnpm pack:mcpb` builds the self-contained bundle and packs `shopware-mcp.mcpb` locally if you want to test the desktop extension before a release.
 
 ## Good first issues
 
