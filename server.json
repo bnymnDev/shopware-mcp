@@ -1,18 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
-  "name": "io.github.bnymndev/shopware-mcp",
+  "name": "io.github.bnymnDev/shopware-mcp",
   "description": "Query and safely manage a Shopware 6 shop: products, orders, customers, stock, audits, reports.",
   "repository": {
     "url": "https://github.com/bnymnDev/shopware-mcp",
     "source": "github"
   },
-  "version": "0.1.0",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "npm",
       "registryBaseUrl": "https://registry.npmjs.org",
       "identifier": "shopware-mcp",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       },

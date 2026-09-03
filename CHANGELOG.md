@@ -1,5 +1,13 @@
 # shopware-mcp
 
+## 0.1.1
+
+### Patch Changes
+
+- Correct the MCP registry namespace to match the GitHub owner exactly. The registry grants
+  `io.github.bnymnDev/*` and compares it case-sensitively against the `mcpName` in the published
+  package, so the lowercase spelling was rejected.
+
 ## 0.1.0
 
 ### Minor Changes

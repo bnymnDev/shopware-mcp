@@ -1,6 +1,6 @@
 {
   "name": "shopware-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for the Shopware 6 Admin API. Read-only by default, guarded writes with dry-run.",
   "license": "MIT",
   "type": "module",
@@ -77,5 +77,5 @@
       "msw"
     ]
   },
-  "mcpName": "io.github.bnymndev/shopware-mcp"
+  "mcpName": "io.github.bnymnDev/shopware-mcp"
 }

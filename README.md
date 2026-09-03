@@ -72,7 +72,7 @@ claude mcp add shopware \
 
 ### MCP registry
 
-Listed as `io.github.bnymndev/shopware-mcp`, so hosts that read the [official registry](https://registry.modelcontextprotocol.io) can install it by name.
+Listed as `io.github.bnymnDev/shopware-mcp`, so hosts that read the [official registry](https://registry.modelcontextprotocol.io) can install it by name.
 
 ### Cursor / other MCP hosts
 

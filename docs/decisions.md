@@ -92,7 +92,7 @@ Every request carries `User-Agent: shopware-mcp/<version> (+repo url)` so operat
 
 ## The MCP registry entry is published from CI
 
-`mcp-publisher login github-oidc` authenticates the workflow as the repository owner, so the `io.github.bnymndev` namespace is proven without a personal token and nobody needs the CLI on their machine. The registry verifies ownership by reading `mcpName` from the published npm package, which is why the job waits for npm to serve the new version first.
+`mcp-publisher login github-oidc` authenticates the workflow as the repository owner, so the `io.github.bnymnDev` namespace is proven without a personal token and nobody needs the CLI on their machine. The registry verifies ownership by reading `mcpName` from the published npm package, which is why the job waits for npm to serve the new version first.
 
 ## Generated manifests are excluded from the formatter
 
