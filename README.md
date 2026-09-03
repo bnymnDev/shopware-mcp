@@ -27,6 +27,7 @@ Agent:  → shop_audit {}
 | **Insight, not just CRUD** | `shop_audit` finds stuck orders, stock problems, expired promotions and pending updates in one call. `sales_report` aggregates revenue, states, channels, a timeline and top products server-side. |
 | **Safe by default** | Write tools are not registered unless you pass `--allow-write`. Every write defaults to `dryRun: true`. Credentials never appear in output, logs or errors. Secrets are scrubbed from every entity payload. |
 | **Built for agents** | Compact JSON with `total` for paging, LLM-written tool descriptions, Shopware Criteria filters 1:1 (no invented DSL), `fields` to opt into raw data like `customFields`. |
+| **Adapts to the shop** | Detects installed extensions and registers extra tools for them, so a shop with more plugins gets a richer agent without any configuration. |
 | **Runs anywhere** | `npx`, Docker, Claude Desktop extension (`.mcpb`), stdio and Streamable HTTP. Shopware 6.6+. |
 | **Solid** | Token cache with early refresh, one retry on 401 and on 429/5xx, exact totals, 80+ unit tests against mocked Admin API responses, nightly e2e against dockware, npm releases signed with build provenance. |
 
@@ -98,10 +99,11 @@ The image serves Streamable HTTP on port 3333. See [docs/self-hosting.md](docs/s
 | `SHOPWARE_CLIENT_SECRET` | yes | Integration secret access key |
 | `SHOPWARE_MCP_ALLOW_WRITE` | no | `true` registers the write tools. Default: off |
 | `SHOPWARE_MCP_DEFAULT_LIMIT` | no | Default page size for search tools (default 20, max 50) |
+| `SHOPWARE_MCP_EXTENSIONS` | no | `false` disables plugin-aware tools and the extension lookup at startup |
 | `SHOPWARE_LANGUAGE_ID` | no | Language UUID for translated fields (`sw-language-id`). Default: shop default language |
 | `SHOPWARE_MCP_LOG_LEVEL` | no | `error` (default), `warn`, `info`, `debug`. Logs go to stderr only |
 
-CLI flags override the environment: `--allow-write`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`.
+CLI flags override the environment: `--allow-write`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`.
 
 The Integration needs read permissions on the entities you query and write permissions on product, order and promotion for the write tools. The *Administrator* role is the quick path for a dev shop; use a dedicated role in production (see [docs/self-hosting.md](docs/self-hosting.md#shopware-permissions)).
 
@@ -136,6 +138,18 @@ Full parameter reference: [docs/tools.md](docs/tools.md). Every search tool take
 
 Resources: `shopware://shop`, `shopware://sales-channels`. Prompts: `order_summary`, `low_stock_report`.
 
+### Plugin-aware tools
+
+Shops are not identical, so the tool list is not either. At startup the server looks up which
+extensions are installed and active and registers extra tools for the ones it knows. The lookup
+runs in the background, a shop that does not answer simply gets the core tools, and
+`--no-extensions` turns the whole mechanism off.
+
+Today one suite is supported, [Merqo](https://github.com/bnymnDev/merqo), which adds tools for
+compliance status, incoming e-invoices, returns and abandoned carts. Shops without it never see
+those tools. Adding support for another vendor's extensions means one file under
+`src/extensions/`, and pull requests are welcome.
+
 ## Safety
 
 - Without `--allow-write` (or `SHOPWARE_MCP_ALLOW_WRITE=true`) the server exposes read tools only. Agents cannot discover or call write tools.
@@ -148,6 +162,10 @@ Resources: `shopware://shop`, `shopware://sales-channels`. Prompts: `order_summa
 ## Open core
 
 Everything in this repository is MIT and stays that way. It covers one shop, one operator, interactive use.
+
+The same author builds [Merqo](https://github.com/bnymnDev/merqo), a commercial suite of Shopware
+extensions for EU compliance and daily operations. This server detects them and adds matching
+tools, but it never requires them, and the core tools behave the same either way.
 
 Agencies and merchants running this at scale usually need more, and that is what I build and operate for clients:
 

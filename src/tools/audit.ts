@@ -3,7 +3,7 @@ import { associations, equals, equalsAny, type ShopwareFilter } from "../client/
 import { INHERITANCE_HEADERS, type Raw, type ShopwareClient } from "../client/index.js";
 import { ShopwareMcpError } from "../errors.js";
 import { mapOrderSummary } from "./orders.js";
-import { listExtensions } from "./plugins.js";
+import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
 import { mapSalesChannel } from "./sales-channels.js";
@@ -13,6 +13,58 @@ import { defineTool } from "./types.js";
 const DAY_MS = 86_400_000;
 
 type Severity = "critical" | "warning" | "info";
+
+/**
+ * Duties that apply to shops selling into the EU, and the kind of extension that usually covers
+ * them. Detection is a name match over installed extensions, so it can only ever say whether
+ * something plausible is installed. It names no product and recommends none.
+ */
+interface Duty {
+  id: string;
+  duty: string;
+  applies: string;
+  pattern: RegExp;
+}
+
+const EU_DUTIES: Duty[] = [
+  {
+    id: "e_invoicing",
+    duty: "Send and receive structured e-invoices (EN 16931, XRechnung or ZUGFeRD)",
+    applies:
+      "Germany: receiving has been mandatory for B2B since 2025, sending follows in 2027 for " +
+      "businesses above 800k EUR turnover and in 2028 for the rest",
+    pattern: /x-?rechnung|zugferd|factur-?x|e-?invoic|e-?rechnung|en\s?16931|peppol/i,
+  },
+  {
+    id: "accessibility",
+    duty: "Accessible storefront and an accessibility statement",
+    applies:
+      "EU Accessibility Act, in Germany the BFSG, applies to consumer-facing online shops since " +
+      "28 June 2025",
+    pattern: /accessib|barrierefrei|wcag|bfsg/i,
+  },
+  {
+    id: "packaging_epr",
+    duty: "Report packaging volumes placed on the market",
+    applies: "EU extended producer responsibility, in Germany registration and reporting via LUCID",
+    pattern: /packag|verpack|lucid|epr\b|recycl/i,
+  },
+  {
+    id: "ai_transparency",
+    duty: "Label AI generated content",
+    applies: "EU AI Act Article 50 transparency obligations apply from 2 August 2026",
+    pattern: /\bai\b|k-?i-?kennzeich|artificial.intelligence/i,
+  },
+];
+
+export interface DutyCoverage {
+  id: string;
+  duty: string;
+  applies: string;
+  /** null when the extension list could not be read. */
+  covered: boolean | null;
+  detectedExtensions: string[];
+}
 
 export interface Finding {
   id: string;
@@ -52,6 +104,20 @@ export interface AuditInput {
   stuckOrderDays: number;
   lowStockThreshold: number;
   maxItems: number;
+  complianceChecks: boolean;
+}
+
+function dutyCoverage(extensions: ExtensionInfo[] | null): DutyCoverage[] {
+  return EU_DUTIES.map(({ id, duty, applies, pattern }) => {
+    if (!extensions) return { id, duty, applies, covered: null, detectedExtensions: [] };
+    const hits = extensions
+      .filter(
+        (extension) =>
+          extension.active && (pattern.test(extension.name) || pattern.test(extension.label ?? "")),
+      )
+      .map((extension) => extension.name);
+    return { id, duty, applies, covered: hits.length > 0, detectedExtensions: hits };
+  });
 }
 
 export async function runAudit(client: ShopwareClient, input: AuditInput) {
@@ -59,6 +125,10 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
   const cutoff = new Date(now.getTime() - input.stuckOrderDays * DAY_MS).toISOString();
   const limit = input.maxItems;
   const currencies = await client.currencies().catch(() => null);
+  // One extension lookup serves both the update check and the duty coverage map.
+  const extensions = listExtensions(client)
+    .then((result) => result.items)
+    .catch(() => null);
 
   const orderCheck = (filter: ShopwareFilter[]) => async () => {
     const result = await client.search<Raw>("order", {
@@ -191,7 +261,8 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       title: "Extensions with an available update",
       hint: "Review changelogs and update in a staging environment first.",
       run: async () => {
-        const { items } = await listExtensions(client);
+        const items = await extensions;
+        if (!items) throw new ShopwareMcpError(0, "UNAVAILABLE", "extension list unavailable");
         const outdated = items.filter((item) => item.installed && item.upgradeVersion);
         return { count: outdated.length, items: outdated.slice(0, limit) };
       },
@@ -234,12 +305,23 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
     healthy: findings.every((finding) => finding.severity === "info"),
   };
 
+  const compliance = input.complianceChecks
+    ? {
+        scope:
+          "Duties for shops selling into the EU. Coverage is guessed from the names of installed " +
+          "extensions, so it shows whether something plausible is installed, not whether the shop " +
+          "is compliant. Not legal advice.",
+        items: dutyCoverage(await extensions),
+      }
+    : undefined;
+
   return {
     generatedAt: now.toISOString(),
     shop: shop ? { url: shop.url, version: shop.version, edition: shop.edition } : null,
     parameters: input,
     summary,
     findings,
+    ...(compliance ? { compliance } : {}),
     ...(warnings.length > 0 ? { warnings } : {}),
   };
 }
@@ -252,11 +334,17 @@ export const shopAudit = defineTool({
     "not shipped, old unpaid orders, out-of-stock and low-stock products, products without cover " +
     "image, expired promotions still active, sales channels in maintenance mode and extensions " +
     "with pending updates. Each finding has a severity, total count, sample items and a hint. " +
+    "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
+    "labelling) appear to be covered by an installed extension, guessed from extension names. " +
     "Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.",
   inputSchema: {
     stuckOrderDays: z.number().int().min(1).max(365).default(7),
     lowStockThreshold: z.number().int().min(1).max(10_000).default(5),
     maxItems: z.number().int().min(1).max(50).default(10).describe("Sample items per finding"),
+    complianceChecks: z
+      .boolean()
+      .default(true)
+      .describe("Include the EU duty coverage map. Set false outside the EU."),
   },
   handler: (input, ctx) => runAudit(ctx.client, input),
 });

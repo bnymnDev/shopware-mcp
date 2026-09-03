@@ -34,6 +34,10 @@ const envSchema = z.object({
     z.string({ error: "SHOPWARE_CLIENT_SECRET is required (Integration secret access key)" }),
   ),
   SHOPWARE_MCP_ALLOW_WRITE: boolFromEnv,
+  SHOPWARE_MCP_EXTENSIONS: z.preprocess(
+    (value) => (value === undefined || value === "" ? "true" : value),
+    boolFromEnv,
+  ),
   SHOPWARE_MCP_DEFAULT_LIMIT: z.preprocess(
     emptyToUndefined,
     z.coerce.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT),
@@ -61,6 +65,8 @@ export interface Config {
   languageId?: string;
   /** When false, write tools are not registered at all. */
   allowWrite: boolean;
+  /** When false, no plugin-aware tools are detected or registered. */
+  extensions: boolean;
   defaultLimit: number;
   maxLimit: number;
   logLevel: LogLevel;
@@ -68,6 +74,7 @@ export interface Config {
 
 export interface ConfigOverrides {
   allowWrite?: boolean;
+  extensions?: boolean;
   logLevel?: LogLevel;
 }
 
@@ -104,6 +111,7 @@ export function loadConfig(
     clientSecret: values.SHOPWARE_CLIENT_SECRET,
     languageId: values.SHOPWARE_LANGUAGE_ID,
     allowWrite: overrides.allowWrite ?? values.SHOPWARE_MCP_ALLOW_WRITE,
+    extensions: overrides.extensions ?? values.SHOPWARE_MCP_EXTENSIONS,
     defaultLimit: values.SHOPWARE_MCP_DEFAULT_LIMIT,
     maxLimit: MAX_LIMIT,
     logLevel: overrides.logLevel ?? values.SHOPWARE_MCP_LOG_LEVEL,

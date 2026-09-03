@@ -1,0 +1,39 @@
+{
+  "generatedAt": "2026-09-03T10:00:00+00:00",
+  "shopware": "6.7.2.2",
+  "php": "8.3.14",
+  "merqoPlugins": [
+    { "name": "MerqoHub", "version": "0.1.0", "active": true },
+    { "name": "MerqoVault", "version": "0.2.0", "active": true }
+  ],
+  "compliance": [
+    { "id": "invoice", "status": "neutral", "params": {}, "pluginName": "MerqoInvoice" },
+    {
+      "id": "vault",
+      "status": "warn",
+      "params": { "mailIngest": false },
+      "pluginName": "MerqoVault"
+    },
+    {
+      "id": "access",
+      "status": "ok",
+      "params": { "statementConfigured": true },
+      "pluginName": "MerqoAccess"
+    }
+  ],
+  "operations": [
+    {
+      "id": "resilience",
+      "status": "critical",
+      "params": { "removedServices": ["Merqo\\Vault\\Mail\\Fetcher"] },
+      "pluginName": null
+    },
+    { "id": "scheduledTasks", "status": "ok", "params": { "overdue": 0 }, "pluginName": null },
+    {
+      "id": "twoFactor",
+      "status": "warn",
+      "params": { "enrolled": 1, "admins": 3 },
+      "pluginName": "MerqoGuard"
+    }
+  ]
+}

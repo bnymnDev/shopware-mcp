@@ -5,6 +5,7 @@ import { entitySchema, entitySearch, scrub } from "../src/tools/entities.js";
 import { salesReport } from "../src/tools/reports.js";
 import {
   createContext,
+  fixture,
   invoke,
   lastSearch,
   mock,
@@ -194,6 +195,56 @@ describe("shop_audit", () => {
   });
 });
 
+describe("shop_audit duty coverage", () => {
+  it("reports every EU duty as uncovered in a plain shop", async () => {
+    const audit = await invoke(shopAudit, {}, ctx);
+    expect(audit.compliance?.scope).toContain("Not legal advice");
+    expect(audit.compliance?.items.map((item) => item.id)).toEqual([
+      "e_invoicing",
+      "accessibility",
+      "packaging_epr",
+      "ai_transparency",
+    ]);
+    expect(audit.compliance?.items.every((item) => item.covered === false)).toBe(true);
+    expect(audit.compliance?.items[0]?.applies).toContain("2027");
+  });
+
+  it("counts only active extensions and names no product it did not find", async () => {
+    mock.use(
+      searchHandler({ plugin: "merqo-plugins" }),
+      http.get(`${SHOP_URL}/api/_action/extension/installed`, () =>
+        HttpResponse.json(fixture("merqo-extensions-installed")),
+      ),
+    );
+    const audit = await invoke(shopAudit, {}, ctx);
+    const byId = new Map(audit.compliance?.items.map((item) => [item.id, item]));
+    expect(byId.get("e_invoicing")).toMatchObject({
+      covered: true,
+      detectedExtensions: ["MerqoVault"],
+    });
+    // MerqoAccess would match the pattern but is not active, so the duty stays open.
+    expect(byId.get("accessibility")).toMatchObject({ covered: false, detectedExtensions: [] });
+    expect(byId.get("packaging_epr")?.covered).toBe(false);
+  });
+
+  it("reports unknown coverage when the extension list cannot be read", async () => {
+    mock.use(
+      http.post(`${SHOP_URL}/api/search/plugin`, () =>
+        HttpResponse.json({ errors: [{ code: "DENIED", detail: "no" }] }, { status: 403 }),
+      ),
+    );
+    const audit = await invoke(shopAudit, {}, ctx);
+    expect(audit.compliance?.items.every((item) => item.covered === null)).toBe(true);
+    expect(audit.warnings?.some((warning) => warning.includes("plugins_outdated"))).toBe(true);
+  });
+
+  it("can be switched off outside the EU", async () => {
+    const audit = await invoke(shopAudit, { complianceChecks: false }, ctx);
+    expect(audit.compliance).toBeUndefined();
+    expect(audit.findings.length).toBeGreaterThan(0);
+  });
+});
+
 describe("entity_search", () => {
   it("searches arbitrary entities and scrubs noise", async () => {
     mock.use(searchHandler({ "product-manufacturer": "manufacturers" }));
@@ -231,6 +282,20 @@ describe("entity_search", () => {
     const channels = await invoke(entitySearch, { entity: "sales-channel" }, ctx);
     expect(JSON.stringify(channels)).not.toContain("SWSCSECRET");
     expect(channels.items[0]).toHaveProperty("domains");
+  });
+
+  it("truncates values too large for an agent context", async () => {
+    const blob = "QkxPQg==".repeat(1000);
+    mock.use(
+      searchHandler({
+        media: () => ({ total: 1, data: [{ id: "1", fileName: "scan.pdf", thumbnail: blob }] }),
+      }),
+    );
+    const result = await invoke(entitySearch, { entity: "media" }, ctx);
+    const item = result.items[0] as Record<string, string>;
+    expect(item.fileName).toBe("scan.pdf");
+    expect(item.thumbnail).toHaveLength(2000 + " [truncated, 8000 characters total]".length + 1);
+    expect(item.thumbnail).toContain("truncated, 8000 characters total");
   });
 
   it("blocks credential-bearing entities and invalid names", async () => {

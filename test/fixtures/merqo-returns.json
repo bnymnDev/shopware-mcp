@@ -1,0 +1,30 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "bbbb000000000000000000000000r001",
+      "status": "requested",
+      "orderId": "f60718293a4b5c6d7e8f010203040506",
+      "order": { "id": "f60718293a4b5c6d7e8f010203040506", "orderNumber": "10042" },
+      "customerId": "293a4b5c6d7e8f01020304050607080a",
+      "refundTotalCents": 11900,
+      "trackingNumber": null,
+      "rejectionReason": null,
+      "requestedAt": "2026-09-01T08:00:00.000+00:00",
+      "approvedAt": null,
+      "refundedAt": null,
+      "closedAt": null,
+      "lineItems": [
+        {
+          "id": "cccc000000000000000000000000l001",
+          "orderLineItemId": "cccc000000000000000000000000000a",
+          "quantity": 1,
+          "reason": "damaged",
+          "itemCondition": "unused"
+        }
+      ],
+      "_uniqueIdentifier": "bbbb000000000000000000000000r001",
+      "apiAlias": "merqo_return"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "total": 4,
+  "data": [
+    {
+      "id": "aaaa000000000000000000000000m001",
+      "name": "MerqoHub",
+      "label": "Merqo Hub \u2013 Compliance traffic lights & health checks (free)",
+      "translated": {
+        "label": "Merqo Hub \u2013 Compliance traffic lights & health checks (free)"
+      },
+      "version": "0.1.0",
+      "active": true,
+      "installedAt": "2026-09-01T00:00:00.000+00:00",
+      "author": "Merqo",
+      "apiAlias": "plugin"
+    },
+    {
+      "id": "aaaa000000000000000000000000m002",
+      "name": "MerqoVault",
+      "label": "Merqo Vault \u2013 Incoming e-invoices (validation & GoBD archive)",
+      "translated": {
+        "label": "Merqo Vault \u2013 Incoming e-invoices (validation & GoBD archive)"
+      },
+      "version": "0.2.0",
+      "active": true,
+      "installedAt": "2026-09-01T00:00:00.000+00:00",
+      "author": "Merqo",
+      "apiAlias": "plugin"
+    },
+    {
+      "id": "aaaa000000000000000000000000m003",
+      "name": "MerqoReturns",
+      "label": "Merqo Returns \u2013 Self-service returns portal",
+      "translated": {
+        "label": "Merqo Returns \u2013 Self-service returns portal"
+      },
+      "version": "0.1.0",
+      "active": true,
+      "installedAt": "2026-09-01T00:00:00.000+00:00",
+      "author": "Merqo",
+      "apiAlias": "plugin"
+    },
+    {
+      "id": "aaaa000000000000000000000000m004",
+      "name": "MerqoAccess",
+      "label": "Merqo Access \u2013 Accessibility audit & statement",
+      "translated": {
+        "label": "Merqo Access \u2013 Accessibility audit & statement"
+      },
+      "version": "0.1.0",
+      "active": false,
+      "installedAt": null,
+      "author": "Merqo",
+      "apiAlias": "plugin"
+    }
+  ]
+}

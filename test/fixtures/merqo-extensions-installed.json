@@ -1,0 +1,46 @@
+[
+  {
+    "name": "MerqoHub",
+    "label": "Merqo Hub – Compliance traffic lights",
+    "version": "0.1.0",
+    "latestVersion": "0.1.0",
+    "active": true,
+    "installedAt": "2026-09-01T00:00:00.000+00:00",
+    "type": "plugin",
+    "producerName": "Merqo",
+    "apiAlias": "extension"
+  },
+  {
+    "name": "MerqoVault",
+    "label": "Merqo Vault – Incoming e-invoices (XRechnung/ZUGFeRD)",
+    "version": "0.2.0",
+    "latestVersion": "0.2.0",
+    "active": true,
+    "installedAt": "2026-09-01T00:00:00.000+00:00",
+    "type": "plugin",
+    "producerName": "Merqo",
+    "apiAlias": "extension"
+  },
+  {
+    "name": "MerqoReturns",
+    "label": "Merqo Returns – Self-service returns",
+    "version": "0.1.0",
+    "latestVersion": "0.1.0",
+    "active": true,
+    "installedAt": "2026-09-01T00:00:00.000+00:00",
+    "type": "plugin",
+    "producerName": "Merqo",
+    "apiAlias": "extension"
+  },
+  {
+    "name": "MerqoAccess",
+    "label": "Merqo Access – Accessibility audit & statement",
+    "version": "0.1.0",
+    "latestVersion": "0.1.0",
+    "active": false,
+    "installedAt": null,
+    "type": "plugin",
+    "producerName": "Merqo",
+    "apiAlias": "extension"
+  }
+]

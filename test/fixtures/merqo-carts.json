@@ -1,0 +1,31 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "id": "dddd000000000000000000000000c001",
+      "token": "SECRETCARTTOKENSHOULDNOTLEAK",
+      "email": "max@example.com",
+      "customerId": "293a4b5c6d7e8f01020304050607080a",
+      "salesChannelId": "3a4b5c6d7e8f01020304050607080a0b",
+      "amount": 149.99,
+      "state": "abandoned",
+      "lineItems": [{ "label": "Aerodynamic Bronze Bag", "quantity": 1, "price": 119.0 }],
+      "lastActivityAt": "2026-09-02T10:00:00.000+00:00",
+      "abandonedAt": "2026-09-02T12:00:00.000+00:00",
+      "recoveredAt": null,
+      "apiAlias": "merqo_cart_snapshot"
+    },
+    {
+      "id": "dddd000000000000000000000000c002",
+      "token": "ANOTHERSECRETTOKEN",
+      "email": "erika@example.com",
+      "amount": 39.9,
+      "state": "recovered",
+      "lineItems": [],
+      "lastActivityAt": "2026-09-01T09:00:00.000+00:00",
+      "abandonedAt": "2026-09-01T11:00:00.000+00:00",
+      "recoveredAt": "2026-09-01T18:00:00.000+00:00",
+      "apiAlias": "merqo_cart_snapshot"
+    }
+  ]
+}

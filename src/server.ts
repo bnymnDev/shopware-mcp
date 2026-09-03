@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { toErrorShape } from "./errors.js";
+import { detectExtensionTools } from "./extensions/index.js";
 import { logger } from "./logger.js";
 import { registerPrompts } from "./prompts/index.js";
 import { registerResources } from "./resources/index.js";
@@ -16,7 +17,8 @@ export const SERVER_INSTRUCTIONS =
   "semantics: { type: equals|contains|range|equalsAny, field, value }. Write tools exist only " +
   "when the server was started with write access, and every write defaults to dryRun=true, " +
   "which returns the request that would be sent; re-run with dryRun=false to apply. Errors " +
-  "come back as { error: { status, code, detail } }.";
+  "come back as { error: { status, code, detail } }. Some shops expose extra tools for their " +
+  "installed extensions; call tools/list again if a tool you were told about is missing.";
 
 function toolResult(value: unknown, isError = false): CallToolResult {
   const result: CallToolResult = {
@@ -29,7 +31,14 @@ function toolResult(value: unknown, isError = false): CallToolResult {
   return result;
 }
 
-function registerTool(server: McpServer, tool: ToolDefinition, ctx: ToolContext): void {
+/** Tool names already registered per server, so a late detection cannot register a name twice. */
+const registered = new WeakMap<McpServer, Set<string>>();
+
+function registerTool(server: McpServer, tool: ToolDefinition, ctx: ToolContext): boolean {
+  const names = registered.get(server) ?? new Set<string>();
+  registered.set(server, names);
+  if (names.has(tool.name)) return false;
+  names.add(tool.name);
   server.registerTool(
     tool.name,
     {
@@ -50,6 +59,30 @@ function registerTool(server: McpServer, tool: ToolDefinition, ctx: ToolContext)
       }
     },
   );
+  return true;
+}
+
+const pendingExtensions = new WeakMap<McpServer, Promise<string[]>>();
+
+/**
+ * Resolves once plugin-aware tool detection has finished for this server.
+ * Detection runs in the background so a slow or unreachable shop never delays startup.
+ */
+export function extensionsReady(server: McpServer): Promise<string[]> {
+  return pendingExtensions.get(server) ?? Promise.resolve([]);
+}
+
+/**
+ * Register the tools this shop qualifies for. The SDK notifies connected clients about the
+ * changed tool list on its own, so tools that appear late are picked up without a reconnect.
+ */
+async function enableExtensionTools(server: McpServer, ctx: ToolContext): Promise<string[]> {
+  const detected = await detectExtensionTools(ctx);
+  const added: string[] = [];
+  for (const entry of detected) {
+    if (registerTool(server, entry.tool, ctx)) added.push(entry.tool.name);
+  }
+  return added;
 }
 
 /** Create a fully configured MCP server. Cheap enough to create per HTTP request. */
@@ -59,14 +92,26 @@ export function createServer(ctx: ToolContext): McpServer {
     { instructions: SERVER_INSTRUCTIONS },
   );
 
-  let registered = 0;
+  let count = 0;
   for (const tool of tools) {
     if (tool.write && !ctx.config.allowWrite) continue;
     registerTool(server, tool, ctx);
-    registered += 1;
+    count += 1;
   }
   registerResources(server, ctx);
   registerPrompts(server);
-  logger.debug("server created", { tools: registered, allowWrite: ctx.config.allowWrite });
+  logger.debug("server created", { tools: count, allowWrite: ctx.config.allowWrite });
+
+  if (ctx.config.extensions) {
+    pendingExtensions.set(
+      server,
+      enableExtensionTools(server, ctx).catch((error: unknown) => {
+        logger.debug("plugin-aware tools unavailable", {
+          reason: error instanceof Error ? error.message : String(error),
+        });
+        return [];
+      }),
+    );
+  }
   return server;
 }

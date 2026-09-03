@@ -2,7 +2,7 @@ import { z } from "zod";
 import { buildCriteria, searchInputShape } from "../client/criteria.js";
 import type { Raw } from "../client/index.js";
 import { badRequest, notFound } from "../errors.js";
-import { isRaw, raw, str, strList } from "./shared.js";
+import { boundText, isRaw, raw, str, strList } from "./shared.js";
 import { defineTool } from "./types.js";
 
 /** Entities that hold credentials, ACLs or system internals and are never exposed. */
@@ -42,7 +42,7 @@ const MAX_DEPTH = 8;
 export function scrub(value: unknown, depth = 0): unknown {
   if (depth > MAX_DEPTH) return undefined;
   if (Array.isArray(value)) return value.map((item) => scrub(item, depth + 1));
-  if (!isRaw(value)) return value;
+  if (!isRaw(value)) return boundText(value);
   const out: Raw = {};
   for (const [key, inner] of Object.entries(value)) {
     if (NOISE_KEYS.has(key) || SENSITIVE_KEY.test(key)) continue;
@@ -73,8 +73,9 @@ export const entitySearch = defineTool({
     "(e.g. product_manufacturer, property_group, shipping_method, tax, country, newsletter_recipient, " +
     "product_review, seo_url, cms_page, media) with the same Criteria filters, sort and paging. " +
     "Use entity_schema first to see the available fields and associations. Credentials and " +
-    "internal fields are always stripped; entities holding secrets (users, integrations, system " +
-    "config) are blocked. Prefer the dedicated tools when one exists. " +
+    "internal fields are always stripped, long values such as stored files are truncated, and " +
+    "entities holding secrets (users, integrations, system config) are blocked. Prefer the " +
+    "dedicated tools when one exists. " +
     "Returns { entity, total, page, limit, items[] } with raw (scrubbed) entity data.",
   inputSchema: {
     entity: z

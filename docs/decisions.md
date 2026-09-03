@@ -101,3 +101,17 @@ Every request carries `User-Agent: shopware-mcp/<version> (+repo url)` so operat
 ## Publishing is blocked while the repository is private
 
 npm provenance requires a public repository, and a package whose repository link 404s looks abandoned. The release job therefore skips itself unless the repository is public, and `workflow_dispatch` exists so a release can be started deliberately.
+
+## Plugin-aware tools are an extension point, not a vendor integration
+
+The tool list is built from what the shop actually has. A pack under `src/extensions/` declares which plugins it needs, and its tools are registered only when all of them are installed and active. The lookup runs once per process, in the background, and a failure degrades to the core tool set instead of blocking startup. The protocol notifies connected clients about the changed tool list, so tools that appear a moment after connect are picked up without a reconnect.
+
+Two rules keep this honest. No vendor is named in a core tool description or in any tool answer, because those texts are read by the model and an advertisement there would be an injection into someone else's agent. And every pack is additive, so a shop without the extension sees exactly the neutral server.
+
+## Long values are truncated, not returned
+
+Shopware stores files as base64 blobs on the entity, for example an archived invoice. A single one of those fills an agent's context and tells it nothing. `entity_search` and every explicitly requested raw field therefore cut strings at 2000 characters and say how long the original was.
+
+## The audit reports duties, never products
+
+`shop_audit` maps four duties that apply to shops selling into the EU: structured e-invoicing, an accessible storefront, packaging reporting and AI labelling. Coverage is guessed from the names and labels of active extensions, so the map says whether something plausible is installed, never whether the shop is compliant, and it recommends nothing. Shops outside the EU switch it off with `complianceChecks: false`.

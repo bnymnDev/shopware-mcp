@@ -4,6 +4,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { z } from "zod";
+import { extensionPacks } from "../src/extensions/index.js";
 import { tools } from "../src/tools/index.js";
 import type { ToolDefinition } from "../src/tools/types.js";
 
@@ -88,6 +89,42 @@ function summaryTable(): string {
   return ["| Tool | Access | Purpose |", "|---|---|---|", ...rows].join("\n");
 }
 
+function extensionSection(): string {
+  if (extensionPacks.length === 0) return "";
+  const parts: string[] = [
+    "## Plugin-aware tools",
+    "",
+    "These tools are not part of the core set. The server looks up which extensions are installed " +
+      "and active, and registers the matching tools on top. A shop without the extension never " +
+      "sees them, and detection can be switched off with `--no-extensions`. Support for another " +
+      "vendor's extensions is a pull request against `src/extensions/`.",
+    "",
+  ];
+  for (const pack of extensionPacks) {
+    parts.push(`### ${pack.label}`, "", `Source: ${pack.url}`, "");
+    parts.push("| Tool | Requires | Purpose |", "|---|---|---|");
+    for (const entry of pack.tools) {
+      parts.push(
+        `| \`${entry.tool.name}\` | ${entry.requires.join(", ")} | ${escapeCell(entry.tool.title)} |`,
+      );
+    }
+    parts.push("");
+    for (const entry of pack.tools) {
+      parts.push(
+        `#### ${entry.tool.name}`,
+        "",
+        `Registered when installed and active: ${entry.requires.join(", ")}.`,
+        "",
+        entry.tool.description,
+        "",
+        paramTable(entry.tool),
+        "",
+      );
+    }
+  }
+  return parts.join("\n");
+}
+
 function toolsDoc(): string {
   const sections = tools.map((tool) => {
     const access = tool.write
@@ -122,6 +159,7 @@ function toolsDoc(): string {
     summaryTable().replace(/\(docs\/tools\.md#/g, "(#"),
     "",
     ...sections,
+    extensionSection(),
   ].join("\n");
 }
 

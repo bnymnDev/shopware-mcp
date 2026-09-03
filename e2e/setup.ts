@@ -76,6 +76,7 @@ export function e2eContext(allowWrite = false): Promise<ToolContext> {
         url: SHOP_URL,
         ...credentials,
         allowWrite: true,
+        extensions: true,
         defaultLimit: 20,
         maxLimit: MAX_LIMIT,
         logLevel: "error",

@@ -43,13 +43,24 @@ export function getPath(target: unknown, path: string): unknown {
   return current;
 }
 
+/**
+ * Longest raw string handed to the agent. Shopware stores files (invoice PDFs, images) as base64
+ * blobs; a single one of those would fill the context window and tell the agent nothing.
+ */
+export const MAX_RAW_TEXT = 2000;
+
+export function boundText(value: unknown): unknown {
+  if (typeof value !== "string" || value.length <= MAX_RAW_TEXT) return value;
+  return `${value.slice(0, MAX_RAW_TEXT)}… [truncated, ${value.length} characters total]`;
+}
+
 /** Copy requested raw fields (dot-paths allowed) from the entity onto the mapped item. */
 export function withFields<T extends object>(mapped: T, entity: Raw, fields?: string[]): T {
   if (!fields || fields.length === 0) return mapped;
   const extras: Raw = {};
   for (const field of fields) {
     const value = getPath(entity, field);
-    extras[field] = value === undefined ? null : value;
+    extras[field] = value === undefined ? null : boundText(value);
   }
   return { ...mapped, ...extras };
 }

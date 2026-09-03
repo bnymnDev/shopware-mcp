@@ -258,7 +258,7 @@ _Shop health audit_
 
 **Read tool** — always registered.
 
-Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, out-of-stock and low-stock products, products without cover image, expired promotions still active, sales channels in maintenance mode and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, out-of-stock and low-stock products, products without cover image, expired promotions still active, sales channels in maintenance mode and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
 
 ### Input
 
@@ -267,6 +267,7 @@ Run a one-shot health check across the shop and return prioritised findings: pai
 | `stuckOrderDays` | `integer` | no | default `7`, min 1, max 365 |
 | `lowStockThreshold` | `integer` | no | default `5`, min 1, max 10000 |
 | `maxItems` | `integer` | no | Sample items per finding. default `10`, min 1, max 50 |
+| `complianceChecks` | `boolean` | no | Include the EU duty coverage map. Set false outside the EU. default `true` |
 
 ## entity_schema
 
@@ -288,7 +289,7 @@ _Search any entity_
 
 **Read tool** — always registered.
 
-Escape hatch for everything without a dedicated tool: search ANY Shopware entity (e.g. product_manufacturer, property_group, shipping_method, tax, country, newsletter_recipient, product_review, seo_url, cms_page, media) with the same Criteria filters, sort and paging. Use entity_schema first to see the available fields and associations. Credentials and internal fields are always stripped; entities holding secrets (users, integrations, system config) are blocked. Prefer the dedicated tools when one exists. Returns { entity, total, page, limit, items[] } with raw (scrubbed) entity data.
+Escape hatch for everything without a dedicated tool: search ANY Shopware entity (e.g. product_manufacturer, property_group, shipping_method, tax, country, newsletter_recipient, product_review, seo_url, cms_page, media) with the same Criteria filters, sort and paging. Use entity_schema first to see the available fields and associations. Credentials and internal fields are always stripped, long values such as stored files are truncated, and entities holding secrets (users, integrations, system config) are blocked. Prefer the dedicated tools when one exists. Returns { entity, total, page, limit, items[] } with raw (scrubbed) entity data.
 
 ### Input
 
@@ -369,4 +370,77 @@ Activate or deactivate one promotion. dryRun=true (default) returns the exact PA
 | `promotionId` | `string` | yes | Promotion UUID |
 | `active` | `boolean` | yes | true to activate, false to deactivate |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## Plugin-aware tools
+
+These tools are not part of the core set. The server looks up which extensions are installed and active, and registers the matching tools on top. A shop without the extension never sees them, and detection can be switched off with `--no-extensions`. Support for another vendor's extensions is a pull request against `src/extensions/`.
+
+### Merqo
+
+Source: https://github.com/bnymnDev/merqo
+
+| Tool | Requires | Purpose |
+|---|---|---|
+| `merqo_health` | MerqoHub | Merqo compliance and health status |
+| `merqo_einvoice_inbox` | MerqoVault | Merqo incoming e-invoices |
+| `merqo_returns_search` | MerqoReturns | Merqo returns |
+| `merqo_abandoned_carts` | MerqoRescue | Merqo abandoned carts |
+
+#### merqo_health
+
+Registered when installed and active: MerqoHub.
+
+Read the Merqo Hub status page: compliance traffic lights (e-invoicing out and in, packaging reporting, accessibility statement, AI labelling, review transparency) and operational health (disabled resilience guards, overdue scheduled tasks, message queue depth, admin two-factor coverage). Each entry is ok, warn, critical or neutral, where neutral means the area is not covered by an installed plugin. Use it to answer 'is the shop compliant and healthy?' in one call. Read-only. Returns one object.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `status` | `("ok" \| "warn" \| "critical" \| "neutral")[]` | no | Only return checks with these statuses, e.g. ['warn','critical'] |
+
+#### merqo_einvoice_inbox
+
+Registered when installed and active: MerqoVault.
+
+Search incoming supplier e-invoices archived by Merqo Vault, with their EN 16931 validation verdict (valid, warning, error), issuing party, invoice number, date and gross total. Use it for 'which incoming invoices failed validation?'. The archived original file is never returned. Returns { total, page, limit, items[] }.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+| `verdict` | `"valid" \| "warning" \| "error"` | no | Only invoices with this validation verdict |
+
+#### merqo_returns_search
+
+Registered when installed and active: MerqoReturns.
+
+Search customer returns filed through the Merqo Returns self-service portal, with status, requested and refunded dates, refund total, tracking number and the returned line items. Use it for 'which returns are still open?' or 'what was refunded last month?'. Returns { total, page, limit, items[] }.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+| `status` | `string` | no | Only returns in this workflow status |
+
+#### merqo_abandoned_carts
+
+Registered when installed and active: MerqoRescue.
+
+Search abandoned cart snapshots captured by Merqo Rescue, with customer email, cart value, line items, state and the times of last activity, abandonment and recovery. Use it for 'how much revenue is sitting in abandoned carts this week?'. The cart token is never returned, so recovery links must come from the shop itself. Returns { total, page, limit, items[] }.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+| `state` | `string` | no | Only snapshots in this state, e.g. 'abandoned' |
 

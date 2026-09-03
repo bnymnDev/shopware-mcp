@@ -14,6 +14,7 @@ Usage:
 
 Options:
   --allow-write        Register write tools (stock_set, product_update, ...). Default: read-only.
+  --no-extensions      Do not detect installed extensions or register plugin-aware tools.
   --http               Serve Streamable HTTP on /mcp instead of stdio.
   --port <n>           HTTP port (default 3333).
   --host <host>        HTTP bind address (default 127.0.0.1).
@@ -24,10 +25,12 @@ Options:
 Environment:
   SHOPWARE_URL, SHOPWARE_CLIENT_ID, SHOPWARE_CLIENT_SECRET   (required)
   SHOPWARE_MCP_ALLOW_WRITE, SHOPWARE_MCP_DEFAULT_LIMIT, SHOPWARE_MCP_LOG_LEVEL
+  SHOPWARE_LANGUAGE_ID, SHOPWARE_MCP_EXTENSIONS
 `;
 
 export interface CliOptions {
   allowWrite: boolean | undefined;
+  extensions: boolean | undefined;
   http: boolean;
   port: number;
   host: string;
@@ -41,6 +44,7 @@ export function parseCli(argv: string[]): CliOptions {
     args: argv,
     options: {
       "allow-write": { type: "boolean" },
+      "no-extensions": { type: "boolean" },
       http: { type: "boolean", default: false },
       port: { type: "string", default: "3333" },
       host: { type: "string", default: "127.0.0.1" },
@@ -61,6 +65,7 @@ export function parseCli(argv: string[]): CliOptions {
   }
   return {
     allowWrite: values["allow-write"],
+    extensions: values["no-extensions"] ? false : undefined,
     http: values.http ?? false,
     port,
     host: values.host ?? "127.0.0.1",
@@ -90,7 +95,11 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 
   let config: Config;
   try {
-    config = loadConfig(process.env, { allowWrite: cli.allowWrite, logLevel: cli.logLevel });
+    config = loadConfig(process.env, {
+      allowWrite: cli.allowWrite,
+      extensions: cli.extensions,
+      logLevel: cli.logLevel,
+    });
   } catch (error) {
     if (error instanceof ConfigError) {
       process.stderr.write(`${error.message}\n\n${HELP}`);

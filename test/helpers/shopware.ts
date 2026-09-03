@@ -139,6 +139,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     clientId: "SWIATEST",
     clientSecret: "secret",
     allowWrite: false,
+    extensions: false,
     defaultLimit: 20,
     maxLimit: MAX_LIMIT,
     logLevel: "error",
