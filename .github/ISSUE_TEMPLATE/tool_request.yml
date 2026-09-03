@@ -1,0 +1,16 @@
+name: Tool or feature request
+description: A tool, field or workflow you are missing
+labels: [enhancement]
+body:
+  - type: textarea
+    id: usecase
+    attributes:
+      label: What would you ask your agent?
+      description: The actual question or task, e.g. "Which products have no SEO URL for the English domain?"
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: Does entity_search / entity_schema get you there today?
+      description: If yes, what is awkward about it? If no, what is missing?

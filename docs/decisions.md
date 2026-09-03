@@ -61,3 +61,27 @@ Rather than silently clamping, the input schema declares `maximum: 50`, so an ag
 ## `--host` flag
 
 Not in SPEC.md, but required to make the Docker image reachable (`--host 0.0.0.0`). Default stays `127.0.0.1`.
+
+## `shop_audit` is opinionated on purpose
+
+Eight fixed checks with fixed severities rather than a configurable rules engine. Thresholds (`stuckOrderDays`, `lowStockThreshold`) are inputs; everything else is a judgement call that a shop owner would agree with. Each check runs independently; a permission error skips that check and is reported in `warnings` instead of failing the audit.
+
+## `sales_report` uses server-side aggregations
+
+Revenue, states, channels, currencies, the timeline and top products come from Criteria aggregations on `order` and `order_line_item`, so a year of orders costs three requests, not thousands. Amounts are summed in each order's currency; `revenueByCurrency` shows the split. Cancelled orders are excluded by default.
+
+## `entity_search` is an escape hatch with guard rails
+
+A generic tool makes the server complete without a tool per entity. The price is that raw entities may contain credentials, so every payload is scrubbed recursively (keys matching password, secret, token, access key, API key, private key, hash, salt) and entities that exist to hold credentials or system internals are blocked outright. `entity_schema` exposes the shop's own entity schema so agents can discover fields instead of guessing.
+
+## User agent and language header
+
+Every request carries `User-Agent: shopware-mcp/<version> (+repo url)` so operators can see the integration in their access logs, and `sw-language-id` when `SHOPWARE_LANGUAGE_ID` is set.
+
+## Transient retry
+
+429, 502, 503 and 504 are retried once after `Retry-After` (capped at 5 s) or 500 ms. Anything else surfaces immediately; agents should not wait on a broken shop.
+
+## Two build outputs
+
+`dist/index.js` keeps dependencies external for npm. `dist/bundle/index.js` inlines everything for the Claude Desktop extension (`.mcpb`), which has no package manager at install time.

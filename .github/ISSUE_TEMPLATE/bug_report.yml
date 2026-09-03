@@ -1,0 +1,37 @@
+name: Bug report
+description: Something returns wrong data, errors or crashes
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: shopware-mcp version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: shopware
+    attributes:
+      label: Shopware version
+      placeholder: "6.6.10.3"
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: MCP host
+      options: [Claude Desktop, Claude Code, Cursor, MCP Inspector, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Tool name, input you sent, and the `{ error }` or wrong output you got. Redact IDs if needed, never paste secrets.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: stderr output with SHOPWARE_MCP_LOG_LEVEL=debug
+      render: text

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Custom agents, plugins or a hosted setup
+    url: https://github.com/bnymnDev
+    about: Need multi-shop routing, audit logs, bulk operations or a custom Shopware agent? Get in touch.

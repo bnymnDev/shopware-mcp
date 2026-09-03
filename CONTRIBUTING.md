@@ -36,6 +36,10 @@ pnpm lint && pnpm typecheck
 
 `pnpm test:e2e` runs against a real Shopware in Docker (`dockware/dev`). See `docs/self-hosting.md` for the compose setup; CI runs these nightly.
 
+## Releasing the desktop extension
+
+`pnpm pack:mcpb` builds the self-contained bundle and packs `shopware-mcp.mcpb` from `manifest.json`; the release workflow attaches it to the GitHub release.
+
 ## Good first issues
 
 Look for the `good first issue` label. Ideas that fit the roadmap: more `fields` examples in the docs, a `products_search` example gallery, better error hints for common Shopware ACL problems.

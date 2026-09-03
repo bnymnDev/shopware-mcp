@@ -18,6 +18,10 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`promotions_list`](#promotions_list) | read | List promotions |
 | [`plugins_list`](#plugins_list) | read | List plugins and apps |
 | [`stock_get`](#stock_get) | read | Get stock |
+| [`sales_report`](#sales_report) | read | Sales report |
+| [`shop_audit`](#shop_audit) | read | Shop health audit |
+| [`entity_schema`](#entity_schema) | read | Entity schema |
+| [`entity_search`](#entity_search) | read | Search any entity |
 | [`stock_set`](#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](#product_update) | write (guarded) | Update product (guarded) |
 | [`order_state_transition`](#order_state_transition) | write (guarded) | Transition order state (guarded) |
@@ -29,7 +33,7 @@ _Shop info_
 
 **Read tool** — always registered.
 
-Get basic facts about the connected Shopware shop: version, edition (Community/Commercial), default currency and default language. Use it first to orient yourself or to confirm the connection works. Returns a single JSON object.
+Get basic facts about the connected Shopware shop: version, edition (Community/Commercial), default currency and default language, plus whether write tools are enabled on this server. Use it first to orient yourself or to confirm the connection works. Returns one object.
 
 ### Input
 
@@ -228,6 +232,76 @@ Get stock and available stock for one product by ID or product number, including
 |---|---|---|---|
 | `productId` | `string` | no | Product UUID |
 | `productNumber` | `string` | no | Product number, e.g. SW10001 |
+
+## sales_report
+
+_Sales report_
+
+**Read tool** — always registered.
+
+Aggregate sales figures for a period straight from Shopware: order count, gross/net revenue, average order value, breakdowns by order/payment/delivery state, payment method, currency and sales channel, a revenue timeline (day/week/month) and the top-selling products. Use it for 'how did we do last month?' questions instead of paging through orders. Defaults to the last 30 days, cancelled orders excluded. Returns one object.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | `string` | no | Start (inclusive), ISO date. Default: 30 days ago |
+| `to` | `string` | no | End (inclusive), ISO date. Default: now |
+| `interval` | `"day" \| "week" \| "month"` | no | Timeline bucket size. default `"day"` |
+| `salesChannelId` | `string` | no | Restrict to one sales channel |
+| `excludeCancelled` | `boolean` | no | default `true` |
+| `topProducts` | `integer` | no | default `10`, min 1, max 25 |
+
+## shop_audit
+
+_Shop health audit_
+
+**Read tool** — always registered.
+
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, out-of-stock and low-stock products, products without cover image, expired promotions still active, sales channels in maintenance mode and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `stuckOrderDays` | `integer` | no | default `7`, min 1, max 365 |
+| `lowStockThreshold` | `integer` | no | default `5`, min 1, max 10000 |
+| `maxItems` | `integer` | no | Sample items per finding. default `10`, min 1, max 50 |
+
+## entity_schema
+
+_Entity schema_
+
+**Read tool** — always registered.
+
+Describe a Shopware entity: its fields (name, type, flags such as required/translatable) and associations (name, relation, target entity), taken from the shop's own entity schema. Call it without `entity` to list all entity names. Use it to build precise filters for entity_search or the `fields` parameter of other tools. Returns one object.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `entity` | `string` | no | Entity name; omit to list all entities |
+
+## entity_search
+
+_Search any entity_
+
+**Read tool** — always registered.
+
+Escape hatch for everything without a dedicated tool: search ANY Shopware entity (e.g. product_manufacturer, property_group, shipping_method, tax, country, newsletter_recipient, product_review, seo_url, cms_page, media) with the same Criteria filters, sort and paging. Use entity_schema first to see the available fields and associations. Credentials and internal fields are always stripped; entities holding secrets (users, integrations, system config) are blocked. Prefer the dedicated tools when one exists. Returns { entity, total, page, limit, items[] } with raw (scrubbed) entity data.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `entity` | `string` | yes | Entity name in snake_case or kebab-case, e.g. 'product_manufacturer' |
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Only return these fields of the entity (Shopware `includes`) |
+| `associations` | `string[]` | no | Association names to load, e.g. ['country', 'salesChannels'] |
 
 ## stock_set
 

@@ -56,6 +56,9 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 
 ## 4. Ask questions
 
+- "Is everything okay with the shop?" → `shop_audit` returns prioritised findings with samples and hints.
+- "How did we do in August?" → `sales_report` with `from`/`to`, grouped by day, week or month.
+- "Which manufacturers have no logo?" → `entity_schema { entity: "product_manufacturer" }` then `entity_search` with a filter on `mediaId`.
 - "Give me a low stock report below 5." → uses `products_search` (or the `low_stock_report` prompt).
 - "Summarize order 10042 for a support reply." → `orders_get` (or the `order_summary` prompt).
 - "Which customers ordered more than 10 times?" → `customers_search` with a `range` filter on `orderCount`.
@@ -86,5 +89,7 @@ stock_set { productId: "…", stock: 3, dryRun: false }   → { dryRun: false, r
 | Name contains "shirt" | `{ "type": "contains", "field": "name", "value": "shirt" }` |
 | Several IDs | `{ "type": "equalsAny", "field": "id", "value": ["…", "…"] }` |
 | By manufacturer | `{ "type": "equals", "field": "manufacturer.name", "value": "Acme" }` |
+
+Reading a shop in another language? Set `SHOPWARE_LANGUAGE_ID` to the language UUID (find it with `entity_search { entity: "language" }`).
 
 Need a raw field that is not in the compact output (e.g. `customFields`, `ean`, `weight`)? Pass `fields: ["customFields", "ean"]` and it is added to every item.
