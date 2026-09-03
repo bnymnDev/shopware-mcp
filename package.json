@@ -8,7 +8,8 @@
     "shopware-mcp": "./dist/index.js"
   },
   "files": [
-    "dist",
+    "dist/index.js",
+    "dist/index.js.map",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
@@ -31,7 +32,8 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "pack:mcpb": "pnpm build && npx -y @anthropic-ai/mcpb pack . shopware-mcp.mcpb"
   },
   "keywords": [
     "mcp",
@@ -40,7 +42,11 @@
     "shopware6",
     "admin-api",
     "ai-agents",
-    "claude"
+    "claude",
+    "agent",
+    "ai",
+    "ecommerce",
+    "mcp-server"
   ],
   "repository": {
     "type": "git",
@@ -69,5 +75,6 @@
       "esbuild",
       "msw"
     ]
-  }
+  },
+  "mcpName": "io.github.bnymndev/shopware-mcp"
 }

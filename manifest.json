@@ -1,0 +1,167 @@
+{
+  "manifest_version": "0.2",
+  "name": "shopware-mcp",
+  "display_name": "Shopware",
+  "version": "0.1.0",
+  "description": "Query and safely manage your Shopware 6 shop: products, orders, customers, stock, health audits and sales reports.",
+  "long_description": "Connects your AI assistant to the Shopware 6 Admin API. Read-only by default; write tools (stock, product basics, order state, promotions) can be enabled and always default to a dry run. Includes a one-shot shop health audit, aggregated sales reports and schema-aware access to any Shopware entity with credentials stripped.",
+  "author": {
+    "name": "bnymnDev",
+    "url": "https://github.com/bnymnDev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bnymnDev/shopware-mcp"
+  },
+  "homepage": "https://github.com/bnymnDev/shopware-mcp",
+  "documentation": "https://github.com/bnymnDev/shopware-mcp/blob/main/docs/quickstart.md",
+  "support": "https://github.com/bnymnDev/shopware-mcp/issues",
+  "license": "MIT",
+  "keywords": ["shopware", "ecommerce", "shop", "orders", "products", "admin-api"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/bundle/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/bundle/index.js"],
+      "env": {
+        "SHOPWARE_URL": "${user_config.shopware_url}",
+        "SHOPWARE_CLIENT_ID": "${user_config.client_id}",
+        "SHOPWARE_CLIENT_SECRET": "${user_config.client_secret}",
+        "SHOPWARE_MCP_ALLOW_WRITE": "${user_config.allow_write}"
+      }
+    }
+  },
+  "user_config": {
+    "shopware_url": {
+      "type": "string",
+      "title": "Shop URL",
+      "description": "Base URL of your shop, e.g. https://shop.example.com",
+      "required": true
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Integration access key ID",
+      "description": "Admin \u2192 Settings \u2192 System \u2192 Integrations",
+      "required": true
+    },
+    "client_secret": {
+      "type": "string",
+      "title": "Integration secret access key",
+      "description": "Shown once when the integration is created",
+      "required": true,
+      "sensitive": true
+    },
+    "allow_write": {
+      "type": "boolean",
+      "title": "Enable write tools",
+      "description": "Registers stock_set, product_update, order_state_transition and promotion_toggle. Every write defaults to a dry run.",
+      "required": false,
+      "default": false
+    }
+  },
+  "tools": [
+    {
+      "name": "shop_info",
+      "description": "Version, edition, default currency and language"
+    },
+    {
+      "name": "shop_audit",
+      "description": "One-shot health check with prioritised findings"
+    },
+    {
+      "name": "sales_report",
+      "description": "Revenue, order counts, timeline and top products for a period"
+    },
+    {
+      "name": "sales_channels_list",
+      "description": "Sales channels with domains"
+    },
+    {
+      "name": "products_search",
+      "description": "Search products with Criteria filters"
+    },
+    {
+      "name": "products_get",
+      "description": "Full product incl. variants, properties, media"
+    },
+    {
+      "name": "stock_get",
+      "description": "Stock per product and variant"
+    },
+    {
+      "name": "orders_search",
+      "description": "Search orders with state, payment and delivery state"
+    },
+    {
+      "name": "orders_get",
+      "description": "Order with line items, addresses, transactions, deliveries"
+    },
+    {
+      "name": "customers_search",
+      "description": "Search customers"
+    },
+    {
+      "name": "customers_get",
+      "description": "Customer with addresses and payment methods"
+    },
+    {
+      "name": "categories_list",
+      "description": "Flat category list with product counts"
+    },
+    {
+      "name": "promotions_list",
+      "description": "Promotions with codes, validity and discounts"
+    },
+    {
+      "name": "plugins_list",
+      "description": "Installed plugins and apps with update info"
+    },
+    {
+      "name": "entity_search",
+      "description": "Search any other Shopware entity (secrets stripped)"
+    },
+    {
+      "name": "entity_schema",
+      "description": "Fields and associations of any entity"
+    },
+    {
+      "name": "stock_set",
+      "description": "Set stock (write, dry run by default)"
+    },
+    {
+      "name": "product_update",
+      "description": "Update name, description, active, price (write, dry run by default)"
+    },
+    {
+      "name": "order_state_transition",
+      "description": "process / complete / cancel / reopen (write, dry run by default)"
+    },
+    {
+      "name": "promotion_toggle",
+      "description": "Activate or deactivate a promotion (write, dry run by default)"
+    }
+  ],
+  "tools_generated": false,
+  "prompts": [
+    {
+      "name": "order_summary",
+      "description": "Summarize one order for a support reply",
+      "arguments": ["orderNumber"],
+      "text": "Load order ${arguments.orderNumber} with orders_get and write a short, friendly support summary: date, items, total, payment and delivery state, tracking codes and shipping address. Flag anything that looks stuck."
+    },
+    {
+      "name": "low_stock_report",
+      "description": "List active products below a stock threshold",
+      "arguments": ["threshold"],
+      "text": "Use products_search with a range filter stock < ${arguments.threshold} and active = true, includeVariants = true, sorted by stock ascending. Produce a table with product number, name, stock, available stock and manufacturer, and end with the total count."
+    }
+  ],
+  "prompts_generated": false,
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=22.0.0"
+    }
+  }
+}

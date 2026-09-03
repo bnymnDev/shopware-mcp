@@ -43,6 +43,13 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - id: version
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Attach Claude Desktop extension to the release
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          pnpm pack:mcpb
+          gh release upload "v${{ steps.version.outputs.version }}" shopware-mcp.mcpb --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docker:
     needs: release

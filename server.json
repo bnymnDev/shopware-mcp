@@ -1,0 +1,47 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "name": "io.github.bnymndev/shopware-mcp",
+  "description": "Shopware 6 Admin API for AI agents: products, orders, customers, stock, audits, sales reports. Safe by default.",
+  "repository": {
+    "url": "https://github.com/bnymnDev/shopware-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "shopware-mcp",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" },
+      "environmentVariables": [
+        {
+          "name": "SHOPWARE_URL",
+          "description": "Shop base URL, e.g. https://shop.example.com",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "SHOPWARE_CLIENT_ID",
+          "description": "Integration access key ID",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "name": "SHOPWARE_CLIENT_SECRET",
+          "description": "Integration secret access key",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "SHOPWARE_MCP_ALLOW_WRITE",
+          "description": "Set to true to register the guarded write tools",
+          "isRequired": false,
+          "format": "boolean",
+          "default": "false"
+        }
+      ]
+    }
+  ]
+}
