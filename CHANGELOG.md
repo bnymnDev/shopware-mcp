@@ -1,5 +1,29 @@
 # shopware-mcp
 
+## 0.2.1
+
+### Patch Changes
+
+- a35b7fd: Fix two mappings in the Merqo tools that only a real shop could reveal. The hub returns its plugin
+  map keyed by plugin name rather than as a list, so `merqo_health` reported no plugins at all. Cart
+  snapshots store `unitPrice` and `totalPrice` per line item, not a single `price`, so
+  `merqo_abandoned_carts` dropped the amounts. Both shapes are now covered by fixtures taken from a
+  live Shopware 6.7 and by an end-to-end test that fails if they drift again.
+- 8d37ed1: Emit every union in a tool schema as `anyOf` branches with a single `type` each. Zod collapses a
+  primitive-only union into `type: ["string", "number", …]`, which is legal JSON Schema but is read
+  as a single string by several MCP clients, which then reject the tool or drop the constraint. The
+  filter value, its list form and the range bounds were affected, so this touched every search tool.
+  A test now walks the schema of every tool, core and plugin-aware, and fails on any array-valued
+  `type`.
+- 8caa12c: Fix `sales_report` returning zero revenue for most top products. Quantity and revenue were read
+  from two independent top-N aggregations, and because Shopware breaks ties between equally frequent
+  products arbitrarily, the two lists disagreed and the revenue lookup missed. Revenue is now
+  resolved against the exact product ids from the first pass. The per-product count is also renamed
+  to `lineItemCount`, which is what the aggregation actually counts.
+  
+  Verified against a Shopware 6.7 shop with sixty generated orders: totals, currency split, state
+  buckets, the timeline and every top product now match the figures computed directly in SQL.
+
 ## 0.2.0
 
 ### Minor Changes
