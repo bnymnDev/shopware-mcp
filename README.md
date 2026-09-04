@@ -2,8 +2,6 @@
 
 **The Shopware 6 MCP server.** Give Claude, Cursor or any MCP host a safe, complete view of your shop: products, orders, customers, stock, promotions, plugins, a one-shot **health audit**, aggregated **sales reports**, and schema-aware access to **every other Shopware entity**. Read-only by default. Writes only when you say so, and always with a dry run first.
 
-<!-- TODO(demo): docs/demo.gif — Claude Desktop asking "Is everything okay with the shop?" -->
-
 ```
 You:    Is everything okay with the shop?
 Agent:  → shop_audit {}
@@ -13,6 +11,8 @@ Agent:  → shop_audit {}
         ▲ 12 active products out of stock, 7 below 5 units, 1 expired promotion still active
         Want me to reopen #10042 or deactivate the SUMMER promotion? (dry run first)
 ```
+
+![shop_audit running in the MCP Inspector against a Shopware 6.7 test shop: prioritised findings with sample orders](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/screenshots/shop-audit.png)
 
 [![npm](https://img.shields.io/npm/v/shopware-mcp)](https://www.npmjs.com/package/shopware-mcp)
 [![CI](https://github.com/bnymnDev/shopware-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/bnymnDev/shopware-mcp/actions/workflows/ci.yml)
@@ -133,6 +133,18 @@ The Integration needs read permissions on the entities you query and write permi
 | [`order_state_transition`](docs/tools.md#order_state_transition) | write (guarded) | Transition order state (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 <!-- TOOLS:END -->
+
+### See it working
+
+All screenshots come from a real Shopware 6.7.13 instance with generated demo data, viewed through the MCP Inspector.
+
+`sales_report` aggregates a period server-side: totals, breakdowns, a timeline and the top products. The figures were cross-checked against SQL on the same database.
+
+![sales_report result for the last 30 days: totals, revenue by currency and sales channel, orders by state; timeline and top products follow further down](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/screenshots/sales-report.png)
+
+When a shop has extensions the server knows, matching tools appear next to the core set. Here the four Merqo tools were registered after the shop reported the plugins as active; nothing about them exists in a shop without them.
+
+![The tool list with the four plugin-aware Merqo tools at the end, and the merqo_health tool with its description ready to run](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/screenshots/plugin-aware-tools.png)
 
 Full parameter reference: [docs/tools.md](docs/tools.md). Every search tool takes `{ term?, filter?, sort?, page?, limit?, fields? }` and returns `{ total, page, limit, items }`. Filters map 1:1 to Shopware Criteria filters, so anything you can filter in the Admin API works here too. See the [filter cheat sheet](docs/quickstart.md#filters-cheat-sheet).
 
