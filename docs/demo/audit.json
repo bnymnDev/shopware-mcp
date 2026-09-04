@@ -1,0 +1,32 @@
+{
+  "title": "shopware-mcp · shop_audit",
+  "lines": [
+    { "kind": "prompt", "text": "Is everything okay with the shop?" },
+    { "kind": "call", "tool": "shop_audit", "args": "{}" },
+    { "kind": "result", "text": "{ \"shop\": { \"version\": \"6.7.13.1\", \"edition\": \"Community\" }," },
+    { "kind": "result", "text": "  \"summary\": { \"critical\": 2, \"warning\": 4, \"info\": 1, \"checksRun\": 8, \"healthy\": false }," },
+    { "kind": "result", "text": "  \"findings\": [" },
+    { "kind": "result", "text": "    { \"id\": \"orders_paid_not_shipped\", \"severity\": \"critical\", \"count\": 3," },
+    { "kind": "result", "text": "      \"items\": [ { \"orderNumber\": \"10056\", \"amountTotal\": 42685.02, \"paymentState\": \"paid\", … }," },
+    { "kind": "result", "text": "                 { \"orderNumber\": \"10038\", … }, { \"orderNumber\": \"10053\", … } ]," },
+    { "kind": "result", "text": "      \"hint\": \"Ship or communicate a delay; these customers have already paid.\" }," },
+    { "kind": "result", "text": "    { \"id\": \"sales_channels_maintenance\", \"severity\": \"critical\", \"count\": 1," },
+    { "kind": "result", "text": "      \"items\": [ { \"name\": \"Storefront\", \"maintenance\": true, … } ] }," },
+    { "kind": "result", "text": "    { \"id\": \"products_out_of_stock\", \"severity\": \"warning\", \"count\": 23, … }," },
+    { "kind": "result", "text": "    { \"id\": \"products_low_stock\", \"severity\": \"warning\", \"count\": 10, … }," },
+    { "kind": "result", "text": "    { \"id\": \"orders_unpaid_old\", \"severity\": \"warning\", \"count\": 2, … }," },
+    { "kind": "result", "text": "    { \"id\": \"promotions_expired_active\", \"severity\": \"warning\", \"count\": 1," },
+    { "kind": "result", "text": "      \"items\": [ { \"name\": \"Summer Sale 2026\", \"code\": \"SUMMER26\", \"validUntil\": \"2026-08-31…\" } ] }," },
+    { "kind": "result", "text": "    { \"id\": \"products_missing_cover\", \"severity\": \"info\", \"count\": 57, … } ]," },
+    { "kind": "result", "text": "  \"compliance\": { \"scope\": \"Duties for shops selling into the EU. …\", \"items\": [ … ] } }" },
+    { "kind": "agent", "text": "Not quite. 2 critical, 4 warnings:" },
+    { "kind": "agent", "text": "{red:●} 3 paid orders not shipped for over 7 days: #10056 (60 days, 42,685.02 €)," },
+    { "kind": "agent", "text": "  #10038 (12 days) and #10053 (10 days). These customers have already paid." },
+    { "kind": "agent", "text": "{red:●} Sales channel \"Storefront\" is in maintenance mode. Customers see a maintenance page." },
+    { "kind": "agent", "text": "{yellow:▲} 23 active products have zero or negative stock, 10 more are below 5 units." },
+    { "kind": "agent", "text": "{yellow:▲} \"Summer Sale 2026\" (SUMMER26) is still active but ended on 31 August." },
+    { "kind": "agent", "text": "{yellow:▲} 2 open orders are unpaid for over 7 days: #10029 and #10012." },
+    { "kind": "agent", "text": "{muted:○} 57 products have no cover image." },
+    { "kind": "agent", "text": "Want me to deactivate SUMMER26? I would run it as a dry run first." }
+  ]
+}

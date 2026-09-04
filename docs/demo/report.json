@@ -1,0 +1,24 @@
+{
+  "title": "shopware-mcp · sales_report",
+  "lines": [
+    { "kind": "prompt", "text": "How did we do this year so far?" },
+    { "kind": "call", "tool": "sales_report", "args": "{ from: \"2026-01-01\", to: \"2026-08-31\", interval: \"month\" }" },
+    { "kind": "result", "text": "{ \"totals\": { \"orders\": 20, \"revenueGross\": 860141.84, \"revenueNet\": 778321.39," },
+    { "kind": "result", "text": "              \"averageOrderValue\": 43007.09, \"shipping\": 0 }," },
+    { "kind": "result", "text": "  \"revenueBySalesChannel\": [ { \"salesChannel\": \"Headless\", \"orders\": 13, \"revenue\": 852339.69 }," },
+    { "kind": "result", "text": "                             { \"salesChannel\": \"Storefront\", \"orders\": 7, \"revenue\": 7802.15 } ]," },
+    { "kind": "result", "text": "  \"ordersByState\": [ { \"key\": \"completed\", \"orders\": 15 }, { \"key\": \"open\", \"orders\": 5 } ]," },
+    { "kind": "result", "text": "  \"ordersByPaymentState\": [ { \"key\": \"paid\", \"orders\": 18 }, { \"key\": \"open\", \"orders\": 2 } ]," },
+    { "kind": "result", "text": "  \"timeline\": [ { \"bucket\": \"2026-01-01 00:00:00\", \"orders\": 3, \"revenue\": 123541.66 }," },
+    { "kind": "result", "text": "                { \"bucket\": \"2026-02-01 00:00:00\", \"orders\": 2, \"revenue\": 1139.09 }, …," },
+    { "kind": "result", "text": "                { \"bucket\": \"2026-06-01 00:00:00\", \"orders\": 4, \"revenue\": 428068.87 }, … ]," },
+    { "kind": "result", "text": "  \"topProducts\": [ { \"productNumber\": \"SW10023.11\", \"name\": \"Ergonomic Paper Lab Along\"," },
+    { "kind": "result", "text": "                     \"lineItemCount\": 2, \"quantity\": 20, \"revenue\": 143563.1 }, … ] }" },
+    { "kind": "agent", "text": "January to August 2026: 20 orders, 860,141.84 € gross, 778,321.39 € net." },
+    { "kind": "agent", "text": "Average order value 43,007.09 €. 15 orders completed, 5 still open, 2 of them unpaid." },
+    { "kind": "agent", "text": "{blue:▪} Headless channel: 13 orders, 852,339.69 €. Storefront: 7 orders, 7,802.15 €." },
+    { "kind": "agent", "text": "{blue:▪} Best month June (4 orders, 428,068.87 €), weakest February (2 orders, 1,139.09 €)." },
+    { "kind": "agent", "text": "{blue:▪} Top product by revenue: Ergonomic Paper Lab Along, 20 units, 143,563.10 €." },
+    { "kind": "agent", "text": "All numbers come from Shopware's own aggregations; no order list was paged through." }
+  ]
+}

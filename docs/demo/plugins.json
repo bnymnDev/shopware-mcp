@@ -1,0 +1,105 @@
+{
+  "title": "shopware-mcp · plugin-aware tools",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp"
+    },
+    {
+      "kind": "note",
+      "text": "tools/list → 16 tools: shop_info, products_search, orders_search, … entity_schema, entity_search"
+    },
+    {
+      "kind": "note",
+      "text": "extensions: looked up in the background … 17 active, 4 of them known"
+    },
+    {
+      "kind": "note",
+      "text": "notifications/tools/list_changed"
+    },
+    {
+      "kind": "note",
+      "text": "tools/list → 20 tools: the 16 above, plus"
+    },
+    {
+      "kind": "note",
+      "text": "  merqo_health, merqo_einvoice_inbox, merqo_returns_search, merqo_abandoned_carts"
+    },
+    {
+      "kind": "blank"
+    },
+    {
+      "kind": "prompt",
+      "text": "Is the shop compliant and healthy?"
+    },
+    {
+      "kind": "call",
+      "tool": "merqo_health",
+      "args": "{}"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"shopwareVersion\": \"6.7.13.1\", \"phpVersion\": \"8.4.19\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"summary\": { \"compliance\": { \"ok\": 4, \"warn\": 2, \"critical\": 0, \"neutral\": 0 },"
+    },
+    {
+      "kind": "result",
+      "text": "               \"operations\": { \"ok\": 2, \"warn\": 2, \"critical\": 0, \"neutral\": 0 } },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"compliance\": [ { \"id\": \"invoice\", \"status\": \"ok\", \"plugin\": \"MerqoInvoice\", \"details\": {} },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"vault\", \"status\": \"warn\", \"plugin\": \"MerqoVault\", \"details\": { \"mailIngest\": false } },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"access\", \"status\": \"warn\", \"details\": { \"statementConfigured\": false } }, … ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"operations\": [ { \"id\": \"twoFactor\", \"status\": \"warn\", \"details\": { \"enrolled\": 0, \"admins\": 1 } },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"scheduledTasks\", \"status\": \"warn\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"details\": { \"overdue\": [ \"merqo_vault.mail_ingest\" ], \"total\": 3 } },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"queue\", \"status\": \"ok\", \"details\": { \"depth\": 110, \"failed\": 0 } } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "Mostly. Compliance: 4 ok, 2 warnings. Operations: 2 ok, 2 warnings. Nothing critical."
+    },
+    {
+      "kind": "agent",
+      "text": "{yellow:▲} Incoming e-invoices: mail ingest is off, and its scheduled task is overdue."
+    },
+    {
+      "kind": "agent",
+      "text": "{yellow:▲} The accessibility statement is not configured."
+    },
+    {
+      "kind": "agent",
+      "text": "{yellow:▲} Two-factor: 0 of 1 admin accounts enrolled."
+    },
+    {
+      "kind": "agent",
+      "text": "{green:●} E-invoicing, packaging reporting, AI labelling and review transparency are fine."
+    },
+    {
+      "kind": "agent",
+      "text": "Message queue: 110 messages, 0 failed."
+    }
+  ]
+}

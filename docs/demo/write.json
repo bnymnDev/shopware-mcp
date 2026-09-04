@@ -1,0 +1,20 @@
+{
+  "title": "shopware-mcp · stock_set, with --allow-write",
+  "lines": [
+    { "kind": "shell", "text": "npx shopware-mcp --allow-write" },
+    { "kind": "prompt", "text": "SW10084 shows a stock of -29. Set it to 40." },
+    { "kind": "call", "tool": "stock_get", "args": "{ productNumber: \"SW10084\" }" },
+    { "kind": "result", "text": "{ \"productNumber\": \"SW10084\", \"name\": \"Aerodynamic Iron Eyewax\", \"stock\": -29, \"active\": true, … }" },
+    { "kind": "call", "tool": "stock_set", "args": "{ productId: \"01a0690afb2a72daa33ab588083338a9\", stock: 40 }" },
+    { "kind": "result", "text": "{ \"dryRun\": true," },
+    { "kind": "result", "text": "  \"wouldSend\": { \"method\": \"PATCH\", \"url\": \"http://127.0.0.1:8000/api/product/01a0690afb2a…\"," },
+    { "kind": "result", "text": "                 \"body\": { \"stock\": 40 } } }" },
+    { "kind": "agent", "text": "Dry run only. This would PATCH product SW10084 (Aerodynamic Iron Eyewax) with { \"stock\": 40 }." },
+    { "kind": "agent", "text": "Nothing has been changed yet. Apply it?" },
+    { "kind": "pause", "ms": 900 },
+    { "kind": "prompt", "text": "Yes." },
+    { "kind": "call", "tool": "stock_set", "args": "{ productId: \"01a0690afb2a72daa33ab588083338a9\", stock: 40, dryRun: false }" },
+    { "kind": "result", "text": "{ \"dryRun\": false, \"result\": { \"productNumber\": \"SW10084\", \"stock\": 40, \"availableStock\": 40, … } }" },
+    { "kind": "agent", "text": "Done. SW10084 now has 40 in stock, re-read from Shopware after the write." }
+  ]
+}

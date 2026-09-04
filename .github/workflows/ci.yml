@@ -34,6 +34,7 @@ jobs:
       - name: Generated files are up to date
         run: |
           pnpm docs:tools --check
+          pnpm docs:demos --check
           pnpm sync:server --check
       - name: Smoke-test the CLI
         run: |

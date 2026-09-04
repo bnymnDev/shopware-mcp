@@ -1,5 +1,6 @@
 /**
- * Generates docs/tools.md and the tool table in README.md from the tool definitions.
+ * Generates docs/tools.md and the tool tables in README.md and README.de.md from the tool
+ * definitions.
  * Usage: pnpm docs:tools [--check]
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -8,7 +9,10 @@ import { extensionPacks } from "../src/extensions/index.js";
 import { tools } from "../src/tools/index.js";
 import type { ToolDefinition } from "../src/tools/types.js";
 
-const README = "README.md";
+const READMES = [
+  { file: "README.md", header: "| Tool | Access | Purpose |" },
+  { file: "README.de.md", header: "| Werkzeug | Zugriff | Zweck |" },
+];
 const TOOLS_DOC = "docs/tools.md";
 const START = "<!-- TOOLS:START -->";
 const END = "<!-- TOOLS:END -->";
@@ -81,12 +85,12 @@ function paramTable(tool: ToolDefinition): string {
   return ["| Parameter | Type | Required | Description |", "|---|---|---|---|", ...rows].join("\n");
 }
 
-function summaryTable(): string {
+function summaryTable(header = "| Tool | Access | Purpose |"): string {
   const rows = tools.map(
     (tool) =>
       `| [\`${tool.name}\`](docs/tools.md#${tool.name}) | ${tool.write ? "write (guarded)" : "read"} | ${escapeCell(tool.title)} |`,
   );
-  return ["| Tool | Access | Purpose |", "|---|---|---|", ...rows].join("\n");
+  return [header, "|---|---|---|", ...rows].join("\n");
 }
 
 function extensionSection(): string {
@@ -163,17 +167,19 @@ function toolsDoc(): string {
   ].join("\n");
 }
 
-function updateReadme(content: string): string {
+function updateReadme(file: string, header: string, content: string): string {
   const start = content.indexOf(START);
   const end = content.indexOf(END);
-  if (start === -1 || end === -1) throw new Error(`README.md is missing ${START} / ${END} markers`);
-  return `${content.slice(0, start + START.length)}\n${summaryTable()}\n${content.slice(end)}`;
+  if (start === -1 || end === -1) throw new Error(`${file} is missing ${START} / ${END} markers`);
+  return `${content.slice(0, start + START.length)}\n${summaryTable(header)}\n${content.slice(end)}`;
 }
 
 const check = process.argv.includes("--check");
 const nextTools = `${toolsDoc()}\n`;
-const readme = readFileSync(README, "utf8");
-const nextReadme = updateReadme(readme);
+const readmes = READMES.map(({ file, header }) => {
+  const current = readFileSync(file, "utf8");
+  return { file, current, next: updateReadme(file, header, current) };
+});
 
 let currentTools = "";
 try {
@@ -185,7 +191,9 @@ try {
 if (check) {
   const stale: string[] = [];
   if (currentTools !== nextTools) stale.push(TOOLS_DOC);
-  if (readme !== nextReadme) stale.push(README);
+  for (const readme of readmes) {
+    if (readme.current !== readme.next) stale.push(readme.file);
+  }
   if (stale.length > 0) {
     process.stderr.write(
       `Generated docs are stale: ${stale.join(", ")}. Run \`pnpm docs:tools\`.\n`,
@@ -195,6 +203,7 @@ if (check) {
   process.stderr.write("Generated docs are up to date.\n");
 } else {
   writeFileSync(TOOLS_DOC, nextTools);
-  writeFileSync(README, nextReadme);
-  process.stderr.write(`Wrote ${TOOLS_DOC} and updated ${README} (${tools.length} tools).\n`);
+  for (const readme of readmes) writeFileSync(readme.file, readme.next);
+  const files = readmes.map((readme) => readme.file).join(", ");
+  process.stderr.write(`Wrote ${TOOLS_DOC} and updated ${files} (${tools.length} tools).\n`);
 }

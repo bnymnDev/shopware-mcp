@@ -1,0 +1,20 @@
+{
+  "title": "shopware-mcp · entity_schema + entity_search",
+  "lines": [
+    { "kind": "prompt", "text": "Which manufacturers have no logo?" },
+    { "kind": "call", "tool": "entity_schema", "args": "{ entity: \"product_manufacturer\" }" },
+    { "kind": "result", "text": "{ \"entity\": \"product_manufacturer\"," },
+    { "kind": "result", "text": "  \"fields\": [ { \"name\": \"id\", \"type\": \"uuid\", \"flags\": [ \"primary_key\", \"required\", … ] }," },
+    { "kind": "result", "text": "              { \"name\": \"mediaId\", \"type\": \"uuid\", \"flags\": [ \"read_protected\" ] }," },
+    { "kind": "result", "text": "              { \"name\": \"name\", \"type\": \"string\", \"flags\": [ …, \"required\", \"translatable\" ] }, … ]," },
+    { "kind": "result", "text": "  \"associations\": [ { \"name\": \"media\", \"relation\": \"many_to_one\", \"entity\": \"media\" }, … ] }" },
+    { "kind": "call", "tool": "entity_search", "args": ["{ entity: \"product_manufacturer\",", "filter: [{ type: \"equals\", field: \"mediaId\", value: null }] }"] },
+    { "kind": "result", "text": "{ \"entity\": \"product_manufacturer\", \"total\": 27, \"page\": 1, \"limit\": 20," },
+    { "kind": "result", "text": "  \"items\": [ { \"name\": \"O'Conner and Sons\", \"mediaId\": null, \"link\": \"http://fadel.com/\", … }," },
+    { "kind": "result", "text": "             { \"name\": \"Wilderman, Hermann and D'Amore\", \"mediaId\": null, … }," },
+    { "kind": "result", "text": "             { \"name\": \"Upton LLC\", \"mediaId\": null, … }, … ] }" },
+    { "kind": "agent", "text": "27 manufacturers have no logo, among them O'Conner and Sons, Wilderman, Hermann and D'Amore" },
+    { "kind": "agent", "text": "and Upton LLC. Shall I list all 27?" },
+    { "kind": "agent", "text": "{muted:There is no manufacturer tool, so I read the entity's schema and filtered on mediaId = null.}" }
+  ]
+}

@@ -34,7 +34,8 @@
     "prepublishOnly": "pnpm build",
     "pack:mcpb": "pnpm build && npx -y @anthropic-ai/mcpb pack . shopware-mcp.mcpb",
     "sync:server": "tsx scripts/sync-server-json.ts",
-    "release:version": "changeset version && tsx scripts/sync-server-json.ts"
+    "release:version": "changeset version && tsx scripts/sync-server-json.ts",
+    "docs:demos": "tsx scripts/render-demos.ts"
   },
   "keywords": [
     "mcp",

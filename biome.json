@@ -14,7 +14,8 @@
       "!pnpm-lock.yaml",
       "!CHANGELOG.md",
       "!server.json",
-      "!manifest.json"
+      "!manifest.json",
+      "!docs/demo/*.json"
     ]
   },
   "formatter": {

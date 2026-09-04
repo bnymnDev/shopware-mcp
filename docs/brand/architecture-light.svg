@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 440" width="1200" height="440" role="img" aria-label="How shopware-mcp sits between an MCP host and the Shopware 6 Admin API">
+  <rect width="1200" height="440" rx="18" fill="#f6f7f9"/>
+  <g>
+    <rect x="40" y="60" width="270" height="300" rx="12" fill="#ffffff" stroke="#d8dde6" stroke-width="1.5"/>
+    <rect x="40" y="60" width="270" height="44" rx="12" fill="#8a919c" fill-opacity="0.12"/>
+    <rect x="40" y="90" width="270" height="14" fill="#ffffff"/>
+    <line x1="40" y1="104" x2="310" y2="104" stroke="#d8dde6" stroke-width="1.5"/>
+    <text x="62" y="89" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#1b1f27">MCP host</text>
+    <text x="62" y="134" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">Claude Desktop</text>
+    <text x="62" y="160" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">Claude Code</text>
+    <text x="62" y="186" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">Cursor, Zed, VS Code</text>
+    <text x="62" y="212" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">your own agent</text>
+    <text x="62" y="238" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27"></text>
+    <text x="62" y="264" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· asks in plain language</text>
+    <text x="62" y="290" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· sees tools, not URLs</text>
+    <text x="62" y="316" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· stdio or HTTP</text>
+  </g>
+  <g>
+    <rect x="440" y="60" width="320" height="300" rx="12" fill="#ffffff" stroke="#d8dde6" stroke-width="1.5"/>
+    <rect x="440" y="60" width="320" height="44" rx="12" fill="#189eff" fill-opacity="0.12"/>
+    <rect x="440" y="90" width="320" height="14" fill="#ffffff"/>
+    <line x1="440" y1="104" x2="760" y2="104" stroke="#d8dde6" stroke-width="1.5"/>
+    <text x="462" y="89" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#1b1f27">shopware-mcp</text>
+    <text x="462" y="134" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">16 curated tools</text>
+    <text x="462" y="160" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">shop_audit, sales_report</text>
+    <text x="462" y="186" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">entity_schema, entity_search</text>
+    <text x="462" y="212" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">plugin-aware tools</text>
+    <text x="462" y="238" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27"></text>
+    <text x="462" y="264" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· read-only by default</text>
+    <text x="462" y="290" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· writes are dry runs first</text>
+    <text x="462" y="316" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· secrets scrubbed</text>
+  </g>
+  <g>
+    <rect x="890" y="60" width="270" height="300" rx="12" fill="#ffffff" stroke="#d8dde6" stroke-width="1.5"/>
+    <rect x="890" y="60" width="270" height="44" rx="12" fill="#1a7f37" fill-opacity="0.12"/>
+    <rect x="890" y="90" width="270" height="14" fill="#ffffff"/>
+    <line x1="890" y1="104" x2="1160" y2="104" stroke="#d8dde6" stroke-width="1.5"/>
+    <text x="912" y="89" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="700" fill="#1b1f27">Shopware 6</text>
+    <text x="912" y="134" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">Admin API</text>
+    <text x="912" y="160" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">OAuth client credentials</text>
+    <text x="912" y="186" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">Criteria + aggregations</text>
+    <text x="912" y="212" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27">entity schema</text>
+    <text x="912" y="238" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#1b1f27"></text>
+    <text x="912" y="264" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· 6.6 and 6.7</text>
+    <text x="912" y="290" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· 200+ entities</text>
+    <text x="912" y="316" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="15" fill="#5c6570">· plugin entities too</text>
+  </g>
+  <!-- host <-> server -->
+  <path id="q1" d="M 316 150 L 434 150" fill="none"/>
+  <line x1="316" y1="150" x2="434" y2="150" stroke="#c9ced8" stroke-width="2.5" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <circle r="4.5" fill="#189eff"><animateMotion dur="2.4s" begin="0s" repeatCount="indefinite"><mpath href="#q1"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="2.4s" begin="0s" repeatCount="indefinite"/></circle>
+  <text x="375" y="140" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#189eff">tools/call</text>
+  <path id="a1" d="M 434 270 L 316 270" fill="none"/>
+  <line x1="434" y1="270" x2="316" y2="270" stroke="#c9ced8" stroke-width="2.5" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <circle r="4.5" fill="#1a7f37"><animateMotion dur="2.4s" begin="1.2s" repeatCount="indefinite"><mpath href="#a1"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="2.4s" begin="1.2s" repeatCount="indefinite"/></circle>
+  <text x="375" y="260" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1a7f37">compact JSON</text>
+  <!-- server <-> shop -->
+  <path id="q2" d="M 766 150 L 884 150" fill="none"/>
+  <line x1="766" y1="150" x2="884" y2="150" stroke="#c9ced8" stroke-width="2.5" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <circle r="4.5" fill="#189eff"><animateMotion dur="2.4s" begin="0.6s" repeatCount="indefinite"><mpath href="#q2"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="2.4s" begin="0.6s" repeatCount="indefinite"/></circle>
+  <text x="825" y="140" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#189eff">POST /api/search</text>
+  <path id="a2" d="M 884 270 L 766 270" fill="none"/>
+  <line x1="884" y1="270" x2="766" y2="270" stroke="#c9ced8" stroke-width="2.5" stroke-dasharray="2 9" stroke-linecap="round"/>
+  <circle r="4.5" fill="#1a7f37"><animateMotion dur="2.4s" begin="1.8s" repeatCount="indefinite"><mpath href="#a2"/></animateMotion><animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.9;1" dur="2.4s" begin="1.8s" repeatCount="indefinite"/></circle>
+  <text x="825" y="260" text-anchor="middle" font-family="ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace" font-size="13" fill="#1a7f37">totals, buckets</text>
+  <text x="600" y="412" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="15" fill="#5c6570">One question in, one tool call out. The server translates, guards, and trims. The shop keeps its own login.</text>
+</svg>

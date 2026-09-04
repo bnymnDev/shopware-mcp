@@ -28,7 +28,7 @@ pnpm lint && pnpm typecheck
 
 1. Branch from `main`.
 2. Make the change, add or update tests, run `pnpm lint && pnpm typecheck && pnpm test`.
-3. If you touched a tool, run `pnpm docs:tools` so `docs/tools.md` and the README table stay in sync (CI checks this).
+3. If you touched a tool, run `pnpm docs:tools` so `docs/tools.md` and the tool tables in `README.md` and `README.de.md` stay in sync (CI checks this). If you edited a transcript under `docs/demo/`, run `pnpm docs:demos` to re-render its recording.
 4. Add a changeset for user-facing changes: `pnpm changeset`.
 5. Open the PR with a conventional-commit style title (`feat:`, `fix:`, `docs:`, ...).
 
