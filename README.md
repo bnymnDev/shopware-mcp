@@ -47,10 +47,10 @@ call what used to take an afternoon in the admin:
 | | |
 |---|---|
 | **Curated tools** | Products, orders, customers, categories, promotions, plugins, stock, sales channels: sixteen tools that return compact JSON with exact totals, descriptions written for a model, and Shopware's own Criteria filters. No invented query language. |
-| **An audit** | `shop_audit` runs nine checks in one call: paid orders that never shipped, unpaid orders going stale, shipped orders never completed, products out of stock or without a cover, promotions past their end date, channels in maintenance, extensions with updates waiting, and which EU duties look covered by an installed extension. Prioritised, with samples and a hint per finding. |
+| **An audit** | `shop_audit` runs eleven checks in one call: paid orders that never shipped, unpaid orders going stale, shipped orders never completed, products out of stock, without a cover or without a delivery time, promotions past their end date, channels in maintenance, storefronts missing a legal page, extensions with updates waiting, and which EU duties look covered by an installed extension. Prioritised, with samples and a hint per finding. |
 | **A report** | `sales_report` asks Shopware to aggregate: gross, net, average order, revenue per currency and channel, orders per state, a day/week/month timeline, the top products and, on request, the change against the period before. The figures were checked against SQL on the same database. |
 | **An escape hatch** | `entity_schema` describes any of the 200+ entities, a plugin's custom entities included, and `entity_search` queries them with the same filters. Entities that hold credentials are refused, secrets in the rest are scrubbed. |
-| **A brake** | Read-only unless you start it with `--allow-write`. Even then every write is a dry run that shows the exact request first. Ship, mark paid, remind, refund, correct stock: six narrow writes, nothing else. Secrets never appear in output, logs or errors. |
+| **A brake** | Read-only unless you start it with `--allow-write`. Even then every write is a dry run that shows the exact request first, and a write budget can cap how many real writes a process may make. Ship, mark paid, remind, refund, correct stock, note, generate a document: eight narrow writes, nothing else. Secrets never appear in output, logs or errors. |
 
 <p align="center">
   <picture>
@@ -103,6 +103,10 @@ the host is told to refresh its list, and a compliance question has an answer.
 
 ![Plugin-aware tools: tools/list grows from 16 to 20 after the extension lookup, then merqo_health answers a compliance question](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/plugins.svg)
 
+**Know before the agent finds out.** `shopware-mcp doctor` probes what the integration may read, reads its role for the write privileges where it can, and names the missing one per tool. An administrator gets a wall of ticks; a support-desk role gets told exactly what to grant.
+
+![shopware-mcp doctor: every tool ready for an administrator integration, then a support-desk integration with customers blocked and the privilege to grant](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/doctor.svg)
+
 <details>
 <summary><b>Screenshots from the MCP Inspector against the same shop</b></summary>
 <br>
@@ -122,12 +126,14 @@ the host is told to refresh its list, and a compliance question has an answer.
 | | |
 |---|---|
 | **Sixteen curated tools** | `products_search`, `orders_get`, `customers_search`, `stock_get`, `promotions_list`, `plugins_list` and friends. Each takes `{ term?, filter?, sort?, page?, limit?, fields? }` and returns `{ total, page, limit, items }`. |
-| **Health audit** | `shop_audit` with tunable thresholds (`stuckOrderDays`, `lowStockThreshold`, `maxItems`). Nine checks, prioritised findings, a hint per finding, and an EU duty overview that names duties and deadlines, never products. |
+| **Health audit** | `shop_audit` with tunable thresholds (`stuckOrderDays`, `lowStockThreshold`, `maxItems`). Eleven checks including legal pages per storefront and delivery times, prioritised findings, a hint per finding, and an EU duty overview that names duties and deadlines, never products. |
 | **Sales report** | `sales_report` for any period, by day, week or month, optionally per sales channel, cancelled orders excluded. `compareWithPrevious` adds the preceding period and the change in orders, revenue and average order value. Top products resolved by exact product id so ties cannot skew revenue. |
 | **Any entity** | `entity_schema` lists all entities or describes one: fields, types, flags, associations. `entity_search` queries it. Long text values are truncated, secrets scrubbed, credential entities refused. |
 | **Plugin-aware tools** | The server detects installed, active extensions and adds tools for the ones it knows. First pack: [Merqo](https://github.com/bnymnDev/merqo). Off with `--no-extensions`. |
-| **Guarded writes** | `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition` (ship, with tracking codes), `order_transaction_transition` (mark paid, remind, refund), `promotion_toggle`. Registered only with `--allow-write`, `dryRun: true` by default, the re-fetched entity on a real write. |
-| **Resources and prompts** | `shopware://shop`, `shopware://sales-channels`, and three ready-made prompts: `order_summary` for support replies, `low_stock_report`, and `weekly_review` for a Monday-morning brief. |
+| **Documents** | `order_documents_list`, `order_document_create` (invoice, delivery note, credit note, cancellation, by Shopware's own generator) and `document_download`, which hands the PDF to the host as an embedded resource while the model sees only the metadata. |
+| **Guarded writes** | `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition` (ship, with tracking codes), `order_transaction_transition` (mark paid, remind, refund), `order_note` (internal comment), `order_document_create`, `promotion_toggle`. Registered only with `--allow-write`, `dryRun: true` by default, the re-fetched entity on a real write. `SHOPWARE_MCP_MAX_WRITES` caps real writes per process. |
+| **Doctor and init** | `shopware-mcp doctor` says per tool whether this integration can use it and which privilege is missing. `shopware-mcp init` tests the credentials and prints or writes the config for Claude Desktop, Claude Code, Cursor, VS Code or Zed. |
+| **Resources and prompts** | `shopware://shop`, `shopware://sales-channels`, the templates `shopware://order/{orderNumber}` and `shopware://product/{productNumber}` so a host can attach a record as context, and three prompts: `order_summary`, `low_stock_report` and `weekly_review`. |
 | **Shopware's vocabulary** | Filters are Shopware Criteria filters (`equals`, `contains`, `range`, `equalsAny`) on Shopware field paths, including associations like `manufacturer.name`. State names are the technical names you already know. |
 | **Portable schemas** | Every tool schema is checked to avoid constructs that some MCP clients misread, so the same server works in every host. |
 | **A solid client** | OAuth client credentials with early token refresh, one retry on 401 and on 429/5xx with `Retry-After`, a per-request timeout, exact totals, inheritance and language headers, a cached entity schema. |
@@ -149,7 +155,15 @@ the host is told to refresh its list, and a compliance question has an answer.
 
 **1.** Create an Integration in your Shopware admin: *Settings → System → Integrations → Add integration*. Copy the access key ID and the secret; the secret is shown once. For a dev shop tick *Administrator*, for production give it a read role (see [permissions](docs/self-hosting.md#shopware-permissions)).
 
-**2.** Run the server:
+**2.** Let the wizard test the credentials and write the host config for you:
+
+```bash
+npx shopware-mcp init                  # asks for URL, key and secret, tests them, prints the config
+npx shopware-mcp init --for claude-desktop --write   # or merges it into the host's config file
+npx shopware-mcp doctor                # which tools can this integration use, and what is missing
+```
+
+Or run the server by hand:
 
 ```bash
 export SHOPWARE_URL=https://shop.example.com
@@ -161,7 +175,7 @@ npx shopware-mcp --http --port 3333    # Streamable HTTP on http://127.0.0.1:333
 npx shopware-mcp --allow-write         # also register the guarded write tools
 ```
 
-**3.** Connect a host:
+**3.** Connect a host (or let `init --write` do it):
 
 <details>
 <summary><b>Claude Desktop</b></summary>
@@ -261,6 +275,9 @@ The image serves Streamable HTTP on `http://127.0.0.1:3333/mcp`. Point any HTTP-
 | "Order 10042 shipped with DHL, tracking 00340434." | `order_delivery_transition { transition: "ship", trackingCodes }` |
 | "The bank transfer for 10038 arrived." | `order_transaction_transition { transition: "paid" }` |
 | "How was last week compared to the week before?" | `sales_report { compareWithPrevious: true }`, or the `weekly_review` prompt |
+| "Send me the invoice for 10042." | `order_documents_list`, then `document_download` returns the PDF |
+| "Note on 10042: customer called, ships Monday." | `order_note` |
+| "Which of my tools will fail with this integration?" | not a tool: `npx shopware-mcp doctor` |
 
 ---
 
@@ -297,6 +314,8 @@ The full [cheat sheet](docs/quickstart.md#filters-cheat-sheet) has more.
 | [`products_get`](docs/tools.md#products_get) | read | Get product |
 | [`orders_search`](docs/tools.md#orders_search) | read | Search orders |
 | [`orders_get`](docs/tools.md#orders_get) | read | Get order |
+| [`order_documents_list`](docs/tools.md#order_documents_list) | read | List order documents |
+| [`document_download`](docs/tools.md#document_download) | read | Download document PDF |
 | [`customers_search`](docs/tools.md#customers_search) | read | Search customers |
 | [`customers_get`](docs/tools.md#customers_get) | read | Get customer |
 | [`categories_list`](docs/tools.md#categories_list) | read | List categories |
@@ -312,6 +331,8 @@ The full [cheat sheet](docs/quickstart.md#filters-cheat-sheet) has more.
 | [`order_state_transition`](docs/tools.md#order_state_transition) | write (guarded) | Transition order state (guarded) |
 | [`order_delivery_transition`](docs/tools.md#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
 | [`order_transaction_transition`](docs/tools.md#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
+| [`order_note`](docs/tools.md#order_note) | write (guarded) | Add internal order note (guarded) |
+| [`order_document_create`](docs/tools.md#order_document_create) | write (guarded) | Create order document (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 <!-- TOOLS:END -->
 
@@ -320,8 +341,8 @@ Every parameter of every tool: [docs/tools.md](docs/tools.md). Searches return
 errors come back as `{ error: { status, code, detail } }` so the model can
 react instead of guessing.
 
-Resources: `shopware://shop`, `shopware://sales-channels`.
-Prompts: `order_summary`, `low_stock_report`, `weekly_review`.
+Resources: `shopware://shop`, `shopware://sales-channels`, `shopware://order/{orderNumber}`,
+`shopware://product/{productNumber}`. Prompts: `order_summary`, `low_stock_report`, `weekly_review`.
 
 ### Plugin-aware tools
 
@@ -341,8 +362,9 @@ one file under `src/extensions/`; pull requests are welcome.
 ## Safety
 
 - **Read-only by default.** Without `--allow-write` (or `SHOPWARE_MCP_ALLOW_WRITE=true`) the write tools are not registered. An agent cannot discover what it cannot call.
-- **Every write is a dry run first.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition` and `promotion_toggle` default to `dryRun: true` and return `{ dryRun: true, wouldSend: { method, url, body } }`, a list when one call needs several requests. A real write returns the re-fetched entity.
-- **Narrow writes.** `product_update` touches name, description, active and one currency's price. The transition tools only move state machines; nothing moves money. Nothing else is writable.
+- **Every write is a dry run first.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create` and `promotion_toggle` default to `dryRun: true` and return `{ dryRun: true, wouldSend: { method, url, body } }`, a list when one call needs several requests. A real write returns the re-fetched entity.
+- **A write budget.** `SHOPWARE_MCP_MAX_WRITES=20` refuses the twenty-first real write of a process with `WRITE_BUDGET_EXHAUSTED`; dry runs stay free. No prompt can lift it.
+- **Narrow writes.** `product_update` touches name, description, active and one currency's price. The transition tools only move state machines; nothing moves money. Documents come from Shopware's own generator and are never sent by this server. Nothing else is writable.
 - **Scrubbed reads.** `entity_search` strips passwords, keys, tokens and hashes from every payload and refuses entities that exist to hold credentials or system internals: users, integrations, ACL roles, apps, system config.
 - **No secrets anywhere.** Credentials never appear in output, logs or error messages. Logs go to stderr only, at `error` level unless you ask for more.
 - **No telemetry.** The server talks to your shop and to your host. Nothing else.
@@ -361,6 +383,7 @@ Found something? See [SECURITY.md](SECURITY.md).
 | `SHOPWARE_CLIENT_ID` | yes | Integration access key ID |
 | `SHOPWARE_CLIENT_SECRET` | yes | Integration secret access key |
 | `SHOPWARE_MCP_ALLOW_WRITE` | no | `true` registers the write tools. Default: off |
+| `SHOPWARE_MCP_MAX_WRITES` | no | Real writes one process may perform in total; `0` (default) means no cap |
 | `SHOPWARE_MCP_DEFAULT_LIMIT` | no | Default page size for search tools (default 20, max 50) |
 | `SHOPWARE_MCP_EXTENSIONS` | no | `false` disables plugin-aware tools and the extension lookup at startup |
 | `SHOPWARE_LANGUAGE_ID` | no | Language UUID for translated fields (`sw-language-id`). Default: shop default language |
@@ -368,7 +391,7 @@ Found something? See [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_HTTP_TOKEN` | no | Bearer token the HTTP transport requires on `/mcp` (at least 16 characters). Default: none |
 | `SHOPWARE_MCP_LOG_LEVEL` | no | `error` (default), `warn`, `info`, `debug`. Logs go to stderr only |
 
-CLI flags override the environment: `--allow-write`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`.
+CLI flags override the environment: `--allow-write`, `--max-writes <n>`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`. Commands: `doctor [--json]` and `init [--for <host>] [--write]`.
 
 The Integration needs read permissions on the entities you query and write
 permissions on product, order and promotion for the write tools. *Administrator*
@@ -447,7 +470,7 @@ Shopware. The recordings above come from Shopware 6.7.13; 6.6 is supported too.
 
 Not in it, on purpose: user management for the HTTP transport (one static
 token, or a proxy), multi-shop routing and audit trails (the commercial part),
-and write tools beyond the six that a support desk needs on a normal day.
+and write tools beyond the eight that a support desk needs on a normal day.
 
 Ideas that fit: more extension packs, better error hints for common Shopware
 ACL problems, a `products_search` example gallery. The [good first

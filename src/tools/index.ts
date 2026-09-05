@@ -1,9 +1,11 @@
 import { shopAudit } from "./audit.js";
 import { categoriesList } from "./categories.js";
 import { customersGet, customersSearch } from "./customers.js";
+import { documentDownload, orderDocumentCreate, orderDocumentsList } from "./documents.js";
 import { entitySchema, entitySearch } from "./entities.js";
 import {
   orderDeliveryTransition,
+  orderNote,
   orderStateTransition,
   ordersGet,
   ordersSearch,
@@ -26,6 +28,8 @@ export const tools: ToolDefinition[] = [
   productsGet,
   ordersSearch,
   ordersGet,
+  orderDocumentsList,
+  documentDownload,
   customersSearch,
   customersGet,
   categoriesList,
@@ -41,6 +45,8 @@ export const tools: ToolDefinition[] = [
   orderStateTransition,
   orderDeliveryTransition,
   orderTransactionTransition,
+  orderNote,
+  orderDocumentCreate,
   promotionToggle,
 ];
 

@@ -223,7 +223,7 @@ describe("sales_report", () => {
 describe("shop_audit", () => {
   it("runs every check and prioritises findings", async () => {
     const audit = await invoke(shopAudit, { stuckOrderDays: 14, lowStockThreshold: 3 }, ctx);
-    expect(audit.summary).toMatchObject({ checksRun: 9, healthy: false });
+    expect(audit.summary).toMatchObject({ checksRun: 11, healthy: false });
     expect(audit.shop).toMatchObject({ version: "6.6.10.3", edition: "Community" });
     const ids = audit.findings.map((finding) => finding.id);
     expect(ids[0]).toBe("orders_paid_not_shipped");
@@ -281,7 +281,36 @@ describe("shop_audit", () => {
     );
     const degraded = await invoke(shopAudit, {}, ctx);
     expect(degraded.warnings?.[0]).toContain("promotions_expired_active skipped");
-    expect(degraded.summary.checksRun).toBe(8);
+    expect(degraded.summary.checksRun).toBe(10);
+  });
+});
+
+describe("shop_audit legal pages", () => {
+  it("reports storefronts that lack a legal page, per sales channel", async () => {
+    const probed: string[] = [];
+    mock.use(
+      http.get(`${SHOP_URL}/api/_action/system-config`, ({ request }) => {
+        const url = new URL(request.url);
+        expect(url.searchParams.get("inherit")).toBe("1");
+        probed.push(url.searchParams.get("salesChannelId") ?? "");
+        const config = fixture<Record<string, unknown>>("system-config");
+        delete config["core.basicInformation.imprintPage"];
+        config["core.basicInformation.revocationPage"] = null;
+        return HttpResponse.json(config);
+      }),
+    );
+    const audit = await invoke(shopAudit, {}, ctx);
+    const finding = audit.findings.find((item) => item.id === "legal_pages_missing");
+    expect(finding).toMatchObject({ severity: "warning", count: 1 });
+    expect(finding?.items[0]).toEqual({
+      salesChannelId: "3a4b5c6d7e8f01020304050607080a0b",
+      salesChannel: "Storefront",
+      missing: ["imprint", "revocation policy"],
+    });
+    // Only the active storefront is probed, never the headless channel.
+    expect(probed).toEqual(["3a4b5c6d7e8f01020304050607080a0b"]);
+    const delivery = audit.findings.find((item) => item.id === "products_without_delivery_time");
+    expect(delivery).toMatchObject({ severity: "info" });
   });
 });
 

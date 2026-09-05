@@ -5,7 +5,7 @@ import { z } from "zod";
 import { extensionPacks } from "../src/extensions/index.js";
 import { createServer } from "../src/server.js";
 import { readTools, tools, writeTools } from "../src/tools/index.js";
-import { createContext, mock, searchHandler } from "./helpers/shopware.js";
+import { createContext, DOCUMENT_ID, mock, PDF_BYTES, searchHandler } from "./helpers/shopware.js";
 
 const clients: Client[] = [];
 
@@ -57,6 +57,8 @@ describe("MCP server", () => {
       "order_state_transition",
       "order_delivery_transition",
       "order_transaction_transition",
+      "order_note",
+      "order_document_create",
       "promotion_toggle",
     ]);
   });
@@ -102,6 +104,16 @@ describe("MCP server", () => {
     expect(shop.contents[0]?.mimeType).toBe("application/json");
     const shopText = (shop.contents[0] as { text?: string } | undefined)?.text;
     expect(JSON.parse(String(shopText))).toMatchObject({ edition: "Community" });
+
+    const { resourceTemplates } = await client.listResourceTemplates();
+    expect(resourceTemplates.map((template) => template.uriTemplate).sort()).toEqual([
+      "shopware://order/{orderNumber}",
+      "shopware://product/{productNumber}",
+    ]);
+    mock.use(searchHandler({ order: "order-detail" }));
+    const order = await client.readResource({ uri: "shopware://order/10042" });
+    const orderText = (order.contents[0] as { text?: string } | undefined)?.text;
+    expect(JSON.parse(String(orderText))).toMatchObject({ orderNumber: "10042" });
 
     const { prompts } = await client.listPrompts();
     expect(prompts.map((prompt) => prompt.name).sort()).toEqual([
@@ -150,5 +162,64 @@ describe("tool schemas stay portable", () => {
     );
     expect(offenders).toEqual([]);
     expect(every.length).toBeGreaterThan(15);
+  });
+});
+
+describe("attachments and the write budget", () => {
+  it("hands document bytes to the host as an embedded resource", async () => {
+    mock.use(searchHandler({ document: "documents" }));
+    const client = await connect(false);
+    const result = await client.callTool({
+      name: "document_download",
+      arguments: { documentId: DOCUMENT_ID },
+    });
+    expect(result.isError).toBeFalsy();
+    const content = result.content as Array<{
+      type: string;
+      resource?: { uri: string; mimeType?: string; blob?: string };
+    }>;
+    const resource = content.find((item) => item.type === "resource");
+    expect(resource?.resource).toMatchObject({
+      uri: `shopware://document/${DOCUMENT_ID}`,
+      mimeType: "application/pdf",
+    });
+    expect(Buffer.from(resource?.resource?.blob ?? "", "base64").toString()).toBe(PDF_BYTES);
+    // The JSON the model reads carries the metadata but not the payload.
+    const text = textOf(result) as { attachments: Array<Record<string, unknown>> };
+    expect(text.attachments[0]).toMatchObject({
+      name: "invoice-1000.pdf",
+      bytes: PDF_BYTES.length,
+    });
+    expect(text.attachments[0]).not.toHaveProperty("base64");
+    await client.close();
+  });
+
+  it("refuses real writes beyond SHOPWARE_MCP_MAX_WRITES, dry runs stay free", async () => {
+    mock.use(searchHandler({ product: "product-detail" }));
+    const ctx = createContext({ allowWrite: true, maxWrites: 1 });
+    const server = createServer(ctx);
+    const client = new Client({ name: "budget", version: "0.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    const args = { productId: "b2c3d4e5f60718293a4b5c6d7e8f0102", stock: 3 };
+    const dry = await client.callTool({ name: "stock_set", arguments: { ...args, dryRun: true } });
+    expect(dry.isError).toBeFalsy();
+    const first = await client.callTool({
+      name: "stock_set",
+      arguments: { ...args, dryRun: false },
+    });
+    expect(first.isError).toBeFalsy();
+    const second = await client.callTool({
+      name: "stock_set",
+      arguments: { ...args, dryRun: false },
+    });
+    expect(second.isError).toBe(true);
+    expect(second.structuredContent).toMatchObject({ error: { code: "WRITE_BUDGET_EXHAUSTED" } });
+    const dryAgain = await client.callTool({
+      name: "stock_set",
+      arguments: { ...args, dryRun: true },
+    });
+    expect(dryAgain.isError).toBeFalsy();
+    await client.close();
   });
 });

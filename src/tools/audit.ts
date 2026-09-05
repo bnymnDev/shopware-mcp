@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { STOREFRONT_TYPE_ID } from "../client/constants.js";
 import { associations, equals, equalsAny, type ShopwareFilter } from "../client/criteria.js";
 import { INHERITANCE_HEADERS, type Raw, type ShopwareClient } from "../client/index.js";
 import { ShopwareMcpError } from "../errors.js";
@@ -7,6 +8,7 @@ import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
 import { mapSalesChannel } from "./sales-channels.js";
+import { translated } from "./shared.js";
 import { fetchShopInfo } from "./shop.js";
 import { defineTool } from "./types.js";
 
@@ -56,6 +58,15 @@ const EU_DUTIES: Duty[] = [
     pattern: /\bai\b|k-?i-?kennzeich|artificial.intelligence/i,
   },
 ];
+
+/** Pages a storefront selling to consumers in Germany is expected to link. */
+const LEGAL_PAGES = [
+  { key: "imprintPage", label: "imprint" },
+  { key: "tosPage", label: "terms and conditions" },
+  { key: "privacyPage", label: "privacy policy" },
+  { key: "revocationPage", label: "revocation policy" },
+  { key: "shippingPaymentInfoPage", label: "shipping and payment information" },
+] as const;
 
 export interface DutyCoverage {
   id: string;
@@ -270,6 +281,57 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       },
     },
     {
+      id: "legal_pages_missing",
+      severity: "warning",
+      title: "Storefronts without all legal pages assigned",
+      hint:
+        "Assign imprint, terms, privacy, revocation and shipping pages under Settings → Basic " +
+        "information, per sales channel where they differ. Missing ones invite warning letters " +
+        "in Germany.",
+      run: async () => {
+        const channels = await client.search<Raw>("sales-channel", {
+          page: 1,
+          limit: 50,
+          filter: [equals("active", true), equals("typeId", STOREFRONT_TYPE_ID)],
+          includes: { sales_channel: ["id", "name", "translated", "typeId", "active"] },
+        });
+        const storefronts = channels.items.filter(
+          (channel) => channel.typeId === STOREFRONT_TYPE_ID && channel.active !== false,
+        );
+        const items: Array<{
+          salesChannelId: string;
+          salesChannel: string | null;
+          missing: string[];
+        }> = [];
+        for (const channel of storefronts) {
+          const id = typeof channel.id === "string" ? channel.id : null;
+          if (!id) continue;
+          const config = await client.request<Raw>(
+            `/api/_action/system-config?domain=core.basicInformation&salesChannelId=${id}&inherit=1`,
+          );
+          const missing = LEGAL_PAGES.filter(
+            ({ key }) => typeof config[`core.basicInformation.${key}`] !== "string",
+          ).map(({ label }) => label);
+          if (missing.length > 0) {
+            items.push({ salesChannelId: id, salesChannel: translated(channel, "name"), missing });
+          }
+        }
+        return { count: items.length, items: items.slice(0, limit) };
+      },
+    },
+    {
+      id: "products_without_delivery_time",
+      severity: "info",
+      title: "Active products without a delivery time",
+      hint:
+        "German price regulations expect a stated delivery time; assign one under the product's " +
+        "deliverability settings.",
+      run: productCheck(
+        [equals("active", true), NO_CHILDREN, equals("deliveryTimeId", null)],
+        "productNumber",
+      ),
+    },
+    {
       id: "plugins_outdated",
       severity: "info",
       title: "Extensions with an available update",
@@ -346,9 +408,10 @@ export const shopAudit = defineTool({
   description:
     "Run a one-shot health check across the shop and return prioritised findings: paid orders " +
     "not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock " +
-    "products, products without cover image, expired promotions still active, sales channels in " +
-    "maintenance mode and extensions with pending updates. Each finding has a severity, total " +
-    "count, sample items and a hint. " +
+    "products, products without cover image or delivery time, expired promotions still active, " +
+    "sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, " +
+    "privacy, revocation, shipping) and extensions with pending updates. Each finding has a " +
+    "severity, total count, sample items and a hint. " +
     "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
     "labelling) appear to be covered by an installed extension, guessed from extension names. " +
     "Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.",

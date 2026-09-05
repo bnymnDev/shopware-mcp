@@ -1,0 +1,11 @@
+{
+  "core.basicInformation.email": "shop@example.com",
+  "core.basicInformation.shopName": "Demostore",
+  "core.basicInformation.contactPage": "01a068fb6d2d728984898aa5eebb5987",
+  "core.basicInformation.shippingPaymentInfoPage": "01a068fb6db472c8b1a1995df512f2d0",
+  "core.basicInformation.tosPage": "01a068fb6db871afbaba3f163ae76082",
+  "core.basicInformation.revocationPage": "01a068fb6dbd715b9ea321b26c7c7eab",
+  "core.basicInformation.privacyPage": "01a068fb6dc573919bb90cef8a7bf771",
+  "core.basicInformation.imprintPage": "01a068fb6dcc718493e6ffb1db6dc3af",
+  "core.basicInformation.useDefaultCookieConsent": true
+}

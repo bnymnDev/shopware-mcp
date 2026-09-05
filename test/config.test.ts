@@ -66,6 +66,13 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...base, SHOPWARE_MCP_HTTP_TOKEN: "short" })).toThrow(/16/);
   });
 
+  it("parses the write budget", () => {
+    expect(loadConfig(base).maxWrites).toBe(0);
+    expect(loadConfig({ ...base, SHOPWARE_MCP_MAX_WRITES: "25" }).maxWrites).toBe(25);
+    expect(() => loadConfig({ ...base, SHOPWARE_MCP_MAX_WRITES: "-1" })).toThrow(ConfigError);
+    expect(loadConfig(base, { maxWrites: 3 }).maxWrites).toBe(3);
+  });
+
   it("lets CLI overrides win over env", () => {
     const config = loadConfig({ ...base, SHOPWARE_MCP_ALLOW_WRITE: "false" }, { allowWrite: true });
     expect(config.allowWrite).toBe(true);

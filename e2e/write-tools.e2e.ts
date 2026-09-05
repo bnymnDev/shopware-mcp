@@ -1,6 +1,12 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import {
+  documentDownload,
+  orderDocumentCreate,
+  orderDocumentsList,
+} from "../src/tools/documents.js";
+import {
   orderDeliveryTransition,
+  orderNote,
   ordersGet,
   ordersSearch,
   orderTransactionTransition,
@@ -119,6 +125,54 @@ describe.skipIf(!E2E_ENABLED)("write tools against dockware", () => {
       ctx,
     );
     expect(restored).toMatchObject({ dryRun: false, result: { paymentState: "open" } });
+  });
+
+  it("order_note appends and the original comment is restored", async () => {
+    const orders = await ordersSearch.handler({ page: 1, limit: 1 }, ctx);
+    const orderId = orders.items[0]?.id;
+    if (!orderId) return;
+    const before = await ordersGet.handler({ orderId }, ctx);
+    const original = (before as { internalComment?: string | null }).internalComment ?? "";
+    const appended = await orderNote.handler(
+      { orderId, note: "e2e note", mode: "append", dryRun: false },
+      ctx,
+    );
+    expect(appended).toMatchObject({ dryRun: false });
+    expect(appended.dryRun ? "" : appended.result.internalComment).toMatch(/e2e note$/);
+    const restored = await orderNote.handler(
+      { orderId, note: original || " ", mode: "replace", dryRun: false },
+      ctx,
+    );
+    expect(restored).toMatchObject({ dryRun: false });
+  });
+
+  it("creates a delivery note when none exists, lists it, and downloads a PDF", async () => {
+    const orders = await ordersSearch.handler({ page: 1, limit: 1 }, ctx);
+    const orderId = orders.items[0]?.id;
+    if (!orderId) return;
+    const listed = await orderDocumentsList.handler({ orderId }, ctx);
+    let documentId = listed.items.find((item) => item.type === "delivery_note")?.id ?? null;
+    if (!documentId) {
+      const dry = await orderDocumentCreate.handler(
+        { orderId, type: "delivery_note", dryRun: true },
+        ctx,
+      );
+      expect(dry).toMatchObject({ dryRun: true, wouldSend: { method: "POST" } });
+      const created = await orderDocumentCreate.handler(
+        { orderId, type: "delivery_note", comment: "e2e", dryRun: false },
+        ctx,
+      );
+      expect(created).toMatchObject({ dryRun: false, result: { type: "delivery_note" } });
+      documentId = created.dryRun ? null : created.result.id;
+    }
+    expect(documentId).toMatch(/^[0-9a-f]{32}$/);
+    const again = await orderDocumentsList.handler({ orderId }, ctx);
+    expect(again.items.some((item) => item.id === documentId)).toBe(true);
+    const download = await documentDownload.handler({ documentId: documentId ?? "" }, ctx);
+    expect(download.mimeType).toBe("application/pdf");
+    expect(download.bytes).toBeGreaterThan(1000);
+    const bytes = Buffer.from(download.attachments[0]?.base64 ?? "", "base64");
+    expect(bytes.subarray(0, 4).toString()).toBe("%PDF");
   });
 
   it("promotion_toggle round-trips when a promotion exists", async () => {

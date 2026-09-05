@@ -2,6 +2,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { categoriesList } from "../src/tools/categories.js";
 import { customersGet, customersSearch } from "../src/tools/customers.js";
+import { documentDownload, orderDocumentsList } from "../src/tools/documents.js";
 import { mapOrderSummary, ordersGet, ordersSearch } from "../src/tools/orders.js";
 import { pluginsList } from "../src/tools/plugins.js";
 import { productsGet, productsSearch } from "../src/tools/products.js";
@@ -15,6 +16,7 @@ import {
   invoke,
   lastSearch,
   mock,
+  PDF_BYTES,
   requests,
   SHOP_URL,
   searchHandler,
@@ -458,5 +460,52 @@ describe("order summaries", () => {
       ],
     });
     expect(summary.deliveryState).toBe("open");
+  });
+});
+
+describe("order documents", () => {
+  const DOCUMENT = "d0c0d0c0d0c0d0c0d0c0d0c0d0c0d0c0";
+
+  it("lists an order's documents by order number", async () => {
+    mock.use(searchHandler({ order: "order-detail", document: "documents" }));
+    const result = await invoke(orderDocumentsList, { orderNumber: "10042" }, ctx);
+    expect(result).toMatchObject({ orderNumber: "10042", total: 1 });
+    expect(result.items[0]).toEqual({
+      id: DOCUMENT,
+      type: "invoice",
+      documentNumber: "1000",
+      fileType: "pdf",
+      sent: false,
+      static: false,
+      orderId: "f60718293a4b5c6d7e8f010203040506",
+      orderNumber: "10042",
+      createdAt: "2024-06-03T09:00:00.000+00:00",
+    });
+    expect(lastSearch("document").body).toMatchObject({
+      filter: [{ type: "equals", field: "orderId", value: "f60718293a4b5c6d7e8f010203040506" }],
+    });
+  });
+
+  it("downloads a document as an attachment with the PDF bytes", async () => {
+    mock.use(searchHandler({ document: "documents" }));
+    const result = await invoke(documentDownload, { documentId: DOCUMENT }, ctx);
+    expect(result).toMatchObject({
+      id: DOCUMENT,
+      type: "invoice",
+      documentNumber: "1000",
+      mimeType: "application/pdf",
+      bytes: PDF_BYTES.length,
+    });
+    const [attachment] = result.attachments;
+    expect(attachment).toMatchObject({
+      uri: `shopware://document/${DOCUMENT}`,
+      name: "invoice-1000.pdf",
+      mimeType: "application/pdf",
+    });
+    expect(Buffer.from(attachment?.base64 ?? "", "base64").toString()).toBe(PDF_BYTES);
+    const download = requests.find((r) => r.path.startsWith("/api/_action/document/"));
+    expect(download?.path).toBe(
+      `/api/_action/document/${DOCUMENT}/RJLFFs1JhlntrA1dVNuHLkrqpm6jFS0v?download=1`,
+    );
   });
 });

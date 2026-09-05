@@ -393,3 +393,47 @@ export const orderTransactionTransition = defineTool({
     );
   },
 });
+
+export const orderNote = defineTool({
+  name: "order_note",
+  title: "Add internal order note (guarded)",
+  description:
+    "Write an internal note on an order (Shopware's internal comment, shown in the admin, never " +
+    "to the customer). append (default) adds a dated line below the existing note, replace " +
+    "overwrites it. Use it for 'note on 10042: customer called, ships Monday'. dryRun=true " +
+    "(default) returns the request that would be sent; call again with dryRun=false to apply. " +
+    "Returns { dryRun, wouldSend } or { dryRun: false, result: { orderId, orderNumber, " +
+    "internalComment } }.",
+  write: true,
+  inputSchema: {
+    orderId: idSchema.describe("Order UUID"),
+    note: z.string().trim().min(1).max(5000),
+    mode: z.enum(["append", "replace"]).default("append"),
+    dryRun: dryRunField,
+  },
+  handler: async (input, ctx) => {
+    const order = await ctx.client.findById<Raw>("order", input.orderId, {
+      includes: { order: ["id", "orderNumber", "internalComment"] },
+    });
+    const current = (str(order.internalComment) ?? "").trimEnd();
+    const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+    const internalComment =
+      input.mode === "replace"
+        ? input.note
+        : [current, `${stamp} ${input.note}`].filter(Boolean).join("\n");
+    const path = `/api/order/${input.orderId}`;
+    const body = { internalComment };
+    if (input.dryRun) {
+      const dry: DryRunResult = {
+        dryRun: true,
+        wouldSend: { method: "PATCH", url: ctx.client.url(path), body },
+      };
+      return dry;
+    }
+    await ctx.client.request(path, { method: "PATCH", body });
+    return {
+      dryRun: false as const,
+      result: { orderId: input.orderId, orderNumber: str(order.orderNumber), internalComment },
+    };
+  },
+});

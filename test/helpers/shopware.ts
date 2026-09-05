@@ -9,6 +9,8 @@ import { type Config, MAX_LIMIT } from "../../src/config.js";
 import type { ToolContext, ToolDefinition } from "../../src/tools/types.js";
 
 export const SHOP_URL = "https://shop.test";
+export const DOCUMENT_ID = "d0c0d0c0d0c0d0c0d0c0d0c0d0c0d0c0";
+export const PDF_BYTES = "%PDF-1.7 shopware-mcp test document";
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "..", "fixtures");
 const cache = new Map<string, unknown>();
@@ -127,6 +129,20 @@ export function defaultHandlers(): HttpHandler[] {
       await capture(request);
       return HttpResponse.json({ technicalName: "completed", name: "Done" });
     }),
+    http.get(`${SHOP_URL}/api/_action/system-config`, async ({ request }) => {
+      await capture(request);
+      return HttpResponse.json(fixture("system-config"));
+    }),
+    http.post(`${SHOP_URL}/api/_action/order/document/:type/create`, async ({ request }) => {
+      await capture(request);
+      return HttpResponse.json({ data: [{ documentId: DOCUMENT_ID }], errors: [] });
+    }),
+    http.get(`${SHOP_URL}/api/_action/document/:id/:code`, async ({ request }) => {
+      await capture(request);
+      return HttpResponse.arrayBuffer(new TextEncoder().encode(PDF_BYTES).buffer, {
+        headers: { "content-type": "application/pdf" },
+      });
+    }),
     searchHandler(),
   ];
 }
@@ -143,6 +159,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     defaultLimit: 20,
     maxLimit: MAX_LIMIT,
     timeoutMs: 30_000,
+    maxWrites: 0,
     logLevel: "error",
     ...overrides,
   };

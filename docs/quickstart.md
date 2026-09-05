@@ -10,6 +10,17 @@ Five minutes from zero to "which products are low on stock?".
 
 ## 2. Run the server
 
+The quickest path is the wizard, which tests the credentials and prints (or writes) the host configuration:
+
+```bash
+npx shopware-mcp init
+npx shopware-mcp init --for cursor --write     # merge into ~/.cursor/mcp.json, backup kept
+```
+
+`npx shopware-mcp doctor` then tells you, per tool, whether the integration may use it and which privilege is missing; add `--allow-write` to include the write tools and `--json` for machines.
+
+By hand:
+
 ```bash
 export SHOPWARE_URL=https://shop.example.com
 export SHOPWARE_CLIENT_ID=SWIA...
@@ -64,6 +75,8 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 - "Which customers ordered more than 10 times?" → `customers_search` with a `range` filter on `orderCount`.
 - "Is the PayPal plugin up to date?" → `plugins_list`.
 - "How was last week against the week before?" → `sales_report` with `compareWithPrevious: true`, or the `weekly_review` prompt.
+- "Send me the invoice for 10042." → `order_documents_list`, then `document_download`; the PDF arrives as an embedded resource.
+- "Note on 10042: customer called, ships Monday." → `order_note`.
 
 ## 5. Enable writes (optional)
 
@@ -71,7 +84,7 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 npx shopware-mcp --allow-write
 ```
 
-Now `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition` and `promotion_toggle` are registered. Each defaults to `dryRun: true`:
+Now `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create` and `promotion_toggle` are registered. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process:
 
 ```
 stock_set { productId: "…", stock: 3 }                  → { dryRun: true, wouldSend: { method: "PATCH", url: "…/api/product/…", body: { stock: 3 } } }

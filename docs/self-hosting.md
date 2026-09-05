@@ -62,6 +62,10 @@ Passing any argument replaces the default `--http ...` command, so the example a
 
 Build locally: `docker build -t shopware-mcp .`
 
+## Checking a deployment
+
+`shopware-mcp doctor` (with the same environment as the server) reports the connection, the integration's role and, per tool, whether it will work. `--json` prints the report as JSON for a health dashboard; the exit code is 1 when a read tool is blocked. Set `SHOPWARE_MCP_MAX_WRITES` on shared deployments so one runaway agent cannot perform more than a known number of real writes per process.
+
 ## Shopware permissions
 
 Create a dedicated Integration and role. Minimal read role: `product`, `product_manufacturer`, `category`, `order`, `order_line_item`, `order_transaction`, `order_delivery`, `customer`, `customer_address`, `promotion`, `promotion_discount`, `plugin`, `sales_channel`, `currency`, `language`, `payment_method` (viewer). For `plugins_list` upgrade information the integration additionally needs the `system:plugin:maintain` privilege; without it the tool still works and reports a warning.

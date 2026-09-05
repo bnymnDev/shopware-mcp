@@ -49,10 +49,10 @@ einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat:
 | | |
 |---|---|
 | **Kuratierte Werkzeuge** | Produkte, Bestellungen, Kunden, Kategorien, Aktionen, Plugins, Bestand, Verkaufskanäle: sechzehn Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Ein Audit** | `shop_audit` prüft neun Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand oder ohne Bild, abgelaufene Aktionen, Kanäle im Wartungsmodus, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
+| **Ein Audit** | `shop_audit` prüft elf Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, ohne Bild oder ohne Lieferzeit, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
 | **Ein Report** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
 | **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
-| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren: sechs schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
+| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen: acht schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
 
 <p align="center">
   <picture>
@@ -108,13 +108,25 @@ Compliance-Frage hat eine Antwort.
 
 ![Plugin-Werkzeuge: tools/list wächst von 16 auf 20, dann beantwortet merqo_health eine Compliance-Frage](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/plugins.svg)
 
+**Vorher wissen, was geht.** `shopware-mcp doctor` prüft, was die Integration lesen darf, liest ihre Rolle für die Schreibrechte, wo das erlaubt ist, und nennt je Werkzeug das fehlende Recht. Ein Administrator bekommt lauter Haken, eine Support-Rolle erfährt genau, was zu vergeben ist.
+
+![shopware-mcp doctor: alle Werkzeuge bereit für eine Administrator-Integration, dann eine Support-Integration mit gesperrten Kunden-Werkzeugen](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/doctor.svg)
+
 ---
 
 ## In 60 Sekunden
 
 **1.** Im Shopware-Admin eine Integration anlegen: *Einstellungen → System → Integrationen → Integration hinzufügen*. Zugangsschlüssel-ID und Geheimschlüssel kopieren; der Geheimschlüssel wird nur einmal angezeigt. Für einen Entwicklungsshop *Administrator* ankreuzen, in Produktion eine Leserolle vergeben ([welche Rechte](docs/self-hosting.md#shopware-permissions)).
 
-**2.** Server starten:
+**2.** Den Assistenten die Zugangsdaten prüfen und die Host-Konfiguration schreiben lassen:
+
+```bash
+npx shopware-mcp init                  # fragt URL, Schlüssel und Geheimnis ab, testet sie, zeigt die Konfiguration
+npx shopware-mcp init --for claude-desktop --write   # oder trägt sie direkt in die Datei des Hosts ein
+npx shopware-mcp doctor                # welche Werkzeuge diese Integration nutzen kann, und was fehlt
+```
+
+Oder den Server von Hand starten:
 
 ```bash
 export SHOPWARE_URL=https://shop.example.com
@@ -126,7 +138,7 @@ npx shopware-mcp --http --port 3333    # Streamable HTTP auf http://127.0.0.1:33
 npx shopware-mcp --allow-write         # zusätzlich die abgesicherten Schreibwerkzeuge
 ```
 
-**3.** Host verbinden:
+**3.** Host verbinden (oder `init --write` machen lassen):
 
 <details>
 <summary><b>Claude Desktop</b></summary>
@@ -208,6 +220,9 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 | „Bestellung 10042 ist mit DHL raus, Sendungsnummer 00340434." | `order_delivery_transition { transition: "ship", trackingCodes }` |
 | „Die Überweisung zu 10038 ist da." | `order_transaction_transition { transition: "paid" }` |
 | „Wie war die letzte Woche im Vergleich zur Vorwoche?" | `sales_report { compareWithPrevious: true }`, oder der Prompt `weekly_review` |
+| „Schick mir die Rechnung zu 10042." | `order_documents_list`, dann liefert `document_download` die PDF |
+| „Notiz zu 10042: Kunde hat angerufen, Versand Montag." | `order_note` |
+| „Welche Werkzeuge scheitern mit dieser Integration?" | kein Werkzeug: `npx shopware-mcp doctor` |
 
 Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`) auf Shopware-Feldpfaden, Assoziationen wie `manufacturer.name` eingeschlossen. Was sich in der Admin-API filtern lässt, lässt sich auch hier filtern. Der [Spickzettel](docs/quickstart.md#filters-cheat-sheet) zeigt die üblichen Fälle.
 
@@ -224,6 +239,8 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`products_get`](docs/tools.md#products_get) | read | Get product |
 | [`orders_search`](docs/tools.md#orders_search) | read | Search orders |
 | [`orders_get`](docs/tools.md#orders_get) | read | Get order |
+| [`order_documents_list`](docs/tools.md#order_documents_list) | read | List order documents |
+| [`document_download`](docs/tools.md#document_download) | read | Download document PDF |
 | [`customers_search`](docs/tools.md#customers_search) | read | Search customers |
 | [`customers_get`](docs/tools.md#customers_get) | read | Get customer |
 | [`categories_list`](docs/tools.md#categories_list) | read | List categories |
@@ -239,6 +256,8 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`order_state_transition`](docs/tools.md#order_state_transition) | write (guarded) | Transition order state (guarded) |
 | [`order_delivery_transition`](docs/tools.md#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
 | [`order_transaction_transition`](docs/tools.md#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
+| [`order_note`](docs/tools.md#order_note) | write (guarded) | Add internal order note (guarded) |
+| [`order_document_create`](docs/tools.md#order_document_create) | write (guarded) | Create order document (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 <!-- TOOLS:END -->
 
@@ -246,8 +265,8 @@ Jeder Parameter jedes Werkzeugs: [docs/tools.md](docs/tools.md). Suchen liefern
 `{ total, page, limit, items }` mit exakten Trefferzahlen, `limit` ist auf 50
 begrenzt, und Fehler kommen als `{ error: { status, code, detail } }` zurück.
 
-Ressourcen: `shopware://shop`, `shopware://sales-channels`.
-Prompts: `order_summary`, `low_stock_report`, `weekly_review`.
+Ressourcen: `shopware://shop`, `shopware://sales-channels`, `shopware://order/{orderNumber}`,
+`shopware://product/{productNumber}`. Prompts: `order_summary`, `low_stock_report`, `weekly_review`.
 
 **Plugin-Werkzeuge.** Beim Start fragt der Server im Hintergrund, welche
 Erweiterungen installiert und aktiv sind, und registriert zusätzliche Werkzeuge
@@ -264,8 +283,9 @@ unter `src/extensions/`; Pull Requests sind willkommen.
 ## Sicherheit
 
 - **Standardmäßig nur lesend.** Ohne `--allow-write` (oder `SHOPWARE_MCP_ALLOW_WRITE=true`) werden die Schreibwerkzeuge gar nicht registriert. Was ein Agent nicht sieht, kann er nicht aufrufen.
-- **Jeder Schreibzugriff ist zuerst ein Probelauf.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition` und `promotion_toggle` stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
-- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Sonst nichts.
+- **Jeder Schreibzugriff ist zuerst ein Probelauf.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create` und `promotion_toggle` stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
+- **Ein Schreib-Budget.** `SHOPWARE_MCP_MAX_WRITES=20` weist den einundzwanzigsten echten Schreibzugriff eines Prozesses mit `WRITE_BUDGET_EXHAUSTED` ab; Probeläufe bleiben frei. Kein Prompt kann das aufheben.
+- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie. Sonst nichts.
 - **Bereinigte Lesezugriffe.** `entity_search` entfernt Passwörter, Schlüssel, Tokens und Hashes aus jeder Antwort und verweigert Entitäten, die Zugangsdaten oder Systeminterna enthalten: Benutzer, Integrationen, ACL-Rollen, Apps, Systemkonfiguration.
 - **Nirgends Geheimnisse.** Zugangsdaten erscheinen nie in Ausgaben, Logs oder Fehlermeldungen. Logs gehen nur nach stderr.
 - **Keine Telemetrie.** Der Server spricht mit Ihrem Shop und mit Ihrem Host. Mit niemandem sonst.
@@ -284,6 +304,7 @@ Etwas gefunden? Siehe [SECURITY.md](SECURITY.md).
 | `SHOPWARE_CLIENT_ID` | ja | Zugangsschlüssel-ID der Integration |
 | `SHOPWARE_CLIENT_SECRET` | ja | Geheimschlüssel der Integration |
 | `SHOPWARE_MCP_ALLOW_WRITE` | nein | `true` registriert die Schreibwerkzeuge. Standard: aus |
+| `SHOPWARE_MCP_MAX_WRITES` | nein | Echte Schreibzugriffe, die ein Prozess insgesamt ausführen darf; `0` (Standard) heißt keine Grenze |
 | `SHOPWARE_MCP_DEFAULT_LIMIT` | nein | Standard-Seitengröße für Suchen (Standard 20, maximal 50) |
 | `SHOPWARE_MCP_EXTENSIONS` | nein | `false` schaltet Plugin-Werkzeuge und die Erweiterungssuche beim Start ab |
 | `SHOPWARE_LANGUAGE_ID` | nein | Sprach-UUID für übersetzte Felder (`sw-language-id`). Standard: Shopsprache |
@@ -291,7 +312,7 @@ Etwas gefunden? Siehe [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_HTTP_TOKEN` | nein | Bearer-Token, den der HTTP-Transport auf `/mcp` verlangt (mindestens 16 Zeichen). Standard: keiner |
 | `SHOPWARE_MCP_LOG_LEVEL` | nein | `error` (Standard), `warn`, `info`, `debug`. Logs gehen nur nach stderr |
 
-CLI-Flags überschreiben die Umgebung: `--allow-write`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`.
+CLI-Flags überschreiben die Umgebung: `--allow-write`, `--max-writes <n>`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`. Befehle: `doctor [--json]` und `init [--for <host>] [--write]`.
 
 ---
 

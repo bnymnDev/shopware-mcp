@@ -1,12 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { toErrorShape } from "./errors.js";
+import { ShopwareMcpError, toErrorShape } from "./errors.js";
 import { detectExtensionTools } from "./extensions/index.js";
 import { logger } from "./logger.js";
 import { registerPrompts } from "./prompts/index.js";
 import { registerResources } from "./resources/index.js";
 import { tools } from "./tools/index.js";
-import type { ToolContext, ToolDefinition } from "./tools/types.js";
+import type { Attachment, ToolContext, ToolDefinition } from "./tools/types.js";
 import { NAME, VERSION } from "./version.js";
 
 export const SERVER_INSTRUCTIONS =
@@ -20,15 +20,63 @@ export const SERVER_INSTRUCTIONS =
   "come back as { error: { status, code, detail } }. Some shops expose extra tools for their " +
   "installed extensions; call tools/list again if a tool you were told about is missing.";
 
-function toolResult(value: unknown, isError = false): CallToolResult {
-  const result: CallToolResult = {
-    content: [{ type: "text", text: JSON.stringify(value, null, 2) }],
+const isAttachment = (value: unknown): value is Attachment =>
+  typeof value === "object" &&
+  value !== null &&
+  typeof (value as Attachment).uri === "string" &&
+  typeof (value as Attachment).mimeType === "string" &&
+  typeof (value as Attachment).base64 === "string";
+
+/** Split a tool result into the JSON the model reads and the files the host receives. */
+function splitAttachments(value: unknown): { json: unknown; attachments: Attachment[] } {
+  if (!value || typeof value !== "object" || Array.isArray(value))
+    return { json: value, attachments: [] };
+  const record = value as Record<string, unknown>;
+  if (!Array.isArray(record.attachments)) return { json: value, attachments: [] };
+  const attachments = record.attachments.filter(isAttachment);
+  const json = {
+    ...record,
+    attachments: attachments.map(({ base64: _base64, ...meta }) => meta),
   };
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    result.structuredContent = value as Record<string, unknown>;
+  return { json, attachments };
+}
+
+function toolResult(value: unknown, isError = false): CallToolResult {
+  const { json, attachments } = splitAttachments(value);
+  const result: CallToolResult = {
+    content: [{ type: "text", text: JSON.stringify(json, null, 2) }],
+  };
+  for (const attachment of attachments) {
+    result.content.push({
+      type: "resource",
+      resource: { uri: attachment.uri, mimeType: attachment.mimeType, blob: attachment.base64 },
+    });
+  }
+  if (json && typeof json === "object" && !Array.isArray(json)) {
+    result.structuredContent = json as Record<string, unknown>;
   }
   if (isError) result.isError = true;
   return result;
+}
+
+/** Real writes performed per process, for the optional SHOPWARE_MCP_MAX_WRITES cap. */
+const writesUsed = new WeakMap<ToolContext, number>();
+
+/** Count a real write against the cap, or refuse it. Dry runs are free. */
+function chargeWrite(tool: ToolDefinition, args: unknown, ctx: ToolContext): void {
+  const cap = ctx.config.maxWrites;
+  if (!tool.write || cap <= 0) return;
+  if ((args as { dryRun?: unknown } | undefined)?.dryRun !== false) return;
+  const used = writesUsed.get(ctx) ?? 0;
+  if (used >= cap) {
+    throw new ShopwareMcpError(
+      403,
+      "WRITE_BUDGET_EXHAUSTED",
+      `This process has used its ${cap} real writes (SHOPWARE_MCP_MAX_WRITES); restart it or raise the cap`,
+    );
+  }
+  writesUsed.set(ctx, used + 1);
+  if (used + 1 === cap) logger.warn("write budget exhausted", { tool: tool.name, cap });
 }
 
 /** Tool names already registered per server, so a late detection cannot register a name twice. */
@@ -50,6 +98,7 @@ function registerTool(server: McpServer, tool: ToolDefinition, ctx: ToolContext)
     async (args) => {
       try {
         // The SDK has already validated `args` against `tool.inputSchema`.
+        chargeWrite(tool, args, ctx);
         const value = await tool.handler(args as Parameters<typeof tool.handler>[0], ctx);
         return toolResult(value);
       } catch (error) {

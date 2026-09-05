@@ -61,6 +61,19 @@ export function defineTool<Shape extends ZodRawShape, Result>(
   };
 }
 
+/**
+ * A file returned alongside a tool result. The server hands it to the host as an embedded
+ * resource and strips the base64 payload from the JSON text, so the model sees the metadata
+ * and the host gets the bytes.
+ */
+export interface Attachment {
+  uri: string;
+  name: string;
+  mimeType: string;
+  bytes: number;
+  base64: string;
+}
+
 /** One HTTP request a write tool would send. */
 export interface WouldSend {
   method: string;

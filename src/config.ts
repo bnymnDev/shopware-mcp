@@ -60,6 +60,10 @@ const envSchema = z.object({
     emptyToUndefined,
     z.coerce.number().int().min(1_000).max(600_000).default(DEFAULT_TIMEOUT_MS),
   ),
+  SHOPWARE_MCP_MAX_WRITES: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().int().min(0).max(1_000_000).default(0),
+  ),
   SHOPWARE_MCP_HTTP_TOKEN: z.preprocess(
     emptyToUndefined,
     z.string().trim().min(16, "SHOPWARE_MCP_HTTP_TOKEN must be at least 16 characters").optional(),
@@ -83,12 +87,15 @@ export interface Config {
   timeoutMs: number;
   /** When set, the HTTP transport requires `Authorization: Bearer <token>` on /mcp. */
   httpToken?: string;
+  /** Real writes this process may perform in total; 0 means no cap. */
+  maxWrites: number;
   logLevel: LogLevel;
 }
 
 export interface ConfigOverrides {
   allowWrite?: boolean;
   extensions?: boolean;
+  maxWrites?: number;
   logLevel?: LogLevel;
 }
 
@@ -130,6 +137,7 @@ export function loadConfig(
     maxLimit: MAX_LIMIT,
     timeoutMs: values.SHOPWARE_MCP_TIMEOUT_MS,
     httpToken: values.SHOPWARE_MCP_HTTP_TOKEN,
+    maxWrites: overrides.maxWrites ?? values.SHOPWARE_MCP_MAX_WRITES,
     logLevel: overrides.logLevel ?? values.SHOPWARE_MCP_LOG_LEVEL,
   };
 }

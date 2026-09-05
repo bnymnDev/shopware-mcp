@@ -147,3 +147,19 @@ Every Admin API request carries an abort signal of `SHOPWARE_MCP_TIMEOUT_MS` (30
 ## Writes are retried only when a repeat cannot hurt
 
 The client retries once on 429 and 5xx, but only for requests that are safe to repeat: reads, searches and PATCHes, which set absolute values. A `POST` to a state transition is excluded, because a proxy can answer 502 after Shopware has already applied `paid` or `ship`; a retry would then be rejected as an illegal transition and the tool would report a failure for a write that succeeded. `RequestOptions.idempotent` overrides the default for the rare exception.
+
+## Documents travel as embedded resources
+
+`document_download` returns the PDF as an MCP embedded resource next to a JSON summary, and the server strips the base64 payload from the text the model reads. The host gets the file, the model gets the metadata, and a 200 KB invoice does not cost 270 KB of context. Files above 8 MB are refused rather than truncated, because a truncated PDF is worthless.
+
+## The doctor probes reads and reads the role for writes
+
+Shopware answers a search with 403 when a privilege is missing, so `doctor` learns what an integration may read by asking for one row of every entity the tools use. Write privileges cannot be probed without writing, so they come from the integration's ACL roles when `integration:read` allows it, and are reported as unknown otherwise. An administrator integration skips the probing. The verdict is Shopware's, not a table in this repository.
+
+## The write budget counts attempts
+
+`SHOPWARE_MCP_MAX_WRITES` counts every real write a process attempts, before it is sent, and never a dry run. Counting attempts rather than successes is the conservative choice for a cap that exists to bound damage; a failed request may still have changed something.
+
+## Legal pages are checked per storefront
+
+Basic information in Shopware is inherited per sales channel, so the audit asks the system-config route with `inherit=1` for every active storefront and reports the channels that miss imprint, terms, privacy, revocation or shipping information. Headless channels have no pages to link and are skipped.

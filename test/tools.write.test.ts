@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { orderDocumentCreate } from "../src/tools/documents.js";
 import {
   orderDeliveryTransition,
+  orderNote,
   orderStateTransition,
   orderTransactionTransition,
 } from "../src/tools/orders.js";
@@ -154,6 +156,56 @@ describe("dry runs", () => {
     expect(writeRequests()).toHaveLength(0);
   });
 
+  it("order_note appends a dated line and can replace", async () => {
+    mock.use(
+      searchHandler({
+        order: () => ({
+          total: 1,
+          data: [{ id: ORDER, orderNumber: "10042", internalComment: "Fragile goods " }],
+        }),
+      }),
+    );
+    const appended = await invoke(
+      orderNote,
+      { orderId: ORDER, note: "Customer called, ships Monday", dryRun: true },
+      ctx,
+    );
+    expect(appended).toMatchObject({
+      dryRun: true,
+      wouldSend: { method: "PATCH", url: `https://shop.test/api/order/${ORDER}` },
+    });
+    const body = (appended as { wouldSend: { body: { internalComment: string } } }).wouldSend.body;
+    expect(body.internalComment).toMatch(
+      /^Fragile goods\n\d{4}-\d{2}-\d{2} \d{2}:\d{2} Customer called, ships Monday$/,
+    );
+    const replaced = await invoke(
+      orderNote,
+      { orderId: ORDER, note: "Fresh start", mode: "replace", dryRun: true },
+      ctx,
+    );
+    expect(replaced).toMatchObject({ wouldSend: { body: { internalComment: "Fresh start" } } });
+    expect(writeRequests()).toHaveLength(0);
+  });
+
+  it("order_document_create returns the generator request and sends nothing", async () => {
+    const result = await invoke(
+      orderDocumentCreate,
+      { orderId: ORDER, type: "invoice", comment: "Thanks", dryRun: true },
+      ctx,
+    );
+    expect(result).toEqual({
+      dryRun: true,
+      wouldSend: {
+        method: "POST",
+        url: "https://shop.test/api/_action/order/document/invoice/create",
+        body: [
+          { orderId: ORDER, fileType: "pdf", static: false, config: { documentComment: "Thanks" } },
+        ],
+      },
+    });
+    expect(writeRequests()).toHaveLength(0);
+  });
+
   it("promotion_toggle returns the request and sends nothing", async () => {
     const result = await invoke(
       promotionToggle,
@@ -290,6 +342,42 @@ describe("real writes", () => {
       { method: "POST", path: `/api/_action/order_transaction/${TRANSACTION}/state/remind` },
     ]);
     expect(result).toMatchObject({ dryRun: false, result: { orderNumber: "10042" } });
+  });
+
+  it("order_note patches the internal comment", async () => {
+    mock.use(searchHandler({ order: "order-detail" }));
+    const result = await invoke(
+      orderNote,
+      { orderId: ORDER, note: "Refund approved", mode: "replace", dryRun: false },
+      ctx,
+    );
+    expect(writeRequests()[0]).toMatchObject({
+      method: "PATCH",
+      path: `/api/order/${ORDER}`,
+      body: { internalComment: "Refund approved" },
+    });
+    expect(result).toMatchObject({
+      dryRun: false,
+      result: { orderNumber: "10042", internalComment: "Refund approved" },
+    });
+  });
+
+  it("order_document_create generates and re-reads the document", async () => {
+    mock.use(searchHandler({ document: "documents" }));
+    const result = await invoke(
+      orderDocumentCreate,
+      { orderId: ORDER, type: "invoice", dryRun: false },
+      ctx,
+    );
+    expect(writeRequests()[0]).toMatchObject({
+      method: "POST",
+      path: "/api/_action/order/document/invoice/create",
+      body: [{ orderId: ORDER, fileType: "pdf", static: false, config: {} }],
+    });
+    expect(result).toMatchObject({
+      dryRun: false,
+      result: { type: "invoice", documentNumber: "1000", orderNumber: "10042" },
+    });
   });
 
   it("promotion_toggle patches and re-fetches", async () => {

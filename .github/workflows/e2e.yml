@@ -7,8 +7,16 @@ on:
 
 jobs:
   e2e:
+    name: e2e (dockware ${{ matrix.shopware }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest supported line and the newest release.
+        shopware: ["6.6.10.6", "latest"]
+    env:
+      DOCKWARE_TAG: ${{ matrix.shopware }}
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6

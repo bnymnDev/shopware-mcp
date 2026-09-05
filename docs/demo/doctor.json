@@ -1,0 +1,121 @@
+{
+  "title": "shopware-mcp · doctor",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp doctor --allow-write"
+    },
+    {
+      "kind": "note",
+      "text": "Shop         http://127.0.0.1:8000 (Shopware 6.7.13.1 Community)"
+    },
+    {
+      "kind": "note",
+      "text": "Integration  shopware-mcp e2e, administrator"
+    },
+    {
+      "kind": "blank"
+    },
+    {
+      "kind": "note",
+      "text": "Tools"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} shop_info"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} sales_channels_list"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} products_search"
+    },
+    {
+      "kind": "note",
+      "text": "  … 15 more read tools {green:✓}"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} stock_set                     (write)"
+    },
+    {
+      "kind": "note",
+      "text": "  … 7 more write tools {green:✓}"
+    },
+    {
+      "kind": "blank"
+    },
+    {
+      "kind": "note",
+      "text": "Result       18 of 18 read tools ready, 8 of 8 write tools ready"
+    },
+    {
+      "kind": "pause",
+      "ms": 1400
+    },
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp doctor --allow-write     # same shop, an integration with a support role"
+    },
+    {
+      "kind": "note",
+      "text": "Shop         http://127.0.0.1:8000 (Shopware 6.7.13.1 Community)"
+    },
+    {
+      "kind": "note",
+      "text": "Integration  role not readable, reads probed"
+    },
+    {
+      "kind": "blank"
+    },
+    {
+      "kind": "note",
+      "text": "Tools"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} orders_search"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} orders_get"
+    },
+    {
+      "kind": "note",
+      "text": "  {red:✗} customers_search    customer:read missing (FRAMEWORK__MISSING_PRIVILEGE_ERROR (HTTP 403))"
+    },
+    {
+      "kind": "note",
+      "text": "  {red:✗} customers_get       customer:read missing (FRAMEWORK__MISSING_PRIVILEGE_ERROR (HTTP 403))"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} plugins_list        reduced coverage: /api/_action/extension/installed refused"
+    },
+    {
+      "kind": "note",
+      "text": "  {green:✓} shop_audit          reduced coverage: /api/_action/system-config refused, …"
+    },
+    {
+      "kind": "note",
+      "text": "  {yellow:?} stock_set           (write)  reads work; the write privilege cannot be verified without writing"
+    },
+    {
+      "kind": "note",
+      "text": "  … 7 more write tools {yellow:?}"
+    },
+    {
+      "kind": "blank"
+    },
+    {
+      "kind": "note",
+      "text": "Result       16 of 18 read tools ready, 0 of 8 write tools ready"
+    },
+    {
+      "kind": "note",
+      "text": "Grant the missing privileges to the integration's role in Settings → System → Users & permissions, …"
+    }
+  ]
+}

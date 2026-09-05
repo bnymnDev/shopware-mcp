@@ -1,7 +1,8 @@
 # Local Shopware for end-to-end tests: `docker compose -f docker-compose.e2e.yml up -d --wait`
 services:
   shopware:
-    image: dockware/dev:latest
+    # DOCKWARE_TAG picks the Shopware version, e.g. 6.6.10.6; latest is the newest 6.7.
+    image: dockware/dev:${DOCKWARE_TAG:-latest}
     ports:
       - "8000:80"
     environment:

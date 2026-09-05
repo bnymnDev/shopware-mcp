@@ -25,6 +25,13 @@ export interface RequestOptions {
    * be sent twice.
    */
   idempotent?: boolean;
+  /** Return the raw bytes instead of parsing JSON, for PDFs and other files. */
+  binary?: boolean;
+}
+
+export interface BinaryResponse {
+  bytes: Uint8Array;
+  contentType: string | null;
 }
 
 export type Raw = Record<string, unknown>;
@@ -85,6 +92,18 @@ export class ShopwareClient {
     return this.send<T>(path, options, { authRetried: false, transientRetried: false });
   }
 
+  /** GET a file such as a document PDF; errors still arrive as parsed Shopware error bodies. */
+  async requestBinary(
+    path: string,
+    options: Omit<RequestOptions, "body" | "binary"> = {},
+  ): Promise<BinaryResponse> {
+    return this.send<BinaryResponse>(
+      path,
+      { ...options, binary: true },
+      { authRetried: false, transientRetried: false },
+    );
+  }
+
   private async send<T>(
     path: string,
     options: RequestOptions,
@@ -131,6 +150,13 @@ export class ShopwareClient {
     }
     let body: unknown;
     try {
+      if (options.binary && response.ok) {
+        const binary: BinaryResponse = {
+          bytes: new Uint8Array(await response.arrayBuffer()),
+          contentType: response.headers.get("content-type"),
+        };
+        return binary as T;
+      }
       body = await parseBody(response);
     } catch (cause) {
       // The shop answered with headers but stalled the body; the timeout also covers that.
