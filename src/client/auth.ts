@@ -1,4 +1,11 @@
-import { fromHttpResponse, networkError, ShopwareMcpError } from "../errors.js";
+import { DEFAULT_TIMEOUT_MS } from "../config.js";
+import {
+  fromHttpResponse,
+  isAbort,
+  networkError,
+  ShopwareMcpError,
+  timeoutError,
+} from "../errors.js";
 import { logger } from "../logger.js";
 import { defaultFetch, type FetchLike, parseBody } from "./fetch.js";
 
@@ -10,6 +17,7 @@ export interface AuthConfig {
   url: string;
   clientId: string;
   clientSecret: string;
+  timeoutMs?: number;
 }
 
 interface CachedToken {
@@ -44,13 +52,18 @@ export class TokenProvider {
     return this.inflight;
   }
 
-  /** Drop the cached token, e.g. after a 401. The next `getToken()` fetches a fresh one. */
-  invalidate(): void {
+  /**
+   * Drop the cached token after a 401. When the rejected token is given, a token fetched in the
+   * meantime survives, so one straggling 401 cannot throw away a fresh credential.
+   */
+  invalidate(rejected?: string): void {
+    if (rejected !== undefined && this.cached && this.cached.token !== rejected) return;
     this.cached = undefined;
   }
 
   private async fetchToken(): Promise<string> {
     const url = `${this.config.url}/api/oauth/token`;
+    const timeoutMs = this.config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     let response: Response;
     try {
       response = await this.fetchImpl(url, {
@@ -61,12 +74,18 @@ export class TokenProvider {
           client_id: this.config.clientId,
           client_secret: this.config.clientSecret,
         }),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     } catch (cause) {
       logger.debug("token request failed (network)");
-      throw networkError(cause);
+      throw isAbort(cause) ? timeoutError(timeoutMs) : networkError(cause);
     }
-    const body = await parseBody(response);
+    let body: unknown;
+    try {
+      body = await parseBody(response);
+    } catch (cause) {
+      throw isAbort(cause) ? timeoutError(timeoutMs) : networkError(cause);
+    }
     if (!response.ok) {
       logger.debug("token request rejected", { status: response.status });
       throw fromHttpResponse(response.status, body);

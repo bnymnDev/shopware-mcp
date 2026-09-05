@@ -79,6 +79,7 @@ export function e2eContext(allowWrite = false): Promise<ToolContext> {
         extensions: true,
         defaultLimit: 20,
         maxLimit: MAX_LIMIT,
+        timeoutMs: 30_000,
         logLevel: "error",
       };
       return { client: new ShopwareClient(config), config };

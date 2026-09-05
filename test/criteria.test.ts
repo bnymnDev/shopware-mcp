@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   associations,
   buildCriteria,
+  filterSchema,
   resolveLimit,
   toShopwareFilter,
 } from "../src/client/criteria.js";
@@ -24,6 +25,11 @@ describe("criteria", () => {
       parameters: { lt: 5, gte: 0 },
     });
     expect(() => toShopwareFilter({ type: "range", field: "stock", value: 5 })).toThrow();
+    // Misspelt bounds must not reach Shopware as an empty range.
+    expect(() =>
+      filterSchema.parse({ type: "range", field: "stock", value: { from: 0, to: 5 } }),
+    ).toThrow();
+    expect(() => filterSchema.parse({ type: "range", field: "stock", value: {} })).toThrow();
   });
 
   it("applies defaults, caps and default sort", () => {

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { shopAudit } from "../src/tools/audit.js";
 import { entitySchema, entitySearch, scrub } from "../src/tools/entities.js";
 import { salesReport } from "../src/tools/reports.js";
+import { withFields } from "../src/tools/shared.js";
 import {
   createContext,
   fixture,
@@ -37,7 +38,7 @@ describe("sales_report", () => {
       {
         type: "range",
         field: "orderDateTime",
-        parameters: { gte: "2024-06-01T00:00:00.000Z", lte: "2024-06-30T00:00:00.000Z" },
+        parameters: { gte: "2024-06-01T00:00:00.000Z", lte: "2024-06-30T23:59:59.999Z" },
       },
       {
         type: "not",
@@ -141,6 +142,77 @@ describe("sales_report", () => {
     expect(searchRequests("product")).toHaveLength(0);
   });
 
+  it("compares with the preceding period of equal length on request", async () => {
+    mock.use(
+      searchHandler({
+        order: "order-aggregations",
+        "order-line-item": () => ({ total: 0, data: [], aggregations: {} }),
+      }),
+    );
+    const report = await invoke(
+      salesReport,
+      { from: "2024-06-01", to: "2024-06-30", compareWithPrevious: true },
+      ctx,
+    );
+    const orderSearches = searchRequests("order");
+    expect(orderSearches).toHaveLength(2);
+    // The main query is issued first, the previous period right behind it.
+    const previousFilter = ((orderSearches[1]?.body as Body | undefined)?.filter ?? []) as Body[];
+    expect(previousFilter[0]).toEqual({
+      type: "range",
+      field: "orderDateTime",
+      parameters: { gte: "2024-05-02T00:00:00.000Z", lte: "2024-05-31T23:59:59.999Z" },
+    });
+    expect(report.previousPeriod).toMatchObject({
+      from: "2024-05-02T00:00:00.000Z",
+      to: "2024-05-31T23:59:59.999Z",
+      orders: 3,
+    });
+    // Same fixture for both periods, so every change is zero.
+    expect(report.change).toEqual({
+      orders: { absolute: 0, percent: 0 },
+      revenueGross: { absolute: 0, percent: 0 },
+      revenueNet: { absolute: 0, percent: 0 },
+      averageOrderValue: { absolute: 0, percent: 0 },
+    });
+    const plain = await invoke(salesReport, { from: "2024-06-01", to: "2024-06-30" }, ctx);
+    expect(plain.previousPeriod).toBeUndefined();
+    expect(plain.change).toBeUndefined();
+  });
+
+  it("surfaces a failing previous-period query as a normal error", async () => {
+    mock.use(
+      http.post(`${SHOP_URL}/api/search/order`, () =>
+        HttpResponse.json(
+          { errors: [{ code: "FRAMEWORK__MISSING_PRIVILEGE", detail: "order:read" }] },
+          { status: 403 },
+        ),
+      ),
+      searchHandler({ "order-line-item": () => ({ total: 0, data: [], aggregations: {} }) }),
+    );
+    await expect(
+      invoke(salesReport, { from: "2024-06-01", to: "2024-06-30", compareWithPrevious: true }, ctx),
+    ).rejects.toMatchObject({ status: 403, code: "FRAMEWORK__MISSING_PRIVILEGE" });
+  });
+
+  it("reads a time without an offset as UTC", async () => {
+    mock.use(
+      searchHandler({
+        order: "order-aggregations",
+        "order-line-item": () => ({ total: 0, data: [], aggregations: {} }),
+      }),
+    );
+    const report = await invoke(
+      salesReport,
+      { from: "2024-06-01T10:00:00", to: "2024-06-30T18:30:00" },
+      ctx,
+    );
+    expect(report.period).toMatchObject({
+      from: "2024-06-01T10:00:00.000Z",
+      to: "2024-06-30T18:30:00.000Z",
+    });
+  });
+
   it("rejects inverted periods", async () => {
     await expect(
       invoke(salesReport, { from: "2024-07-01", to: "2024-06-01" }, ctx),
@@ -151,7 +223,7 @@ describe("sales_report", () => {
 describe("shop_audit", () => {
   it("runs every check and prioritises findings", async () => {
     const audit = await invoke(shopAudit, { stuckOrderDays: 14, lowStockThreshold: 3 }, ctx);
-    expect(audit.summary).toMatchObject({ checksRun: 8, healthy: false });
+    expect(audit.summary).toMatchObject({ checksRun: 9, healthy: false });
     expect(audit.shop).toMatchObject({ version: "6.6.10.3", edition: "Community" });
     const ids = audit.findings.map((finding) => finding.id);
     expect(ids[0]).toBe("orders_paid_not_shipped");
@@ -167,7 +239,12 @@ describe("shop_audit", () => {
     expect(stuck?.items[0]).toMatchObject({ orderNumber: "10042", paymentState: "paid" });
 
     const orderSearches = searchRequests("order");
-    expect(orderSearches).toHaveLength(2);
+    expect(orderSearches).toHaveLength(3);
+    const housekeeping = audit.findings.find(
+      (finding) => finding.id === "orders_shipped_not_completed",
+    );
+    expect(housekeeping).toMatchObject({ severity: "info", count: 3 });
+    expect(JSON.stringify(orderSearches[2]?.body)).toContain('"shipped"');
     const filters = orderSearches[0]?.body as Body;
     expect(JSON.stringify(filters.filter)).toContain('"paid"');
     expect(JSON.stringify(filters.filter)).toContain('"lt"');
@@ -204,7 +281,7 @@ describe("shop_audit", () => {
     );
     const degraded = await invoke(shopAudit, {}, ctx);
     expect(degraded.warnings?.[0]).toContain("promotions_expired_active skipped");
-    expect(degraded.summary.checksRun).toBe(7);
+    expect(degraded.summary.checksRun).toBe(8);
   });
 });
 
@@ -322,6 +399,40 @@ describe("entity_search", () => {
       code: "BAD_REQUEST",
     });
     expect(requests.filter((r) => r.path.startsWith("/api/search"))).toHaveLength(0);
+  });
+
+  it("expands nested association paths and scrubs deep link codes", async () => {
+    mock.use(
+      searchHandler({
+        order: () => ({
+          total: 1,
+          data: [{ id: "1", orderNumber: "10042", deepLinkCode: "abc", deliveries: [] }],
+        }),
+      }),
+    );
+    const result = await invoke(
+      entitySearch,
+      { entity: "order", associations: ["deliveries.shippingMethod"] },
+      ctx,
+    );
+    expect(lastSearch("order").body).toMatchObject({
+      associations: { deliveries: { associations: { shippingMethod: {} } } },
+    });
+    expect(result.items[0]).toEqual({ id: "1", orderNumber: "10042", deliveries: [] });
+  });
+
+  it("truncates long strings inside requested raw fields too", () => {
+    const item = withFields(
+      { id: "1" },
+      { customFields: { blob: "x".repeat(5000), list: ["y".repeat(2500)] } },
+      ["customFields"],
+    );
+    const custom = (item as Record<string, unknown>).customFields as {
+      blob: string;
+      list: string[];
+    };
+    expect(custom.blob).toContain("[truncated, 5000 characters total]");
+    expect(custom.list[0]).toContain("[truncated, 2500 characters total]");
   });
 
   it("scrub removes nested secrets", () => {

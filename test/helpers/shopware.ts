@@ -123,7 +123,7 @@ export function defaultHandlers(): HttpHandler[] {
       await capture(request);
       return new HttpResponse(null, { status: 204 });
     }),
-    http.post(`${SHOP_URL}/api/_action/order/:id/state/:transition`, async ({ request }) => {
+    http.post(`${SHOP_URL}/api/_action/:entity/:id/state/:transition`, async ({ request }) => {
       await capture(request);
       return HttpResponse.json({ technicalName: "completed", name: "Done" });
     }),
@@ -142,6 +142,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     extensions: false,
     defaultLimit: 20,
     maxLimit: MAX_LIMIT,
+    timeoutMs: 30_000,
     logLevel: "error",
     ...overrides,
   };

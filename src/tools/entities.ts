@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { buildCriteria, searchInputShape } from "../client/criteria.js";
+import { associations, buildCriteria, searchInputShape } from "../client/criteria.js";
 import type { Raw } from "../client/index.js";
 import { badRequest, notFound } from "../errors.js";
 import { boundText, isRaw, raw, str, strList } from "./shared.js";
@@ -34,7 +34,8 @@ const BLOCKED_ENTITIES = new Set([
   "version_commit_data",
 ]);
 
-const SENSITIVE_KEY = /password|secret|token|accesskey|apikey|privatekey|credential|hash$|^salt$/i;
+const SENSITIVE_KEY =
+  /password|secret|token|accesskey|apikey|privatekey|credential|deeplinkcode|hash$|^salt$/i;
 const NOISE_KEYS = new Set(["_uniqueIdentifier", "versionId", "extensions", "apiAlias"]);
 const MAX_DEPTH = 8;
 
@@ -114,7 +115,7 @@ export const entitySearch = defineTool({
       criteria.includes = { [snake]: [...new Set(["id", ...input.fields])] };
     }
     if (input.associations && input.associations.length > 0) {
-      criteria.associations = Object.fromEntries(input.associations.map((name) => [name, {}]));
+      criteria.associations = associations(input.associations);
     }
     const result = await ctx.client.search<Raw>(kebab, criteria);
     return {

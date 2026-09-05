@@ -61,8 +61,15 @@ export function defineTool<Shape extends ZodRawShape, Result>(
   };
 }
 
-/** Shape of a dry-run response from every write tool. */
+/** One HTTP request a write tool would send. */
+export interface WouldSend {
+  method: string;
+  url: string;
+  body: unknown;
+}
+
+/** Shape of a dry-run response from every write tool; a list when one call needs several requests. */
 export interface DryRunResult {
   dryRun: true;
-  wouldSend: { method: string; url: string; body: unknown };
+  wouldSend: WouldSend | WouldSend[];
 }

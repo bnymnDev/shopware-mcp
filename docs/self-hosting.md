@@ -9,13 +9,16 @@
 
 The HTTP transport runs **stateless**: every request gets a fresh MCP server instance, there are no sessions to expire, and it can sit behind any load balancer.
 
-## No auth layer in v0.1
+## Authentication
 
-`--http` does **not** authenticate callers. Anyone who can reach the port can query (and, with `--allow-write`, modify) your shop. Therefore:
+`--http` authenticates callers with one static bearer token, or not at all:
 
-- Default bind is `127.0.0.1`. Only pass `--host 0.0.0.0` inside a container or a private network.
+- Set `SHOPWARE_MCP_HTTP_TOKEN` to a random secret of at least 16 characters (`openssl rand -hex 24`). Every request to `/mcp` must then carry `Authorization: Bearer <secret>`; anything else gets a 401. `/healthz` stays open so load balancers can probe. Most HTTP-capable hosts have a headers field for this.
+- Without a token, anyone who can reach the port can query (and, with `--allow-write`, modify) your shop. Default bind is `127.0.0.1`; only pass `--host 0.0.0.0` inside a container or a private network. The server logs a warning when it listens beyond loopback without a token.
 - On loopback the server rejects requests whose `Host` header is not a loopback name (DNS-rebinding protection).
-- For anything reachable from the outside, put a reverse proxy with authentication in front (e.g. Caddy/nginx with basic auth, an OAuth proxy, or your API gateway) and forward `/mcp` and `/healthz`. Make sure the proxy does not buffer responses: MCP uses server-sent events (`Content-Type: text/event-stream`). For nginx that is `proxy_buffering off;`.
+- For anything reachable from the outside, a reverse proxy with its own authentication (Caddy or nginx with basic auth, an OAuth proxy, your API gateway) is still the right place for user management, rate limits and TLS. Forward `/mcp` and `/healthz`, and make sure the proxy does not buffer responses: MCP uses server-sent events (`Content-Type: text/event-stream`). For nginx that is `proxy_buffering off;`.
+
+Requests to Shopware time out after `SHOPWARE_MCP_TIMEOUT_MS` (default 30 seconds), so a shop that stops answering fails one tool call with `TIMEOUT` instead of hanging the session.
 
 Example Caddyfile:
 

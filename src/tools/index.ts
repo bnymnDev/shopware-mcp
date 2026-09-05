@@ -2,7 +2,13 @@ import { shopAudit } from "./audit.js";
 import { categoriesList } from "./categories.js";
 import { customersGet, customersSearch } from "./customers.js";
 import { entitySchema, entitySearch } from "./entities.js";
-import { orderStateTransition, ordersGet, ordersSearch } from "./orders.js";
+import {
+  orderDeliveryTransition,
+  orderStateTransition,
+  ordersGet,
+  ordersSearch,
+  orderTransactionTransition,
+} from "./orders.js";
 import { pluginsList } from "./plugins.js";
 import { productsGet, productsSearch, productUpdate } from "./products.js";
 import { promotionsList, promotionToggle } from "./promotions.js";
@@ -33,6 +39,8 @@ export const tools: ToolDefinition[] = [
   stockSet,
   productUpdate,
   orderStateTransition,
+  orderDeliveryTransition,
+  orderTransactionTransition,
   promotionToggle,
 ];
 

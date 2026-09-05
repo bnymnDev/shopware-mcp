@@ -47,10 +47,10 @@ call what used to take an afternoon in the admin:
 | | |
 |---|---|
 | **Curated tools** | Products, orders, customers, categories, promotions, plugins, stock, sales channels: sixteen tools that return compact JSON with exact totals, descriptions written for a model, and Shopware's own Criteria filters. No invented query language. |
-| **An audit** | `shop_audit` runs eight checks in one call: paid orders that never shipped, unpaid orders going stale, products out of stock or without a cover, promotions past their end date, channels in maintenance, extensions with updates waiting, and which EU duties look covered by an installed extension. Prioritised, with samples and a hint per finding. |
-| **A report** | `sales_report` asks Shopware to aggregate: gross, net, average order, revenue per currency and channel, orders per state, a day/week/month timeline and the top products. The figures were checked against SQL on the same database. |
+| **An audit** | `shop_audit` runs nine checks in one call: paid orders that never shipped, unpaid orders going stale, shipped orders never completed, products out of stock or without a cover, promotions past their end date, channels in maintenance, extensions with updates waiting, and which EU duties look covered by an installed extension. Prioritised, with samples and a hint per finding. |
+| **A report** | `sales_report` asks Shopware to aggregate: gross, net, average order, revenue per currency and channel, orders per state, a day/week/month timeline, the top products and, on request, the change against the period before. The figures were checked against SQL on the same database. |
 | **An escape hatch** | `entity_schema` describes any of the 200+ entities, a plugin's custom entities included, and `entity_search` queries them with the same filters. Entities that hold credentials are refused, secrets in the rest are scrubbed. |
-| **A brake** | Read-only unless you start it with `--allow-write`. Even then every write is a dry run that shows the exact request first. Secrets never appear in output, logs or errors. |
+| **A brake** | Read-only unless you start it with `--allow-write`. Even then every write is a dry run that shows the exact request first. Ship, mark paid, remind, refund, correct stock: six narrow writes, nothing else. Secrets never appear in output, logs or errors. |
 
 <p align="center">
   <picture>
@@ -73,7 +73,7 @@ Every recording on this page is real output from the server against a Shopware
 [`docs/demo/`](docs/demo). Tool calls and results are verbatim, shortened to
 fit the screen. The prose is what an MCP host says with them.
 
-**One question, eight checks.** Three paid orders are still waiting for shipment,
+**One question, nine checks.** Three paid orders are still waiting for shipment,
 the storefront is in maintenance, a summer promotion outlived August. The
 answer names order numbers and amounts, and offers the safe next step.
 
@@ -122,16 +122,16 @@ the host is told to refresh its list, and a compliance question has an answer.
 | | |
 |---|---|
 | **Sixteen curated tools** | `products_search`, `orders_get`, `customers_search`, `stock_get`, `promotions_list`, `plugins_list` and friends. Each takes `{ term?, filter?, sort?, page?, limit?, fields? }` and returns `{ total, page, limit, items }`. |
-| **Health audit** | `shop_audit` with tunable thresholds (`stuckOrderDays`, `lowStockThreshold`, `maxItems`). Eight checks, prioritised findings, a hint per finding, and an EU duty overview that names duties and deadlines, never products. |
-| **Sales report** | `sales_report` for any period, by day, week or month, optionally per sales channel, cancelled orders excluded. Top products resolved by exact product id so ties cannot skew revenue. |
+| **Health audit** | `shop_audit` with tunable thresholds (`stuckOrderDays`, `lowStockThreshold`, `maxItems`). Nine checks, prioritised findings, a hint per finding, and an EU duty overview that names duties and deadlines, never products. |
+| **Sales report** | `sales_report` for any period, by day, week or month, optionally per sales channel, cancelled orders excluded. `compareWithPrevious` adds the preceding period and the change in orders, revenue and average order value. Top products resolved by exact product id so ties cannot skew revenue. |
 | **Any entity** | `entity_schema` lists all entities or describes one: fields, types, flags, associations. `entity_search` queries it. Long text values are truncated, secrets scrubbed, credential entities refused. |
 | **Plugin-aware tools** | The server detects installed, active extensions and adds tools for the ones it knows. First pack: [Merqo](https://github.com/bnymnDev/merqo). Off with `--no-extensions`. |
-| **Guarded writes** | `stock_set`, `product_update`, `order_state_transition`, `promotion_toggle`. Registered only with `--allow-write`, `dryRun: true` by default, the re-fetched entity on a real write. |
-| **Resources and prompts** | `shopware://shop`, `shopware://sales-channels`, and two ready-made prompts: `order_summary` for support replies and `low_stock_report`. |
+| **Guarded writes** | `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition` (ship, with tracking codes), `order_transaction_transition` (mark paid, remind, refund), `promotion_toggle`. Registered only with `--allow-write`, `dryRun: true` by default, the re-fetched entity on a real write. |
+| **Resources and prompts** | `shopware://shop`, `shopware://sales-channels`, and three ready-made prompts: `order_summary` for support replies, `low_stock_report`, and `weekly_review` for a Monday-morning brief. |
 | **Shopware's vocabulary** | Filters are Shopware Criteria filters (`equals`, `contains`, `range`, `equalsAny`) on Shopware field paths, including associations like `manufacturer.name`. State names are the technical names you already know. |
 | **Portable schemas** | Every tool schema is checked to avoid constructs that some MCP clients misread, so the same server works in every host. |
-| **A solid client** | OAuth client credentials with early token refresh, one retry on 401 and on 429/5xx with `Retry-After`, exact totals, inheritance and language headers, a cached entity schema. |
-| **Two transports** | stdio for desktop hosts, stateless Streamable HTTP for everything else. |
+| **A solid client** | OAuth client credentials with early token refresh, one retry on 401 and on 429/5xx with `Retry-After`, a per-request timeout, exact totals, inheritance and language headers, a cached entity schema. |
+| **Two transports** | stdio for desktop hosts, stateless Streamable HTTP for everything else, with an optional bearer token. |
 | **Packaged four ways** | npm with build provenance, a Docker image on GHCR, a one-click `.mcpb` bundle for Claude Desktop, and a listing in the official MCP registry. |
 
 ---
@@ -238,7 +238,7 @@ docker run --rm -p 3333:3333 \
   ghcr.io/bnymndev/shopware-mcp
 ```
 
-The image serves Streamable HTTP on `http://127.0.0.1:3333/mcp`. Point any HTTP-capable host at that URL. The transport has no authentication of its own, so keep it on localhost or behind a proxy that authenticates ([self-hosting notes](docs/self-hosting.md)).
+The image serves Streamable HTTP on `http://127.0.0.1:3333/mcp`. Point any HTTP-capable host at that URL. Add `-e SHOPWARE_MCP_HTTP_TOKEN=<random secret>` and the endpoint requires `Authorization: Bearer <secret>`; without a token, keep it on localhost or behind a proxy that authenticates ([self-hosting notes](docs/self-hosting.md)).
 
 </details>
 
@@ -258,6 +258,9 @@ The image serves Streamable HTTP on `http://127.0.0.1:3333/mcp`. Point any HTTP-
 | "Is the PayPal plugin up to date?" | `plugins_list` |
 | "Which manufacturers have no logo?" | `entity_schema` then `entity_search` on `product_manufacturer` |
 | "Set the stock of SW10084 to 40." | `stock_set`, dry run first, then for real |
+| "Order 10042 shipped with DHL, tracking 00340434." | `order_delivery_transition { transition: "ship", trackingCodes }` |
+| "The bank transfer for 10038 arrived." | `order_transaction_transition { transition: "paid" }` |
+| "How was last week compared to the week before?" | `sales_report { compareWithPrevious: true }`, or the `weekly_review` prompt |
 
 ---
 
@@ -307,6 +310,8 @@ The full [cheat sheet](docs/quickstart.md#filters-cheat-sheet) has more.
 | [`stock_set`](docs/tools.md#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](docs/tools.md#product_update) | write (guarded) | Update product (guarded) |
 | [`order_state_transition`](docs/tools.md#order_state_transition) | write (guarded) | Transition order state (guarded) |
+| [`order_delivery_transition`](docs/tools.md#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
+| [`order_transaction_transition`](docs/tools.md#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 <!-- TOOLS:END -->
 
@@ -316,7 +321,7 @@ errors come back as `{ error: { status, code, detail } }` so the model can
 react instead of guessing.
 
 Resources: `shopware://shop`, `shopware://sales-channels`.
-Prompts: `order_summary`, `low_stock_report`.
+Prompts: `order_summary`, `low_stock_report`, `weekly_review`.
 
 ### Plugin-aware tools
 
@@ -336,12 +341,13 @@ one file under `src/extensions/`; pull requests are welcome.
 ## Safety
 
 - **Read-only by default.** Without `--allow-write` (or `SHOPWARE_MCP_ALLOW_WRITE=true`) the write tools are not registered. An agent cannot discover what it cannot call.
-- **Every write is a dry run first.** `stock_set`, `product_update`, `order_state_transition` and `promotion_toggle` default to `dryRun: true` and return `{ dryRun: true, wouldSend: { method, url, body } }`. A real write returns the re-fetched entity.
-- **Narrow writes.** `product_update` touches name, description, active and one currency's price. Nothing else is writable.
+- **Every write is a dry run first.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition` and `promotion_toggle` default to `dryRun: true` and return `{ dryRun: true, wouldSend: { method, url, body } }`, a list when one call needs several requests. A real write returns the re-fetched entity.
+- **Narrow writes.** `product_update` touches name, description, active and one currency's price. The transition tools only move state machines; nothing moves money. Nothing else is writable.
 - **Scrubbed reads.** `entity_search` strips passwords, keys, tokens and hashes from every payload and refuses entities that exist to hold credentials or system internals: users, integrations, ACL roles, apps, system config.
 - **No secrets anywhere.** Credentials never appear in output, logs or error messages. Logs go to stderr only, at `error` level unless you ask for more.
 - **No telemetry.** The server talks to your shop and to your host. Nothing else.
-- **HTTP transport.** No authentication layer of its own. Bind it to localhost (the default) or put it behind a reverse proxy that authenticates.
+- **HTTP transport.** Set `SHOPWARE_MCP_HTTP_TOKEN` and every call to `/mcp` needs that bearer token, compared in constant time. Without it, bind to localhost (the default) or put it behind a reverse proxy that authenticates; the server warns when it is reachable further without a token.
+- **Requests time out.** A shop that stops answering costs one request 30 seconds (`SHOPWARE_MCP_TIMEOUT_MS`), not the whole session.
 
 Found something? See [SECURITY.md](SECURITY.md).
 
@@ -358,6 +364,8 @@ Found something? See [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_DEFAULT_LIMIT` | no | Default page size for search tools (default 20, max 50) |
 | `SHOPWARE_MCP_EXTENSIONS` | no | `false` disables plugin-aware tools and the extension lookup at startup |
 | `SHOPWARE_LANGUAGE_ID` | no | Language UUID for translated fields (`sw-language-id`). Default: shop default language |
+| `SHOPWARE_MCP_TIMEOUT_MS` | no | Per-request timeout for the Admin API in milliseconds (default 30000, 1000 to 600000) |
+| `SHOPWARE_MCP_HTTP_TOKEN` | no | Bearer token the HTTP transport requires on `/mcp` (at least 16 characters). Default: none |
 | `SHOPWARE_MCP_LOG_LEVEL` | no | `error` (default), `warn`, `info`, `debug`. Logs go to stderr only |
 
 CLI flags override the environment: `--allow-write`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`.
@@ -433,13 +441,13 @@ End-to-end tests against a real Shopware (`dockware/dev`, or any shop you point 
 
 ## Status
 
-v0.2. Everything on this page is implemented, covered by unit tests against
+v0.3. Everything on this page is implemented, covered by unit tests against
 mocked Admin API responses, and exercised nightly end-to-end against a real
 Shopware. The recordings above come from Shopware 6.7.13; 6.6 is supported too.
 
-Not in it, on purpose: authentication in front of the HTTP transport (use a
-proxy), multi-shop routing and audit trails (the commercial part), and write
-tools beyond the four that a support desk needs on a normal day.
+Not in it, on purpose: user management for the HTTP transport (one static
+token, or a proxy), multi-shop routing and audit trails (the commercial part),
+and write tools beyond the six that a support desk needs on a normal day.
 
 Ideas that fit: more extension packs, better error hints for common Shopware
 ACL problems, a `products_search` example gallery. The [good first

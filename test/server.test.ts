@@ -55,6 +55,8 @@ describe("MCP server", () => {
       "stock_set",
       "product_update",
       "order_state_transition",
+      "order_delivery_transition",
+      "order_transaction_transition",
       "promotion_toggle",
     ]);
   });
@@ -105,7 +107,10 @@ describe("MCP server", () => {
     expect(prompts.map((prompt) => prompt.name).sort()).toEqual([
       "low_stock_report",
       "order_summary",
+      "weekly_review",
     ]);
+    const weekly = await client.getPrompt({ name: "weekly_review" });
+    expect(JSON.stringify(weekly.messages[0]?.content)).toContain("compareWithPrevious");
     const prompt = await client.getPrompt({
       name: "order_summary",
       arguments: { orderNumber: "10042" },

@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { associations, buildCriteria, searchInputShape } from "../client/criteria.js";
+import { associations, buildCriteria, equals, searchInputShape } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
-import { badRequest } from "../errors.js";
+import { badRequest, notFound } from "../errors.js";
 import {
   dryRunField,
   fullName,
@@ -17,7 +17,7 @@ import {
   translated,
   withFields,
 } from "./shared.js";
-import { type DryRunResult, defineTool } from "./types.js";
+import { type DryRunResult, defineTool, type ToolContext, type WouldSend } from "./types.js";
 
 const SEARCH_ASSOCIATIONS = associations([
   "orderCustomer",
@@ -47,6 +47,12 @@ function latestTransaction(order: Raw): Raw | null {
   return transactions.at(-1) ?? null;
 }
 
+/** Same for deliveries: the newest one is the one a transition acts on. */
+function latestDelivery(order: Raw): Raw | null {
+  const deliveries = sortByKey(rawList(order.deliveries), "createdAt");
+  return deliveries.at(-1) ?? null;
+}
+
 function mapAddress(address: Raw | null) {
   if (!address) return null;
   return {
@@ -66,7 +72,7 @@ function mapAddress(address: Raw | null) {
 
 export function mapOrderSummary(order: Raw) {
   const customer = raw(order.orderCustomer);
-  const delivery = rawList(order.deliveries)[0] ?? null;
+  const delivery = latestDelivery(order);
   return {
     id: str(order.id),
     orderNumber: str(order.orderNumber),
@@ -216,5 +222,174 @@ export const orderStateTransition = defineTool({
     await ctx.client.request(path, { method: "POST", body: {} });
     const { mapped } = await fetchOrderDetail(ctx.client, { orderId: input.orderId });
     return { dryRun: false, result: mapped };
+  },
+});
+
+const DELIVERY_TRANSITIONS = [
+  "ship",
+  "ship_partially",
+  "retour",
+  "retour_partially",
+  "cancel",
+  "reopen",
+] as const;
+
+const TRANSACTION_TRANSITIONS = [
+  "paid",
+  "paid_partially",
+  "remind",
+  "process",
+  "authorize",
+  "cancel",
+  "fail",
+  "refund",
+  "refund_partially",
+  "chargeback",
+  "reopen",
+  "process_unconfirmed",
+] as const;
+
+type ChildEntity = "order-delivery" | "order-transaction";
+
+/**
+ * The delivery or transaction a transition applies to. Shopware appends a new record on every
+ * retry instead of replacing the old one, so without an explicit id the newest record is the
+ * one that reflects the current state. An explicit id must belong to the order.
+ */
+async function resolveChild(
+  client: ShopwareClient,
+  entity: ChildEntity,
+  orderId: string,
+  childId: string | undefined,
+): Promise<string> {
+  const result = await client.search<Raw>(entity, {
+    page: 1,
+    limit: 1,
+    filter: childId
+      ? [equals("id", childId), equals("orderId", orderId)]
+      : [equals("orderId", orderId)],
+    sort: [{ field: "createdAt", order: "DESC" }],
+    includes: { [entity.replace("-", "_")]: ["id"] },
+  });
+  const id = str(result.items[0]?.id);
+  if (!id)
+    throw notFound(entity, childId ? `${childId} on order ${orderId}` : `orderId=${orderId}`);
+  return id;
+}
+
+async function applyOrDescribe(
+  ctx: ToolContext,
+  orderId: string,
+  steps: Array<{ method: "PATCH" | "POST"; path: string; body: unknown }>,
+  dryRun: boolean,
+) {
+  const requests: WouldSend[] = steps.map((step) => ({
+    method: step.method,
+    url: ctx.client.url(step.path),
+    body: step.body,
+  }));
+  if (dryRun) {
+    const dry: DryRunResult = {
+      dryRun: true,
+      wouldSend: requests.length === 1 && requests[0] ? requests[0] : requests,
+    };
+    return dry;
+  }
+  for (const step of steps) {
+    await ctx.client.request(step.path, { method: step.method, body: step.body });
+  }
+  const { mapped } = await fetchOrderDetail(ctx.client, { orderId });
+  return { dryRun: false as const, result: mapped };
+}
+
+export const orderDeliveryTransition = defineTool({
+  name: "order_delivery_transition",
+  title: "Transition delivery state (guarded)",
+  description:
+    "Move an order's delivery through its state machine: ship (open → shipped), ship_partially, " +
+    "retour, retour_partially, cancel or reopen, optionally replacing the tracking codes first. " +
+    "Acts on the order's newest delivery unless deliveryId is given. Use it for 'mark order " +
+    "10042 as shipped with tracking code X'. Shopware rejects transitions that are not allowed " +
+    "from the current state. dryRun=true (default) returns every request that would be sent; " +
+    "call again with dryRun=false to apply. Returns { dryRun, wouldSend } or " +
+    "{ dryRun: false, result: <updated order> }.",
+  write: true,
+  annotations: { idempotentHint: false },
+  inputSchema: {
+    orderId: idSchema.describe("Order UUID"),
+    transition: z.enum(DELIVERY_TRANSITIONS),
+    trackingCodes: z
+      .array(z.string().trim().min(1))
+      .max(20)
+      .optional()
+      .describe("Replace the delivery's tracking codes before the transition"),
+    deliveryId: idSchema.optional().describe("Delivery UUID; default: the order's newest delivery"),
+    dryRun: dryRunField,
+  },
+  handler: async (input, ctx) => {
+    const deliveryId = await resolveChild(
+      ctx.client,
+      "order-delivery",
+      input.orderId,
+      input.deliveryId,
+    );
+    const steps: Array<{ method: "PATCH" | "POST"; path: string; body: unknown }> = [];
+    if (input.trackingCodes) {
+      steps.push({
+        method: "PATCH",
+        path: `/api/order-delivery/${deliveryId}`,
+        body: { trackingCodes: input.trackingCodes },
+      });
+    }
+    steps.push({
+      method: "POST",
+      path: `/api/_action/order_delivery/${deliveryId}/state/${input.transition}`,
+      body: {},
+    });
+    return applyOrDescribe(ctx, input.orderId, steps, input.dryRun);
+  },
+});
+
+export const orderTransactionTransition = defineTool({
+  name: "order_transaction_transition",
+  title: "Transition payment state (guarded)",
+  description:
+    "Move an order's payment (its newest transaction) through its state machine: paid, " +
+    "paid_partially, remind, process, authorize, cancel, fail, refund, refund_partially, " +
+    "chargeback, reopen or process_unconfirmed. Use it for 'mark order 10042 as paid' once a " +
+    "bank transfer arrived, or 'remind' for an overdue payment (the state changes; whether a " +
+    "mail goes out is decided by the shop's flows). It never moves money. Shopware rejects " +
+    "transitions that are not allowed from the current state. dryRun=true (default) returns " +
+    "the request that would be sent; call again with dryRun=false to apply. Returns " +
+    "{ dryRun, wouldSend } or { dryRun: false, result: <updated order> }.",
+  write: true,
+  annotations: { idempotentHint: false },
+  inputSchema: {
+    orderId: idSchema.describe("Order UUID"),
+    transition: z.enum(TRANSACTION_TRANSITIONS),
+    transactionId: idSchema
+      .optional()
+      .describe("Transaction UUID; default: the order's newest transaction"),
+    dryRun: dryRunField,
+  },
+  handler: async (input, ctx) => {
+    const transactionId = await resolveChild(
+      ctx.client,
+      "order-transaction",
+      input.orderId,
+      input.transactionId,
+    );
+    return applyOrDescribe(
+      ctx,
+      input.orderId,
+      [
+        {
+          method: "POST",
+          path: `/api/_action/order_transaction/${transactionId}/state/${input.transition}`,
+          body: {},
+        },
+      ],
+      input.dryRun,
+    );
   },
 });

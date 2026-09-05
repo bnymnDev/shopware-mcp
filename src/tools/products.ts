@@ -215,13 +215,21 @@ export const productUpdate = defineTool({
     if (input.description !== undefined) body.description = input.description;
     if (input.active !== undefined) body.active = input.active;
     if (input.price) {
-      // Price is a JSON blob holding all currencies; merge so we do not drop other currencies.
-      const current = await ctx.client.findById<Raw>("product", input.productId);
+      // Price is a JSON blob holding all currencies; merge so we do not drop other currencies,
+      // and keep the entry's list and regulation prices, which only the price itself replaces.
+      const current = await ctx.client.findById<Raw>(
+        "product",
+        input.productId,
+        {},
+        INHERITANCE_HEADERS,
+      );
       const currencyId = input.price.currencyId ?? DEFAULT_CURRENCY_ID;
-      const others = rawList(current.price).filter((entry) => entry.currencyId !== currencyId);
+      const entries = rawList(current.price);
+      const existing = entries.find((entry) => entry.currencyId === currencyId) ?? {};
+      const others = entries.filter((entry) => entry.currencyId !== currencyId);
       body.price = [
         ...others,
-        { currencyId, gross: input.price.gross, net: input.price.net, linked: false },
+        { ...existing, currencyId, gross: input.price.gross, net: input.price.net, linked: false },
       ];
     }
     if (Object.keys(body).length === 0) {

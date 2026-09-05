@@ -1,4 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import {
+  orderDeliveryTransition,
+  ordersGet,
+  ordersSearch,
+  orderTransactionTransition,
+} from "../src/tools/orders.js";
 import { productsSearch, productUpdate } from "../src/tools/products.js";
 import { promotionsList, promotionToggle } from "../src/tools/promotions.js";
 import { stockGet, stockSet } from "../src/tools/stock.js";
@@ -58,6 +64,61 @@ describe.skipIf(!E2E_ENABLED)("write tools against dockware", () => {
       ctx,
     );
     expect(restored).toMatchObject({ dryRun: false, result: { active: wasActive } });
+  });
+
+  it("delivery and transaction transitions act on the order's newest records", async () => {
+    // An open order whose delivery and payment are still open; skipped on shops without one.
+    const open = await ordersSearch.handler(
+      {
+        page: 1,
+        limit: 1,
+        filter: [
+          { type: "equals", field: "stateMachineState.technicalName", value: "open" },
+          { type: "equals", field: "deliveries.stateMachineState.technicalName", value: "open" },
+          { type: "equals", field: "transactions.stateMachineState.technicalName", value: "open" },
+        ],
+      },
+      ctx,
+    );
+    const orderId = open.items[0]?.id;
+    if (!orderId) return;
+
+    const dry = await orderDeliveryTransition.handler(
+      { orderId, transition: "ship", trackingCodes: ["E2E-1"], dryRun: true },
+      ctx,
+    );
+    const wouldSend = dry.dryRun ? dry.wouldSend : [];
+    expect(Array.isArray(wouldSend) ? wouldSend : []).toHaveLength(2);
+    await expect(
+      orderDeliveryTransition.handler(
+        { orderId, transition: "ship", deliveryId: "0".repeat(32), dryRun: true },
+        ctx,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    const shipped = await orderDeliveryTransition.handler(
+      { orderId, transition: "ship", trackingCodes: ["E2E-1"], dryRun: false },
+      ctx,
+    );
+    expect(shipped).toMatchObject({ dryRun: false, result: { deliveryState: "shipped" } });
+    const detail = await ordersGet.handler({ orderId }, ctx);
+    expect(detail.deliveries.at(-1)?.trackingCodes).toEqual(["E2E-1"]);
+    const reopened = await orderDeliveryTransition.handler(
+      { orderId, transition: "reopen", trackingCodes: [], dryRun: false },
+      ctx,
+    );
+    expect(reopened).toMatchObject({ dryRun: false, result: { deliveryState: "open" } });
+
+    const reminded = await orderTransactionTransition.handler(
+      { orderId, transition: "remind", dryRun: false },
+      ctx,
+    );
+    expect(reminded).toMatchObject({ dryRun: false, result: { paymentState: "reminded" } });
+    const restored = await orderTransactionTransition.handler(
+      { orderId, transition: "reopen", dryRun: false },
+      ctx,
+    );
+    expect(restored).toMatchObject({ dryRun: false, result: { paymentState: "open" } });
   });
 
   it("promotion_toggle round-trips when a promotion exists", async () => {

@@ -2,7 +2,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { categoriesList } from "../src/tools/categories.js";
 import { customersGet, customersSearch } from "../src/tools/customers.js";
-import { ordersGet, ordersSearch } from "../src/tools/orders.js";
+import { mapOrderSummary, ordersGet, ordersSearch } from "../src/tools/orders.js";
 import { pluginsList } from "../src/tools/plugins.js";
 import { productsGet, productsSearch } from "../src/tools/products.js";
 import { promotionsList } from "../src/tools/promotions.js";
@@ -437,5 +437,26 @@ describe("stock_get", () => {
 
   it("requires an identifier", async () => {
     await expect(invoke(stockGet, {}, ctx)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});
+
+describe("order summaries", () => {
+  it("show the newest delivery, the one a transition acts on", () => {
+    const summary = mapOrderSummary({
+      id: "1",
+      deliveries: [
+        {
+          id: "old",
+          createdAt: "2024-06-01T10:00:00.000+00:00",
+          stateMachineState: { technicalName: "cancelled" },
+        },
+        {
+          id: "new",
+          createdAt: "2024-06-02T10:00:00.000+00:00",
+          stateMachineState: { technicalName: "open" },
+        },
+      ],
+    });
+    expect(summary.deliveryState).toBe("open");
   });
 });

@@ -24,11 +24,14 @@ const scalarList = z
 const bound = z.union([z.number().describe("number"), z.string().describe("ISO date")]);
 
 const rangeValue = z
-  .object({
+  .strictObject({
     gte: bound.optional(),
     gt: bound.optional(),
     lte: bound.optional(),
     lt: bound.optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "range filter needs at least one of gte, gt, lte, lt",
   })
   .describe("Range bounds; dates as ISO strings, e.g. { gte: '2024-01-01' }");
 

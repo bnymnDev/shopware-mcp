@@ -1,5 +1,12 @@
-import type { Config } from "../config.js";
-import { fromHttpResponse, networkError, notFound, ShopwareMcpError } from "../errors.js";
+import { type Config, DEFAULT_TIMEOUT_MS } from "../config.js";
+import {
+  fromHttpResponse,
+  isAbort,
+  networkError,
+  notFound,
+  ShopwareMcpError,
+  timeoutError,
+} from "../errors.js";
 import { logger } from "../logger.js";
 import { NAME, VERSION } from "../version.js";
 import { TokenProvider } from "./auth.js";
@@ -12,6 +19,12 @@ export interface RequestOptions {
   method?: HttpMethod;
   body?: unknown;
   headers?: Record<string, string>;
+  /**
+   * Whether a transient failure (429/5xx) may be retried. Defaults to true for everything except
+   * POST outside /api/search, because a state transition that Shopware already applied must not
+   * be sent twice.
+   */
+  idempotent?: boolean;
 }
 
 export type Raw = Record<string, unknown>;
@@ -49,16 +62,19 @@ export class ShopwareClient {
   private currencyCache: Promise<Map<string, CurrencyInfo>> | undefined;
   private schemaCache: Promise<Record<string, Raw>> | undefined;
   private readonly languageId: string | undefined;
+  private readonly timeoutMs: number;
 
   constructor(
-    config: Pick<Config, "url" | "clientId" | "clientSecret"> & Partial<Pick<Config, "languageId">>,
+    config: Pick<Config, "url" | "clientId" | "clientSecret"> &
+      Partial<Pick<Config, "languageId" | "timeoutMs">>,
     private readonly fetchImpl: FetchLike = defaultFetch,
     private readonly sleep: (ms: number) => Promise<void> = (ms) =>
       new Promise((resolve) => setTimeout(resolve, ms)),
   ) {
     this.baseUrl = config.url;
     this.languageId = config.languageId;
-    this.auth = new TokenProvider(config, fetchImpl);
+    this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this.auth = new TokenProvider({ ...config, timeoutMs: this.timeoutMs }, fetchImpl);
   }
 
   url(path: string): string {
@@ -91,27 +107,35 @@ export class ShopwareClient {
         method,
         headers,
         body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (cause) {
-      logger.debug("request failed (network)", { method, path });
-      throw networkError(cause);
+      logger.debug("request failed (network)", { method, path, timeout: isAbort(cause) });
+      throw isAbort(cause) ? timeoutError(this.timeoutMs) : networkError(cause);
     }
     logger.debug("request", { method, path, status: response.status, ms: Date.now() - startedAt });
 
     if (response.status === 401 && !state.authRetried) {
       // Drain the body so the connection is released, then refresh the token once and retry.
       await response.text().catch(() => undefined);
-      this.auth.invalidate();
+      this.auth.invalidate(token);
       return this.send<T>(path, options, { ...state, authRetried: true });
     }
-    if (TRANSIENT_STATUSES.has(response.status) && !state.transientRetried) {
+    const idempotent = options.idempotent ?? (method !== "POST" || path.startsWith("/api/search/"));
+    if (TRANSIENT_STATUSES.has(response.status) && !state.transientRetried && idempotent) {
       await response.text().catch(() => undefined);
       const delay = retryDelayMs(response.headers.get("retry-after"));
       logger.debug("transient error, retrying once", { status: response.status, delay });
       await this.sleep(delay);
       return this.send<T>(path, options, { ...state, transientRetried: true });
     }
-    const body = await parseBody(response);
+    let body: unknown;
+    try {
+      body = await parseBody(response);
+    } catch (cause) {
+      // The shop answered with headers but stalled the body; the timeout also covers that.
+      throw isAbort(cause) ? timeoutError(this.timeoutMs) : networkError(cause);
+    }
     if (!response.ok) throw fromHttpResponse(response.status, body);
     return body as T;
   }

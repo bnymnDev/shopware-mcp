@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TokenProvider } from "../src/client/auth.js";
+import type { FetchLike } from "../src/client/fetch.js";
 import { ShopwareClient } from "../src/client/index.js";
 import { ShopwareMcpError } from "../src/errors.js";
 import { fixture, mock, requests, SHOP_URL, testConfig } from "./helpers/shopware.js";
@@ -23,6 +24,17 @@ describe("TokenProvider", () => {
     expect(tokenRequests()).toHaveLength(1);
 
     vi.setSystemTime(new Date("2024-01-01T00:09:01Z")); // within the 60s margin
+    await provider.getToken();
+    expect(tokenRequests()).toHaveLength(2);
+  });
+
+  it("keeps a fresh token when a stale one is invalidated", async () => {
+    const provider = new TokenProvider(testConfig());
+    const token = await provider.getToken();
+    provider.invalidate("some-older-token");
+    expect(await provider.getToken()).toBe(token);
+    expect(tokenRequests()).toHaveLength(1);
+    provider.invalidate(token);
     await provider.getToken();
     expect(tokenRequests()).toHaveLength(2);
   });
@@ -102,6 +114,61 @@ describe("ShopwareClient", () => {
       code: "9",
     });
     expect(tokenRequests()).toHaveLength(2);
+  });
+
+  it("gives up on a request that exceeds the timeout", async () => {
+    const hanging: FetchLike = (_url, init) =>
+      new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+      });
+    const client = new ShopwareClient({ ...testConfig(), timeoutMs: 30 }, hanging);
+    await expect(client.request("/api/_info/version")).rejects.toMatchObject({
+      status: 0,
+      code: "TIMEOUT",
+      detail: expect.stringContaining("30 ms"),
+    });
+  });
+
+  it("maps a timeout while reading the body to TIMEOUT as well", async () => {
+    const stalling: FetchLike = async (_url, init) =>
+      ({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        text: () =>
+          new Promise<string>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(init.signal?.reason));
+          }),
+      }) as unknown as Response;
+    const client = new ShopwareClient({ ...testConfig(), timeoutMs: 30 }, stalling);
+    await expect(client.request("/api/_info/version")).rejects.toMatchObject({
+      status: 0,
+      code: "TIMEOUT",
+    });
+  });
+
+  it("does not retry a state transition after a transient error", async () => {
+    let transitions = 0;
+    let searches = 0;
+    mock.use(
+      http.post(`${SHOP_URL}/api/_action/order/:id/state/:transition`, () => {
+        transitions += 1;
+        return HttpResponse.json({ errors: [{ code: "GATEWAY", detail: "bad" }] }, { status: 502 });
+      }),
+      http.post(`${SHOP_URL}/api/search/order`, () => {
+        searches += 1;
+        return searches === 1
+          ? HttpResponse.json({ errors: [] }, { status: 503 })
+          : HttpResponse.json({ total: 0, data: [] });
+      }),
+    );
+    const client = new ShopwareClient(testConfig(), undefined, async () => undefined);
+    await expect(
+      client.request("/api/_action/order/abc/state/complete", { method: "POST", body: {} }),
+    ).rejects.toMatchObject({ status: 502 });
+    expect(transitions).toBe(1);
+    expect(await client.search("order", { limit: 1 })).toMatchObject({ total: 0 });
+    expect(searches).toBe(2);
   });
 
   it("maps network failures", async () => {

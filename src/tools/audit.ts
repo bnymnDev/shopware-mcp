@@ -166,7 +166,9 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       id: "orders_paid_not_shipped",
       severity: "critical",
       title: `Paid orders not shipped for more than ${input.stuckOrderDays} days`,
-      hint: "Ship or communicate a delay; these customers have already paid.",
+      hint:
+        "Ship or communicate a delay; these customers have already paid. Matched on any paid " +
+        "transaction, so an order refunded later can appear here too.",
       run: orderCheck([
         equalsAny("stateMachineState.technicalName", ["open", "in_progress"]),
         equals("transactions.stateMachineState.technicalName", "paid"),
@@ -186,6 +188,18 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
           "reminded",
           "in_progress",
         ]),
+        { type: "range", field: "orderDateTime", parameters: { lt: cutoff } },
+      ]),
+    },
+    {
+      id: "orders_shipped_not_completed",
+      severity: "info",
+      title: `Orders paid and shipped but not completed for more than ${input.stuckOrderDays} days`,
+      hint: "Complete them (order_state_transition: complete) so open-order lists show real work only.",
+      run: orderCheck([
+        equalsAny("stateMachineState.technicalName", ["open", "in_progress"]),
+        equals("transactions.stateMachineState.technicalName", "paid"),
+        equals("deliveries.stateMachineState.technicalName", "shipped"),
         { type: "range", field: "orderDateTime", parameters: { lt: cutoff } },
       ]),
     },
@@ -331,9 +345,10 @@ export const shopAudit = defineTool({
   title: "Shop health audit",
   description:
     "Run a one-shot health check across the shop and return prioritised findings: paid orders " +
-    "not shipped, old unpaid orders, out-of-stock and low-stock products, products without cover " +
-    "image, expired promotions still active, sales channels in maintenance mode and extensions " +
-    "with pending updates. Each finding has a severity, total count, sample items and a hint. " +
+    "not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock " +
+    "products, products without cover image, expired promotions still active, sales channels in " +
+    "maintenance mode and extensions with pending updates. Each finding has a severity, total " +
+    "count, sample items and a hint. " +
     "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
     "labelling) appear to be covered by an installed extension, guessed from extension names. " +
     "Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.",

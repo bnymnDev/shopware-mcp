@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { orderStateTransition } from "../src/tools/orders.js";
+import {
+  orderDeliveryTransition,
+  orderStateTransition,
+  orderTransactionTransition,
+} from "../src/tools/orders.js";
 import { productUpdate } from "../src/tools/products.js";
 import { promotionToggle } from "../src/tools/promotions.js";
 import { stockSet } from "../src/tools/stock.js";
 import {
   createContext,
   invoke,
+  lastSearch,
   mock,
   requests,
   searchHandler,
@@ -16,6 +21,22 @@ const ctx = createContext({ allowWrite: true });
 const PRODUCT = "b2c3d4e5f60718293a4b5c6d7e8f0102";
 const ORDER = "f60718293a4b5c6d7e8f010203040506";
 const PROMOTION = "4b5c6d7e8f01020304050607080a0b0c";
+const DELIVERY = "0102030405060708090a0b0c0d0e0f10";
+const TRANSACTION = "100f0e0d0c0b0a090807060504030201";
+
+function childHandlers(order = "order-detail") {
+  return searchHandler({
+    order,
+    "order-delivery": () => ({
+      total: 1,
+      data: [{ id: DELIVERY, orderId: ORDER, createdAt: "2024-06-02T10:00:00.000+00:00" }],
+    }),
+    "order-transaction": () => ({
+      total: 1,
+      data: [{ id: TRANSACTION, orderId: ORDER, createdAt: "2024-06-02T10:00:00.000+00:00" }],
+    }),
+  });
+}
 
 describe("dry runs", () => {
   it("stock_set returns the request and sends nothing", async () => {
@@ -43,6 +64,90 @@ describe("dry runs", () => {
       wouldSend: {
         method: "POST",
         url: `https://shop.test/api/_action/order/${ORDER}/state/complete`,
+        body: {},
+      },
+    });
+    expect(writeRequests()).toHaveLength(0);
+  });
+
+  it("order_delivery_transition resolves the newest delivery and lists every request", async () => {
+    mock.use(childHandlers());
+    const result = await invoke(
+      orderDeliveryTransition,
+      { orderId: ORDER, transition: "ship", trackingCodes: ["DHL123"], dryRun: true },
+      ctx,
+    );
+    expect(result).toEqual({
+      dryRun: true,
+      wouldSend: [
+        {
+          method: "PATCH",
+          url: `https://shop.test/api/order-delivery/${DELIVERY}`,
+          body: { trackingCodes: ["DHL123"] },
+        },
+        {
+          method: "POST",
+          url: `https://shop.test/api/_action/order_delivery/${DELIVERY}/state/ship`,
+          body: {},
+        },
+      ],
+    });
+    const lookup = requests.find((r) => r.path === "/api/search/order-delivery");
+    expect(lookup?.body).toMatchObject({
+      limit: 1,
+      filter: [{ type: "equals", field: "orderId", value: ORDER }],
+      sort: [{ field: "createdAt", order: "DESC" }],
+    });
+    expect(writeRequests()).toHaveLength(0);
+  });
+
+  it("order_delivery_transition without tracking codes is a single request", async () => {
+    mock.use(childHandlers());
+    const result = await invoke(
+      orderDeliveryTransition,
+      { orderId: ORDER, transition: "reopen", dryRun: true },
+      ctx,
+    );
+    expect(result).toEqual({
+      dryRun: true,
+      wouldSend: {
+        method: "POST",
+        url: `https://shop.test/api/_action/order_delivery/${DELIVERY}/state/reopen`,
+        body: {},
+      },
+    });
+  });
+
+  it("order_delivery_transition refuses a delivery that belongs to another order", async () => {
+    mock.use(searchHandler({ "order-delivery": () => ({ total: 0, data: [] }) }));
+    await expect(
+      invoke(
+        orderDeliveryTransition,
+        { orderId: ORDER, transition: "ship", deliveryId: DELIVERY, dryRun: true },
+        ctx,
+      ),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const lookup = requests.find((r) => r.path === "/api/search/order-delivery");
+    expect(lookup?.body).toMatchObject({
+      filter: [
+        { type: "equals", field: "id", value: DELIVERY },
+        { type: "equals", field: "orderId", value: ORDER },
+      ],
+    });
+  });
+
+  it("order_transaction_transition targets the newest transaction", async () => {
+    mock.use(childHandlers());
+    const result = await invoke(
+      orderTransactionTransition,
+      { orderId: ORDER, transition: "paid", dryRun: true },
+      ctx,
+    );
+    expect(result).toEqual({
+      dryRun: true,
+      wouldSend: {
+        method: "POST",
+        url: `https://shop.test/api/_action/order_transaction/${TRANSACTION}/state/paid`,
         body: {},
       },
     });
@@ -93,11 +198,14 @@ describe("dry runs", () => {
               gross: 99,
               net: 83.19,
               linked: false,
+              // The strike-through price survives a price change.
+              listPrice: { gross: 149, net: 125.21, linked: true },
             },
           ],
         },
       },
     });
+    expect(lastSearch("product").headers["sw-inheritance"]).toBe("true");
     expect(writeRequests()).toHaveLength(0);
   });
 
@@ -151,6 +259,37 @@ describe("real writes", () => {
       dryRun: false,
       result: { orderNumber: "10042", state: "in_progress" },
     });
+  });
+
+  it("order_delivery_transition patches tracking codes, ships, and re-fetches the order", async () => {
+    mock.use(childHandlers());
+    const result = await invoke(
+      orderDeliveryTransition,
+      { orderId: ORDER, transition: "ship", trackingCodes: ["DHL123"], dryRun: false },
+      ctx,
+    );
+    expect(writeRequests()).toMatchObject([
+      {
+        method: "PATCH",
+        path: `/api/order-delivery/${DELIVERY}`,
+        body: { trackingCodes: ["DHL123"] },
+      },
+      { method: "POST", path: `/api/_action/order_delivery/${DELIVERY}/state/ship` },
+    ]);
+    expect(result).toMatchObject({ dryRun: false, result: { orderNumber: "10042" } });
+  });
+
+  it("order_transaction_transition posts and re-fetches the order", async () => {
+    mock.use(childHandlers());
+    const result = await invoke(
+      orderTransactionTransition,
+      { orderId: ORDER, transition: "remind", dryRun: false },
+      ctx,
+    );
+    expect(writeRequests()).toMatchObject([
+      { method: "POST", path: `/api/_action/order_transaction/${TRANSACTION}/state/remind` },
+    ]);
+    expect(result).toMatchObject({ dryRun: false, result: { orderNumber: "10042" } });
   });
 
   it("promotion_toggle patches and re-fetches", async () => {

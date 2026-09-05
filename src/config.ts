@@ -4,6 +4,8 @@ import type { LogLevel } from "./logger.js";
 /** Hard cap for `limit` on every search tool. */
 export const MAX_LIMIT = 50;
 export const DEFAULT_LIMIT = 20;
+/** How long one Admin API request may take before it is abandoned. */
+export const DEFAULT_TIMEOUT_MS = 30_000;
 
 const TRUE_VALUES = new Set(["1", "true", "yes", "on"]);
 
@@ -23,7 +25,7 @@ const envSchema = z.object({
       .string({ error: "SHOPWARE_URL is required, e.g. https://shop.example.com" })
       .trim()
       .regex(/^https?:\/\/.+/, "SHOPWARE_URL must start with http:// or https://")
-      .transform((value) => value.replace(/\/+$/, "")),
+      .transform((value) => value.replace(/\/+$/, "").replace(/\/api$/i, "")),
   ),
   SHOPWARE_CLIENT_ID: z.preprocess(
     emptyToUndefined,
@@ -54,6 +56,14 @@ const envSchema = z.object({
     (value) => (typeof value === "string" ? value.trim().toLowerCase() : value),
     z.preprocess(emptyToUndefined, z.enum(["error", "warn", "info", "debug"]).default("error")),
   ),
+  SHOPWARE_MCP_TIMEOUT_MS: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().int().min(1_000).max(600_000).default(DEFAULT_TIMEOUT_MS),
+  ),
+  SHOPWARE_MCP_HTTP_TOKEN: z.preprocess(
+    emptyToUndefined,
+    z.string().trim().min(16, "SHOPWARE_MCP_HTTP_TOKEN must be at least 16 characters").optional(),
+  ),
 });
 
 export interface Config {
@@ -69,6 +79,10 @@ export interface Config {
   extensions: boolean;
   defaultLimit: number;
   maxLimit: number;
+  /** Per-request timeout for the Admin API, in milliseconds. */
+  timeoutMs: number;
+  /** When set, the HTTP transport requires `Authorization: Bearer <token>` on /mcp. */
+  httpToken?: string;
   logLevel: LogLevel;
 }
 
@@ -114,6 +128,8 @@ export function loadConfig(
     extensions: overrides.extensions ?? values.SHOPWARE_MCP_EXTENSIONS,
     defaultLimit: values.SHOPWARE_MCP_DEFAULT_LIMIT,
     maxLimit: MAX_LIMIT,
+    timeoutMs: values.SHOPWARE_MCP_TIMEOUT_MS,
+    httpToken: values.SHOPWARE_MCP_HTTP_TOKEN,
     logLevel: overrides.logLevel ?? values.SHOPWARE_MCP_LOG_LEVEL,
   };
 }

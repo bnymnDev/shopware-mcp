@@ -65,6 +65,22 @@ export function fromHttpResponse(status: number, body: unknown): ShopwareMcpErro
   return new ShopwareMcpError(status, `HTTP_${status}`, `Shopware responded with HTTP ${status}`);
 }
 
+/** True for the rejection `fetch` produces when its AbortSignal times out or is aborted. */
+export function isAbort(cause: unknown): boolean {
+  if (!(cause instanceof Error)) return false;
+  if (cause.name === "TimeoutError" || cause.name === "AbortError") return true;
+  const inner = (cause as { cause?: unknown }).cause;
+  return inner instanceof Error && (inner.name === "TimeoutError" || inner.name === "AbortError");
+}
+
+export function timeoutError(timeoutMs: number): ShopwareMcpError {
+  return new ShopwareMcpError(
+    0,
+    "TIMEOUT",
+    `Shopware did not answer within ${timeoutMs} ms; raise SHOPWARE_MCP_TIMEOUT_MS if the shop is slow`,
+  );
+}
+
 export function networkError(cause: unknown): ShopwareMcpError {
   let detail = "Network request to Shopware failed";
   if (cause instanceof Error) {

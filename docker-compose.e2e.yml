@@ -8,7 +8,8 @@ services:
       SW_API_ACCESS: "true"
       XDEBUG_ENABLED: "0"
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost/api/_info/version"]
+      # /api/_info/version needs a token and answers 401; the health-check route is public.
+      test: ["CMD", "curl", "-fsS", "http://localhost/api/_info/health-check"]
       interval: 10s
       timeout: 5s
       retries: 60

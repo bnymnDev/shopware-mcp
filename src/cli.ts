@@ -25,7 +25,8 @@ Options:
 Environment:
   SHOPWARE_URL, SHOPWARE_CLIENT_ID, SHOPWARE_CLIENT_SECRET   (required)
   SHOPWARE_MCP_ALLOW_WRITE, SHOPWARE_MCP_DEFAULT_LIMIT, SHOPWARE_MCP_LOG_LEVEL
-  SHOPWARE_LANGUAGE_ID, SHOPWARE_MCP_EXTENSIONS
+  SHOPWARE_LANGUAGE_ID, SHOPWARE_MCP_EXTENSIONS, SHOPWARE_MCP_TIMEOUT_MS
+  SHOPWARE_MCP_HTTP_TOKEN   bearer token required on /mcp when serving --http
 `;
 
 export interface CliOptions {
@@ -118,7 +119,11 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
   });
 
   if (cli.http) {
-    const httpServer = await startHttp(ctx, { port: cli.port, host: cli.host });
+    const httpServer = await startHttp(ctx, {
+      port: cli.port,
+      host: cli.host,
+      token: config.httpToken,
+    });
     const shutdown = () => {
       httpServer.close(() => process.exit(0));
       setTimeout(() => process.exit(0), 2000).unref();

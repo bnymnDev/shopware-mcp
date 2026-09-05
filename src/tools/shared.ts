@@ -54,13 +54,25 @@ export function boundText(value: unknown): unknown {
   return `${value.slice(0, MAX_RAW_TEXT)}… [truncated, ${value.length} characters total]`;
 }
 
+const BOUND_DEPTH = 8;
+
+/** `boundText` for every string inside a value, however deeply nested. */
+export function boundDeep(value: unknown, depth = 0): unknown {
+  if (depth > BOUND_DEPTH) return undefined;
+  if (Array.isArray(value)) return value.map((item) => boundDeep(item, depth + 1));
+  if (!isRaw(value)) return boundText(value);
+  const out: Raw = {};
+  for (const [key, inner] of Object.entries(value)) out[key] = boundDeep(inner, depth + 1);
+  return out;
+}
+
 /** Copy requested raw fields (dot-paths allowed) from the entity onto the mapped item. */
 export function withFields<T extends object>(mapped: T, entity: Raw, fields?: string[]): T {
   if (!fields || fields.length === 0) return mapped;
   const extras: Raw = {};
   for (const field of fields) {
     const value = getPath(entity, field);
-    extras[field] = value === undefined ? null : boundText(value);
+    extras[field] = value === undefined ? null : boundDeep(value);
   }
   return { ...mapped, ...extras };
 }

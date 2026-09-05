@@ -13,7 +13,7 @@ Do not open a public issue for security problems. You will get an acknowledgemen
 - Credential handling (OAuth token cache, logging, error messages)
 - The `--allow-write` gate and `dryRun` defaults
 - Secret scrubbing in `entity_search` and the blocked entity list
-- The HTTP transport's Host header check
+- The HTTP transport's Host header check and bearer token comparison
 
 Out of scope: Shopware itself, and deployments that expose the HTTP transport without a proxy despite
 the documentation.
@@ -21,5 +21,5 @@ the documentation.
 ## Hardening tips
 
 - Give the Integration a read-only role unless you need write tools.
-- Keep the HTTP transport on localhost or behind an authenticating reverse proxy.
+- Keep the HTTP transport on localhost, set `SHOPWARE_MCP_HTTP_TOKEN`, or put it behind an authenticating reverse proxy.
 - Pin the npm version in production and review the changelog before upgrading.

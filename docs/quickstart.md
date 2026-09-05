@@ -63,6 +63,7 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 - "Summarize order 10042 for a support reply." → `orders_get` (or the `order_summary` prompt).
 - "Which customers ordered more than 10 times?" → `customers_search` with a `range` filter on `orderCount`.
 - "Is the PayPal plugin up to date?" → `plugins_list`.
+- "How was last week against the week before?" → `sales_report` with `compareWithPrevious: true`, or the `weekly_review` prompt.
 
 ## 5. Enable writes (optional)
 
@@ -70,11 +71,15 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 npx shopware-mcp --allow-write
 ```
 
-Now `stock_set`, `product_update`, `order_state_transition` and `promotion_toggle` are registered. Each defaults to `dryRun: true`:
+Now `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition` and `promotion_toggle` are registered. Each defaults to `dryRun: true`:
 
 ```
 stock_set { productId: "…", stock: 3 }                  → { dryRun: true, wouldSend: { method: "PATCH", url: "…/api/product/…", body: { stock: 3 } } }
 stock_set { productId: "…", stock: 3, dryRun: false }   → { dryRun: false, result: { productNumber: "SW10002", stock: 3, … } }
+order_delivery_transition { orderId: "…", transition: "ship", trackingCodes: ["00340434"] }
+                                                          → { dryRun: true, wouldSend: [ PATCH …/api/order-delivery/…, POST …/state/ship ] }
+order_transaction_transition { orderId: "…", transition: "paid", dryRun: false }
+                                                          → { dryRun: false, result: { orderNumber: "10038", paymentState: "paid", … } }
 ```
 
 ## Filters cheat sheet

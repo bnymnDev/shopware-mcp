@@ -25,6 +25,8 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`stock_set`](#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](#product_update) | write (guarded) | Update product (guarded) |
 | [`order_state_transition`](#order_state_transition) | write (guarded) | Transition order state (guarded) |
+| [`order_delivery_transition`](#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
+| [`order_transaction_transition`](#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`promotion_toggle`](#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 
 ## shop_info
@@ -239,18 +241,19 @@ _Sales report_
 
 **Read tool** — always registered.
 
-Aggregate sales figures for a period straight from Shopware: order count, gross/net revenue, average order value, breakdowns by order/payment/delivery state, payment method, currency and sales channel, a revenue timeline (day/week/month) and the top-selling products. Use it for 'how did we do last month?' questions instead of paging through orders. Defaults to the last 30 days, cancelled orders excluded. Returns one object.
+Aggregate sales figures for a period straight from Shopware: order count, gross/net revenue, average order value, breakdowns by order/payment/delivery state, payment method, currency and sales channel, a revenue timeline (day/week/month) and the top-selling products. Use it for 'how did we do last month?' questions instead of paging through orders. compareWithPrevious adds the period of equal length before `from` and the change in orders and revenue. Defaults to the last 30 days, cancelled orders excluded. Returns one object.
 
 ### Input
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `from` | `string` | no | Start (inclusive), ISO date. Default: 30 days ago |
-| `to` | `string` | no | End (inclusive), ISO date. Default: now |
+| `to` | `string` | no | End (inclusive; a date without time covers the whole day), ISO date. Default: now |
 | `interval` | `"day" \| "week" \| "month"` | no | Timeline bucket size. default `"day"` |
 | `salesChannelId` | `string` | no | Restrict to one sales channel |
 | `excludeCancelled` | `boolean` | no | default `true` |
 | `topProducts` | `integer` | no | default `10`, min 1, max 25 |
+| `compareWithPrevious` | `boolean` | no | Also report the preceding period of equal length and the change. default `false` |
 
 ## shop_audit
 
@@ -258,7 +261,7 @@ _Shop health audit_
 
 **Read tool** — always registered.
 
-Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, out-of-stock and low-stock products, products without cover image, expired promotions still active, sales channels in maintenance mode and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, expired promotions still active, sales channels in maintenance mode and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
 
 ### Input
 
@@ -353,6 +356,41 @@ Move an order through its state machine: process (open → in_progress), complet
 |---|---|---|---|
 | `orderId` | `string` | yes | Order UUID |
 | `transition` | `"process" \| "complete" \| "cancel" \| "reopen"` | yes |  |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## order_delivery_transition
+
+_Transition delivery state (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Move an order's delivery through its state machine: ship (open → shipped), ship_partially, retour, retour_partially, cancel or reopen, optionally replacing the tracking codes first. Acts on the order's newest delivery unless deliveryId is given. Use it for 'mark order 10042 as shipped with tracking code X'. Shopware rejects transitions that are not allowed from the current state. dryRun=true (default) returns every request that would be sent; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <updated order> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `orderId` | `string` | yes | Order UUID |
+| `transition` | `"ship" \| "ship_partially" \| "retour" \| "retour_partially" \| "cancel" \| "reopen"` | yes |  |
+| `trackingCodes` | `string[]` | no | Replace the delivery's tracking codes before the transition |
+| `deliveryId` | `string` | no | Delivery UUID; default: the order's newest delivery |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## order_transaction_transition
+
+_Transition payment state (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Move an order's payment (its newest transaction) through its state machine: paid, paid_partially, remind, process, authorize, cancel, fail, refund, refund_partially, chargeback, reopen or process_unconfirmed. Use it for 'mark order 10042 as paid' once a bank transfer arrived, or 'remind' for an overdue payment (the state changes; whether a mail goes out is decided by the shop's flows). It never moves money. Shopware rejects transitions that are not allowed from the current state. dryRun=true (default) returns the request that would be sent; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <updated order> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `orderId` | `string` | yes | Order UUID |
+| `transition` | `"paid" \| "paid_partially" \| "remind" \| "process" \| "authorize" \| "cancel" \| "fail" \| "refund" \| "refund_partially" \| "chargeback" \| "reopen" \| "process_unconfirmed"` | yes |  |
+| `transactionId` | `string` | no | Transaction UUID; default: the order's newest transaction |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
 ## promotion_toggle

@@ -30,6 +30,15 @@ describe("loadConfig", () => {
     }
   });
 
+  it("drops a trailing /api from the base URL", () => {
+    expect(loadConfig({ ...base, SHOPWARE_URL: "https://shop.example.com/api/" }).url).toBe(
+      "https://shop.example.com",
+    );
+    expect(loadConfig({ ...base, SHOPWARE_URL: "https://shop.example.com/API" }).url).toBe(
+      "https://shop.example.com",
+    );
+  });
+
   it("rejects URLs without scheme", () => {
     expect(() => loadConfig({ ...base, SHOPWARE_URL: "shop.example.com" })).toThrow(/http/);
   });
@@ -43,6 +52,18 @@ describe("loadConfig", () => {
     expect(() => loadConfig({ ...base, SHOPWARE_MCP_DEFAULT_LIMIT: "500" })).toThrow(ConfigError);
     expect(loadConfig({ ...base, SHOPWARE_MCP_LOG_LEVEL: "DEBUG" }).logLevel).toBe("debug");
     expect(() => loadConfig({ ...base, SHOPWARE_MCP_LOG_LEVEL: "loud" })).toThrow(ConfigError);
+  });
+
+  it("parses the request timeout and the HTTP token", () => {
+    expect(loadConfig(base).timeoutMs).toBe(30_000);
+    expect(loadConfig(base).httpToken).toBeUndefined();
+    expect(loadConfig({ ...base, SHOPWARE_MCP_TIMEOUT_MS: "5000" }).timeoutMs).toBe(5000);
+    expect(() => loadConfig({ ...base, SHOPWARE_MCP_TIMEOUT_MS: "10" })).toThrow(ConfigError);
+    expect(loadConfig({ ...base, SHOPWARE_MCP_HTTP_TOKEN: " 0123456789abcdef " }).httpToken).toBe(
+      "0123456789abcdef",
+    );
+    expect(loadConfig({ ...base, SHOPWARE_MCP_HTTP_TOKEN: "" }).httpToken).toBeUndefined();
+    expect(() => loadConfig({ ...base, SHOPWARE_MCP_HTTP_TOKEN: "short" })).toThrow(/16/);
   });
 
   it("lets CLI overrides win over env", () => {

@@ -12,11 +12,75 @@ const isoDate = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/, "Use an ISO date like 2026-08-01");
 
-function toIso(value: string | undefined, fallback: Date): string {
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+const HAS_OFFSET = /(Z|[+-]\d{2}:?\d{2})$/;
+
+/**
+ * A date without a time means the whole day: its start for `from`, its last millisecond for `to`.
+ * A time without an offset is read as UTC, like a bare date, rather than as the server's zone.
+ */
+function toIso(value: string | undefined, fallback: Date, endOfDay = false): string {
   if (!value) return fallback.toISOString();
-  const parsed = new Date(value);
+  const normalized = value.includes("T") && !HAS_OFFSET.test(value) ? `${value}Z` : value;
+  const parsed = new Date(normalized);
   if (Number.isNaN(parsed.getTime())) throw badRequest(`Invalid date: ${value}`);
+  if (endOfDay && DATE_ONLY.test(value)) parsed.setUTCHours(23, 59, 59, 999);
   return parsed.toISOString();
+}
+
+function orderFilters(from: string, to: string, input: SalesReportInput): ShopwareFilter[] {
+  const filters: ShopwareFilter[] = [
+    { type: "range", field: "orderDateTime", parameters: { gte: from, lte: to } },
+  ];
+  if (input.salesChannelId) filters.push(equals("salesChannelId", input.salesChannelId));
+  if (input.excludeCancelled) filters.push(notCancelled());
+  return filters;
+}
+
+interface PeriodTotals {
+  from: string;
+  to: string;
+  orders: number;
+  revenueGross: number;
+  revenueNet: number;
+  averageOrderValue: number;
+}
+
+/** Order count and revenue for one period, computed by Shopware. */
+async function periodTotals(
+  client: ShopwareClient,
+  from: string,
+  to: string,
+  input: SalesReportInput,
+): Promise<PeriodTotals> {
+  const result = await client.search<Raw>("order", {
+    page: 1,
+    limit: 1,
+    "total-count-mode": 1,
+    filter: orderFilters(from, to, input),
+    includes: { order: ["id"] },
+    aggregations: [
+      { name: "revenue", type: "sum", field: "amountTotal" },
+      { name: "net", type: "sum", field: "amountNet" },
+    ],
+  });
+  const revenueGross = round2(sumOf(result.aggregations.revenue));
+  return {
+    from,
+    to,
+    orders: result.total,
+    revenueGross,
+    revenueNet: round2(sumOf(result.aggregations.net)),
+    averageOrderValue: result.total > 0 ? round2(revenueGross / result.total) : 0,
+  };
+}
+
+function change(current: number, previous: number) {
+  return {
+    absolute: round2(current - previous),
+    percent: previous === 0 ? null : round2(((current - previous) / previous) * 100),
+  };
 }
 
 function notCancelled(prefix = ""): ShopwareFilter {
@@ -34,19 +98,18 @@ export interface SalesReportInput {
   salesChannelId?: string;
   excludeCancelled: boolean;
   topProducts: number;
+  compareWithPrevious?: boolean;
 }
 
 export async function buildSalesReport(client: ShopwareClient, input: SalesReportInput) {
   const now = new Date();
   const from = toIso(input.from, new Date(now.getTime() - 30 * DAY_MS));
-  const to = toIso(input.to, now);
+  const to = toIso(input.to, now, true);
   if (from > to) throw badRequest("`from` must be before `to`");
 
-  const orderFilters: ShopwareFilter[] = [
-    { type: "range", field: "orderDateTime", parameters: { gte: from, lte: to } },
-  ];
-  if (input.salesChannelId) orderFilters.push(equals("salesChannelId", input.salesChannelId));
-  if (input.excludeCancelled) orderFilters.push(notCancelled());
+  // The period of equal length that ends right before `from`.
+  const previousTo = new Date(Date.parse(from) - 1);
+  const previousFrom = new Date(previousTo.getTime() - (Date.parse(to) - Date.parse(from)));
 
   const lineItemFilters: ShopwareFilter[] = [
     equals("type", "product"),
@@ -58,12 +121,13 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
 
   const revenue = { name: "revenue", type: "sum", field: "amountTotal" };
 
-  const [orders, lineItems] = await Promise.all([
+  // All three run together so a failure in any of them is caught here, never left dangling.
+  const [orders, lineItems, previousPeriod] = await Promise.all([
     client.search<Raw>("order", {
       page: 1,
       limit: 1,
       "total-count-mode": 1,
-      filter: orderFilters,
+      filter: orderFilters(from, to, input),
       includes: { order: ["id"] },
       aggregations: [
         revenue,
@@ -101,6 +165,9 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
         },
       ],
     }),
+    input.compareWithPrevious
+      ? periodTotals(client, previousFrom.toISOString(), previousTo.toISOString(), input)
+      : Promise.resolve(null),
   ]);
 
   const orderCount = orders.total;
@@ -154,6 +221,20 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
       orders: bucket.count,
     }));
 
+  const revenueNet = round2(sumOf(orders.aggregations.net));
+  const averageOrderValue = orderCount > 0 ? round2(totalRevenue / orderCount) : 0;
+  const comparison = previousPeriod
+    ? {
+        previousPeriod,
+        change: {
+          orders: change(orderCount, previousPeriod.orders),
+          revenueGross: change(totalRevenue, previousPeriod.revenueGross),
+          revenueNet: change(revenueNet, previousPeriod.revenueNet),
+          averageOrderValue: change(averageOrderValue, previousPeriod.averageOrderValue),
+        },
+      }
+    : {};
+
   return {
     period: { from, to, interval: input.interval },
     filters: {
@@ -163,11 +244,12 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
     totals: {
       orders: orderCount,
       revenueGross: totalRevenue,
-      revenueNet: round2(sumOf(orders.aggregations.net)),
+      revenueNet,
       shipping: round2(sumOf(orders.aggregations.shipping)),
-      averageOrderValue: orderCount > 0 ? round2(totalRevenue / orderCount) : 0,
+      averageOrderValue,
       note: "Amounts are summed in each order's own currency; see revenueByCurrency for the split.",
     },
+    ...comparison,
     revenueByCurrency: bucketsOf(orders.aggregations, "byCurrency").map((bucket) => ({
       currency: bucket.key,
       orders: bucket.count,
@@ -209,14 +291,23 @@ export const salesReport = defineTool({
     "average order value, breakdowns by order/payment/delivery state, payment method, currency " +
     "and sales channel, a revenue timeline (day/week/month) and the top-selling products. " +
     "Use it for 'how did we do last month?' questions instead of paging through orders. " +
-    "Defaults to the last 30 days, cancelled orders excluded. Returns one object.",
+    "compareWithPrevious adds the period of equal length before `from` and the change in orders " +
+    "and revenue. Defaults to the last 30 days, cancelled orders excluded. Returns one object.",
   inputSchema: {
     from: isoDate.optional().describe("Start (inclusive), ISO date. Default: 30 days ago"),
-    to: isoDate.optional().describe("End (inclusive), ISO date. Default: now"),
+    to: isoDate
+      .optional()
+      .describe(
+        "End (inclusive; a date without time covers the whole day), ISO date. Default: now",
+      ),
     interval: z.enum(["day", "week", "month"]).default("day").describe("Timeline bucket size"),
     salesChannelId: idSchema.optional().describe("Restrict to one sales channel"),
     excludeCancelled: z.boolean().default(true),
     topProducts: z.number().int().min(1).max(25).default(10),
+    compareWithPrevious: z
+      .boolean()
+      .default(false)
+      .describe("Also report the preceding period of equal length and the change"),
   },
   handler: (input, ctx) => buildSalesReport(ctx.client, input),
 });

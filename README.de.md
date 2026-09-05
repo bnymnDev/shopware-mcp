@@ -49,10 +49,10 @@ einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat:
 | | |
 |---|---|
 | **Kuratierte Werkzeuge** | Produkte, Bestellungen, Kunden, Kategorien, Aktionen, Plugins, Bestand, Verkaufskanäle: sechzehn Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Ein Audit** | `shop_audit` prüft acht Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, Produkte ohne Bestand oder ohne Bild, abgelaufene Aktionen, Kanäle im Wartungsmodus, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
-| **Ein Report** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
+| **Ein Audit** | `shop_audit` prüft neun Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand oder ohne Bild, abgelaufene Aktionen, Kanäle im Wartungsmodus, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
+| **Ein Report** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
 | **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
-| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
+| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren: sechs schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
 
 <p align="center">
   <picture>
@@ -76,7 +76,7 @@ mit generierten Demodaten, abgespielt aus den Transkripten in
 [`docs/demo/`](docs/demo). Die Aufnahmen sind auf Englisch; Werkzeugaufrufe und
 Ergebnisse sind wörtlich, zum Lesen gekürzt.
 
-**Eine Frage, acht Prüfungen.** Drei bezahlte Bestellungen warten auf den
+**Eine Frage, neun Prüfungen.** Drei bezahlte Bestellungen warten auf den
 Versand, die Storefront ist im Wartungsmodus, eine Sommeraktion hat den August
 überlebt. Die Antwort nennt Bestellnummern und Beträge und bietet den sicheren
 nächsten Schritt an.
@@ -185,7 +185,7 @@ docker run --rm -p 3333:3333 \
   ghcr.io/bnymndev/shopware-mcp
 ```
 
-Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Der Transport hat keine eigene Authentifizierung: auf localhost lassen oder hinter einen Proxy stellen, der authentifiziert ([Hinweise zum Betrieb](docs/self-hosting.md)).
+Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHOPWARE_MCP_HTTP_TOKEN=<zufälliges Geheimnis>` verlangt der Endpunkt `Authorization: Bearer <Geheimnis>`; ohne Token auf localhost lassen oder hinter einen Proxy stellen, der authentifiziert ([Hinweise zum Betrieb](docs/self-hosting.md)).
 
 </details>
 
@@ -205,6 +205,9 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Der Transpo
 | „Ist das PayPal-Plugin aktuell?" | `plugins_list` |
 | „Welche Hersteller haben kein Logo?" | `entity_schema`, dann `entity_search` auf `product_manufacturer` |
 | „Setze den Bestand von SW10084 auf 40." | `stock_set`, erst als Probelauf, dann echt |
+| „Bestellung 10042 ist mit DHL raus, Sendungsnummer 00340434." | `order_delivery_transition { transition: "ship", trackingCodes }` |
+| „Die Überweisung zu 10038 ist da." | `order_transaction_transition { transition: "paid" }` |
+| „Wie war die letzte Woche im Vergleich zur Vorwoche?" | `sales_report { compareWithPrevious: true }`, oder der Prompt `weekly_review` |
 
 Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`) auf Shopware-Feldpfaden, Assoziationen wie `manufacturer.name` eingeschlossen. Was sich in der Admin-API filtern lässt, lässt sich auch hier filtern. Der [Spickzettel](docs/quickstart.md#filters-cheat-sheet) zeigt die üblichen Fälle.
 
@@ -234,6 +237,8 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`stock_set`](docs/tools.md#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](docs/tools.md#product_update) | write (guarded) | Update product (guarded) |
 | [`order_state_transition`](docs/tools.md#order_state_transition) | write (guarded) | Transition order state (guarded) |
+| [`order_delivery_transition`](docs/tools.md#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
+| [`order_transaction_transition`](docs/tools.md#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 <!-- TOOLS:END -->
 
@@ -242,7 +247,7 @@ Jeder Parameter jedes Werkzeugs: [docs/tools.md](docs/tools.md). Suchen liefern
 begrenzt, und Fehler kommen als `{ error: { status, code, detail } }` zurück.
 
 Ressourcen: `shopware://shop`, `shopware://sales-channels`.
-Prompts: `order_summary`, `low_stock_report`.
+Prompts: `order_summary`, `low_stock_report`, `weekly_review`.
 
 **Plugin-Werkzeuge.** Beim Start fragt der Server im Hintergrund, welche
 Erweiterungen installiert und aktiv sind, und registriert zusätzliche Werkzeuge
@@ -259,12 +264,13 @@ unter `src/extensions/`; Pull Requests sind willkommen.
 ## Sicherheit
 
 - **Standardmäßig nur lesend.** Ohne `--allow-write` (oder `SHOPWARE_MCP_ALLOW_WRITE=true`) werden die Schreibwerkzeuge gar nicht registriert. Was ein Agent nicht sieht, kann er nicht aufrufen.
-- **Jeder Schreibzugriff ist zuerst ein Probelauf.** `stock_set`, `product_update`, `order_state_transition` und `promotion_toggle` stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`. Ein echter Schreibzugriff liefert die neu gelesene Entität.
-- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung. Sonst nichts.
+- **Jeder Schreibzugriff ist zuerst ein Probelauf.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition` und `promotion_toggle` stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
+- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Sonst nichts.
 - **Bereinigte Lesezugriffe.** `entity_search` entfernt Passwörter, Schlüssel, Tokens und Hashes aus jeder Antwort und verweigert Entitäten, die Zugangsdaten oder Systeminterna enthalten: Benutzer, Integrationen, ACL-Rollen, Apps, Systemkonfiguration.
 - **Nirgends Geheimnisse.** Zugangsdaten erscheinen nie in Ausgaben, Logs oder Fehlermeldungen. Logs gehen nur nach stderr.
 - **Keine Telemetrie.** Der Server spricht mit Ihrem Shop und mit Ihrem Host. Mit niemandem sonst.
-- **HTTP-Transport.** Ohne eigene Authentifizierung. Auf localhost lassen (Standard) oder hinter einen authentifizierenden Reverse Proxy stellen.
+- **HTTP-Transport.** Mit `SHOPWARE_MCP_HTTP_TOKEN` verlangt `/mcp` diesen Bearer-Token, verglichen in konstanter Zeit. Ohne Token auf localhost lassen (Standard) oder hinter einen authentifizierenden Reverse Proxy stellen; der Server warnt, wenn er ohne Token weiter erreichbar ist.
+- **Requests laufen ab.** Ein Shop, der nicht mehr antwortet, kostet einen Request 30 Sekunden (`SHOPWARE_MCP_TIMEOUT_MS`), nicht die ganze Sitzung.
 
 Etwas gefunden? Siehe [SECURITY.md](SECURITY.md).
 
@@ -281,6 +287,8 @@ Etwas gefunden? Siehe [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_DEFAULT_LIMIT` | nein | Standard-Seitengröße für Suchen (Standard 20, maximal 50) |
 | `SHOPWARE_MCP_EXTENSIONS` | nein | `false` schaltet Plugin-Werkzeuge und die Erweiterungssuche beim Start ab |
 | `SHOPWARE_LANGUAGE_ID` | nein | Sprach-UUID für übersetzte Felder (`sw-language-id`). Standard: Shopsprache |
+| `SHOPWARE_MCP_TIMEOUT_MS` | nein | Timeout je Admin-API-Request in Millisekunden (Standard 30000, 1000 bis 600000) |
+| `SHOPWARE_MCP_HTTP_TOKEN` | nein | Bearer-Token, den der HTTP-Transport auf `/mcp` verlangt (mindestens 16 Zeichen). Standard: keiner |
 | `SHOPWARE_MCP_LOG_LEVEL` | nein | `error` (Standard), `warn`, `info`, `debug`. Logs gehen nur nach stderr |
 
 CLI-Flags überschreiben die Umgebung: `--allow-write`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`.
