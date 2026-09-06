@@ -10,6 +10,7 @@
   <a href="https://github.com/bnymnDev/shopware-mcp/actions/workflows/ci.yml"><img src="https://github.com/bnymnDev/shopware-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/bnymnDev/shopware-mcp/actions/workflows/e2e.yml"><img src="https://github.com/bnymnDev/shopware-mcp/actions/workflows/e2e.yml/badge.svg" alt="nächtliche E2E-Tests gegen ein echtes Shopware"></a>
   <a href="https://registry.modelcontextprotocol.io"><img src="https://img.shields.io/badge/MCP_registry-io.github.bnymnDev%2Fshopware--mcp-0b7bd6" alt="MCP registry"></a>
+  <img src="https://img.shields.io/node/v/shopware-mcp?color=339933&logo=node.js&logoColor=white" alt="node">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
@@ -347,6 +348,7 @@ Alle weiteren Dokumente sind auf Englisch:
 | [docs/decisions.md](docs/decisions.md) | Designentscheidungen und ihre Begründung |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Einrichtung, Grundregeln, End-to-End-Tests, Releases |
 | [SECURITY.md](SECURITY.md) | Was melden und wohin |
+| [CHANGELOG.md](CHANGELOG.md) | Was sich in jeder Version geändert hat |
 
 ## Lizenz
 

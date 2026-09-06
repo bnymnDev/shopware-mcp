@@ -6,7 +6,7 @@ body:
     id: version
     attributes:
       label: shopware-mcp version
-      placeholder: "0.1.0"
+      placeholder: "0.3.0"
     validations:
       required: true
   - type: input
@@ -20,7 +20,7 @@ body:
     id: host
     attributes:
       label: MCP host
-      options: [Claude Desktop, Claude Code, Cursor, MCP Inspector, Other]
+      options: [Claude Desktop, Claude Code, Cursor, VS Code, Zed, MCP Inspector, Other]
     validations:
       required: true
   - type: textarea
