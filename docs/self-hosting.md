@@ -35,6 +35,8 @@ mcp.example.com {
 
 ## Docker
 
+The image is published for `linux/amd64` and `linux/arm64`, so it runs natively on Apple Silicon and ARM servers.
+
 ```bash
 docker run --rm -p 3333:3333 \
   -e SHOPWARE_URL=https://shop.example.com \

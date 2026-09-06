@@ -74,6 +74,8 @@ jobs:
         id: image
         # Container repository names must be lowercase, the GitHub owner is not.
         run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      # QEMU lets buildx produce the arm64 variant on the amd64 runner.
+      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
         with:
@@ -84,6 +86,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.name }}:${{ needs.release.outputs.version }}

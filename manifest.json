@@ -3,8 +3,8 @@
   "name": "shopware-mcp",
   "display_name": "Shopware",
   "version": "0.3.0",
-  "description": "Query and safely manage your Shopware 6 shop: products, orders, customers, stock, health audits and sales reports.",
-  "long_description": "Connects your AI assistant to the Shopware 6 Admin API. Read-only by default; write tools (stock, product basics, order state, promotions) can be enabled and always default to a dry run. Includes a one-shot shop health audit, aggregated sales reports and schema-aware access to any Shopware entity with credentials stripped.",
+  "description": "Query and safely manage your Shopware 6 shop: products, orders, customers, stock, documents, health audits and sales reports.",
+  "long_description": "Connects your AI assistant to the Shopware 6 Admin API. Read-only by default; write tools (stock, product basics, order, delivery and payment state, internal notes, documents, promotions) can be enabled and always default to a dry run, with an optional write budget. Includes a one-shot shop health audit, aggregated sales reports with period comparison, order documents as PDF and schema-aware access to any Shopware entity with credentials stripped.",
   "author": {
     "name": "bnymnDev",
     "url": "https://github.com/bnymnDev"
@@ -23,7 +23,10 @@
     "shop",
     "orders",
     "products",
-    "admin-api"
+    "admin-api",
+    "documents",
+    "invoices",
+    "mcp"
   ],
   "server": {
     "type": "node",
@@ -37,7 +40,8 @@
         "SHOPWARE_URL": "${user_config.shopware_url}",
         "SHOPWARE_CLIENT_ID": "${user_config.client_id}",
         "SHOPWARE_CLIENT_SECRET": "${user_config.client_secret}",
-        "SHOPWARE_MCP_ALLOW_WRITE": "${user_config.allow_write}"
+        "SHOPWARE_MCP_ALLOW_WRITE": "${user_config.allow_write}",
+        "SHOPWARE_MCP_MAX_WRITES": "${user_config.max_writes}"
       }
     }
   },
@@ -64,9 +68,18 @@
     "allow_write": {
       "type": "boolean",
       "title": "Enable write tools",
-      "description": "Registers stock_set, product_update, order_state_transition and promotion_toggle. Every write defaults to a dry run.",
+      "description": "Registers the guarded write tools: stock, product basics, order state, shipping with tracking codes, payment state, internal notes, documents and promotions. Every write defaults to a dry run.",
       "required": false,
       "default": false
+    },
+    "max_writes": {
+      "type": "number",
+      "title": "Write budget",
+      "description": "Real writes this extension may perform per session; 0 means no cap. Dry runs are always free.",
+      "required": false,
+      "default": 0,
+      "min": 0,
+      "max": 1000000
     }
   },
   "tools": [

@@ -1,0 +1,40 @@
+# Smithery (smithery.ai) listing: how to start this server with a user's shop credentials.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: [shopwareUrl, clientId, clientSecret]
+    properties:
+      shopwareUrl:
+        type: string
+        title: Shop URL
+        description: Base URL of the shop, e.g. https://shop.example.com
+      clientId:
+        type: string
+        title: Integration access key ID
+        description: Settings → System → Integrations in the Shopware admin
+      clientSecret:
+        type: string
+        title: Integration secret access key
+        description: Shown once when the integration is created
+      allowWrite:
+        type: boolean
+        title: Enable write tools
+        description: Registers the guarded write tools; every write defaults to a dry run
+        default: false
+      maxWrites:
+        type: integer
+        title: Write budget
+        description: Real writes per session, 0 means no cap
+        default: 0
+  commandFunction: |-
+    (config) => ({
+      command: "node",
+      args: ["dist/index.js", ...(config.allowWrite ? ["--allow-write"] : [])],
+      env: {
+        SHOPWARE_URL: config.shopwareUrl,
+        SHOPWARE_CLIENT_ID: config.clientId,
+        SHOPWARE_CLIENT_SECRET: config.clientSecret,
+        SHOPWARE_MCP_MAX_WRITES: String(config.maxWrites ?? 0)
+      }
+    })

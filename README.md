@@ -138,7 +138,7 @@ the host is told to refresh its list, and a compliance question has an answer.
 | **Portable schemas** | Every tool schema is checked to avoid constructs that some MCP clients misread, so the same server works in every host. |
 | **A solid client** | OAuth client credentials with early token refresh, one retry on 401 and on 429/5xx with `Retry-After`, a per-request timeout, exact totals, inheritance and language headers, a cached entity schema. |
 | **Two transports** | stdio for desktop hosts, stateless Streamable HTTP for everything else, with an optional bearer token. |
-| **Packaged four ways** | npm with build provenance, a Docker image on GHCR, a one-click `.mcpb` bundle for Claude Desktop, and a listing in the official MCP registry. |
+| **Packaged four ways** | npm with build provenance, a Docker image on GHCR for amd64 and arm64, a one-click `.mcpb` bundle for Claude Desktop that asks for the credentials and a write budget, and a listing in the official MCP registry. |
 
 ---
 
