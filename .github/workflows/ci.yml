@@ -53,7 +53,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build the Claude Desktop extension
         run: pnpm pack:mcpb
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: shopware-mcp-mcpb
           path: shopware-mcp.mcpb
