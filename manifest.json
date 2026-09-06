@@ -2,7 +2,7 @@
   "manifest_version": "0.2",
   "name": "shopware-mcp",
   "display_name": "Shopware",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Query and safely manage your Shopware 6 shop: products, orders, customers, stock, documents, health audits and sales reports.",
   "long_description": "Connects your AI assistant to the Shopware 6 Admin API. Read-only by default; write tools (stock, product basics, order, delivery and payment state, internal notes, documents, promotions) can be enabled and always default to a dry run, with an optional write budget. Includes a one-shot shop health audit, aggregated sales reports with period comparison, order documents as PDF and schema-aware access to any Shopware entity with credentials stripped.",
   "author": {
