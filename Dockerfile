@@ -1,5 +1,9 @@
 # syntax=docker/dockerfile:1
-FROM node:22-alpine AS build
+# The build stage runs on the builder's own architecture: its output is plain JavaScript and
+# pure-JS dependencies, so nothing there depends on the target platform, and compiling under
+# QEMU emulation is slow (and stalls with TypeScript's native binary). Only the runtime stage
+# is built per platform.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
