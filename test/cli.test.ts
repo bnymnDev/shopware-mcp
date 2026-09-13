@@ -135,7 +135,7 @@ describe("audit and report commands", () => {
     expect(critical.code).toBe(1);
     expect((await run(["audit", "--fail-on", "none"])).code).toBe(0);
     const json = await run(["audit", "--json", "--fail-on", "warning"]);
-    expect(JSON.parse(json.out).summary.checksRun).toBe(15);
+    expect(JSON.parse(json.out).summary.checksRun).toBe(16);
     expect(json.code).toBe(1);
   });
 

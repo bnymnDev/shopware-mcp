@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { ShopwareMcpError, toErrorShape } from "./errors.js";
+import { toErrorShape } from "./errors.js";
 import { detectExtensionTools } from "./extensions/index.js";
 import { logger } from "./logger.js";
 import { registerPrompts } from "./prompts/index.js";
@@ -8,6 +8,7 @@ import { registerResources } from "./resources/index.js";
 import { tools } from "./tools/index.js";
 import type { Attachment, ToolContext, ToolDefinition } from "./tools/types.js";
 import { NAME, VERSION } from "./version.js";
+import { chargeWrites } from "./writes.js";
 
 export const SERVER_INSTRUCTIONS =
   "Tools for a Shopware 6 shop via its Admin API. Start with shop_info; use shop_audit for a " +
@@ -59,24 +60,11 @@ function toolResult(value: unknown, isError = false): CallToolResult {
   return result;
 }
 
-/** Real writes performed per process, for the optional SHOPWARE_MCP_MAX_WRITES cap. */
-const writesUsed = new WeakMap<ToolContext, number>();
-
 /** Count a real write against the cap, or refuse it. Dry runs are free. */
 function chargeWrite(tool: ToolDefinition, args: unknown, ctx: ToolContext): void {
-  const cap = ctx.config.maxWrites;
-  if (!tool.write || cap <= 0) return;
+  if (!tool.write || tool.selfCharging) return;
   if ((args as { dryRun?: unknown } | undefined)?.dryRun !== false) return;
-  const used = writesUsed.get(ctx) ?? 0;
-  if (used >= cap) {
-    throw new ShopwareMcpError(
-      403,
-      "WRITE_BUDGET_EXHAUSTED",
-      `This process has used its ${cap} real writes (SHOPWARE_MCP_MAX_WRITES); restart it or raise the cap`,
-    );
-  }
-  writesUsed.set(ctx, used + 1);
-  if (used + 1 === cap) logger.warn("write budget exhausted", { tool: tool.name, cap });
+  chargeWrites(ctx, 1, tool.name);
 }
 
 /** Tool names already registered per server, so a late detection cannot register a name twice. */

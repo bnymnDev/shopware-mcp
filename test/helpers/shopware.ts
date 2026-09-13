@@ -71,6 +71,8 @@ export const searchFixtures: Record<string, string> = {
   tax: "taxes",
   "order-line-item": "line-item-sales",
   "media-folder": "media-folders",
+  "scheduled-task": "scheduled-tasks",
+  document: "documents",
 };
 
 export function tokenHandler(): HttpHandler {

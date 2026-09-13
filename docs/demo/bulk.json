@@ -1,0 +1,252 @@
+{
+  "title": "shopware-mcp · order_documents_bulk_create, scheduled_tasks_list and tag_assign, with --allow-write",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp --allow-write"
+    },
+    {
+      "kind": "prompt",
+      "text": "Create invoices for the paid orders that never got one. Show me first."
+    },
+    {
+      "kind": "call",
+      "tool": "order_documents_bulk_create",
+      "args": "{ type: \"invoice\", maxOrders: 3 }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": true, \"matching\": 56,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"orders\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"orderNumber\": \"10028\", \"orderDate\": \"2024-09-18T08:24:34.000+00:00\", \"amountTotal\": 62064.02,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"currency\": \"EUR\", \"state\": \"completed\", \"paymentState\": \"paid\", \"deliveryState\": \"shipped\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"customer\": { \"name\": \"Friedrich Homenick\", \"customerNumber\": \"10009\", … }, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"orderNumber\": \"10035\", \"orderDate\": \"2024-09-20T00:13:01.000+00:00\", \"amountTotal\": 67605.7, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"orderNumber\": \"10015\", \"orderDate\": \"2024-09-28T13:37:04.000+00:00\", \"amountTotal\": 59588.92, … }"
+    },
+    {
+      "kind": "result",
+      "text": "  ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"apply\": { \"type\": \"invoice\", \"dryRun\": false, \"orderIds\": [ \"01a0690b05a371d39f4169dc4a9eb96d\","
+    },
+    {
+      "kind": "result",
+      "text": "             \"01a0690b06e271bf88dd23b0015635b2\", \"01a0690b011372c48a4890061a54f59c\" ] },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"wouldSend\": { \"method\": \"POST\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"url\": \"http://127.0.0.1:8000/api/_action/order/document/invoice/create\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"body\": ["
+    },
+    {
+      "kind": "result",
+      "text": "      { \"orderId\": \"01a0690b05a371d39f4169dc4a9eb96d\", \"fileType\": \"pdf\", \"static\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "        \"config\": {} },"
+    },
+    {
+      "kind": "result",
+      "text": "      { \"orderId\": \"01a0690b06e271bf88dd23b0015635b2\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "      { \"orderId\": \"01a0690b011372c48a4890061a54f59c\", … } ] } }"
+    },
+    {
+      "kind": "agent",
+      "text": "56 paid orders have no invoice. The three oldest, from September 2024, would get one:"
+    },
+    {
+      "kind": "agent",
+      "text": "#10028 (62,064.02 €, Friedrich Homenick), #10035 (67,605.70 €) and #10015 (59,588.92 €)."
+    },
+    {
+      "kind": "agent",
+      "text": "One request, three documents, nothing sent yet. Shall I create them?"
+    },
+    {
+      "kind": "prompt",
+      "text": "Yes."
+    },
+    {
+      "kind": "call",
+      "tool": "order_documents_bulk_create",
+      "args": [
+        "{ type: \"invoice\", dryRun: false,",
+        "  orderIds: [\"01a0690b05a371d39f4169dc4a9eb96d\", \"01a0690b06e271bf88dd23b0015635b2\",",
+        "             \"01a0690b011372c48a4890061a54f59c\"] }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": false, \"created\": 3,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"documents\": [ { \"orderNumber\": \"10028\", \"documentId\": \"01a09b3aeee67200a7be84b582343766\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "                 { \"orderNumber\": \"10035\", \"documentId\": \"01a09b3aef157015a5f266c6e15bab26\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "                 { \"orderNumber\": \"10015\", \"documentId\": \"01a09b3aef3c71a39dfa7304cdd3c442\", … } ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"skipped\": [], \"errors\": [], \"orders\": [ … ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "Done, three invoices exist now, for exactly the orders shown. 53 remain; each call takes up"
+    },
+    {
+      "kind": "agent",
+      "text": "to 50, and every invoice counts as one write against the budget, so a capped process stops."
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "prompt",
+      "text": "How did 56 pile up? Are the cron jobs running at all?"
+    },
+    {
+      "kind": "call",
+      "tool": "scheduled_tasks_list",
+      "args": "{ onlyProblems: true }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"total\": 33, \"summary\": { \"byStatus\": { \"scheduled\": 31, \"skipped\": 2 }, \"overdue\": 31, \"failed\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "                            \"stuck\": 0, \"longestOverdueMinutes\": 14050, \"lastRun\": null },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"tasks\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"log_entry.cleanup\", \"status\": \"scheduled\", \"runIntervalSeconds\": 86400,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"lastExecutionTime\": null, \"nextExecutionTime\": \"2026-09-03T20:35:11.856+00:00\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"overdueMinutes\": 14050, \"problem\": \"overdue\" },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"shopware.invalidate_cache\", \"status\": \"scheduled\", \"runIntervalSeconds\": 300, …"
+    },
+    {
+      "kind": "result",
+      "text": "      \"problem\": \"overdue\" },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"app_update\", \"status\": \"scheduled\", \"runIntervalSeconds\": 86400, …"
+    },
+    {
+      "kind": "result",
+      "text": "      \"problem\": \"overdue\" },"
+    },
+    {
+      "kind": "note",
+      "text": "28 more tasks omitted"
+    },
+    {
+      "kind": "result",
+      "text": "    … ], \"truncated\": false }"
+    },
+    {
+      "kind": "agent",
+      "text": "No. 31 of 33 scheduled tasks are overdue, the oldest by 9 days 18 hours, and none has ever"
+    },
+    {
+      "kind": "agent",
+      "text": "run: the scheduler is not running on this host. Search index, thumbnails, mails and cache"
+    },
+    {
+      "kind": "agent",
+      "text": "invalidation wait with it. Start the messenger worker and scheduled-task:run, then check again."
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "prompt",
+      "text": "Tag order 10028 as invoice-sent so the team sees it."
+    },
+    {
+      "kind": "call",
+      "tool": "tag_assign",
+      "args": [
+        "{ entity: \"order\", id: \"01a0690b05a371d39f4169dc4a9eb96d\",",
+        "  add: [\"invoice-sent\"] }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": true, \"unchanged\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"wouldSend\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"method\": \"PATCH\", \"url\": \"http://127.0.0.1:8000/api/order/01a0690b05a371d39f4169dc4a9eb96d\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"body\": { \"tags\": [ { \"id\": \"66a9508d0f344db1a0b71a398f78c14d\", \"name\": \"invoice-sent\" } ] } } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "One request: it attaches \"invoice-sent\" to #10028 and creates the tag on the way, since none"
+    },
+    {
+      "kind": "agent",
+      "text": "of that name exists yet. The order keeps its other tags. Say the word and I apply it."
+    }
+  ]
+}

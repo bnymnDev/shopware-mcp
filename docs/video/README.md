@@ -13,5 +13,5 @@ npx hyperframes@0.8.36 check                      # lint, runtime, layout and co
 npx hyperframes@0.8.36 render --quality high --output shopware-mcp-intro.mp4
 ```
 
-The MP4 is not committed; it is attached to release announcements instead. Text and timings are plain HTML,
+`shopware-mcp-intro.mp4` is the rendered clip, re-encoded to 720p for the website (`poster.jpg` is its title frame, `captions.vtt` describes each scene for the silent video); the Pages workflow copies all three into the site. Text and timings are plain HTML,
 so a new scene is a new `<section class="clip" data-start data-duration>` plus its tweens at the bottom.

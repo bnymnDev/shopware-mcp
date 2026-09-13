@@ -61,10 +61,12 @@ describe("MCP server", () => {
       "order_transaction_transition",
       "order_note",
       "order_document_create",
+      "order_documents_bulk_create",
       "promotion_toggle",
       "promotion_create",
       "customer_update",
       "review_moderate",
+      "tag_assign",
     ]);
   });
 
@@ -210,6 +212,26 @@ describe("attachments and the write budget", () => {
       bytes: PDF_BYTES.length,
     });
     expect(text.attachments[0]).not.toHaveProperty("base64");
+    await client.close();
+  });
+
+  it("lets a bulk tool charge the budget per order instead of per call", async () => {
+    mock.use(searchHandler({ product: "product-detail" }));
+    const ctx = createContext({ allowWrite: true, maxWrites: 2 });
+    const server = createServer(ctx);
+    const client = new Client({ name: "bulk-budget", version: "0.0.0" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    const bulk = await client.callTool({
+      name: "order_documents_bulk_create",
+      arguments: { type: "invoice", dryRun: false },
+    });
+    expect(bulk.isError).toBeFalsy();
+    expect(bulk.structuredContent).toMatchObject({ created: 1, writesLeft: 1 });
+    const args = { productId: "b2c3d4e5f60718293a4b5c6d7e8f0102", stock: 3, dryRun: false };
+    expect((await client.callTool({ name: "stock_set", arguments: args })).isError).toBeFalsy();
+    const third = await client.callTool({ name: "stock_set", arguments: args });
+    expect(third.structuredContent).toMatchObject({ error: { code: "WRITE_BUDGET_EXHAUSTED" } });
     await client.close();
   });
 

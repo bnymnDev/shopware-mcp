@@ -1,8 +1,14 @@
 import { z } from "zod";
-import { associations, equals } from "../client/criteria.js";
+import { associations, equals, equalsAny } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
 import { badRequest, ShopwareMcpError } from "../errors.js";
-import { bool, dryRunField, idSchema, raw, str } from "./shared.js";
+import { chargeWrites, writesLeft } from "../writes.js";
+import { mapOrderSummary } from "./orders.js";
+
+type OrderSummary = ReturnType<typeof mapOrderSummary>;
+
+import { notCancelled } from "./periods.js";
+import { bool, dryRunField, idSchema, raw, rawList, str } from "./shared.js";
 import { type Attachment, type DryRunResult, defineTool } from "./types.js";
 
 /** Larger files stay in the shop; a base64 blob beyond this would swamp any host. */
@@ -130,7 +136,96 @@ export const documentDownload = defineTool({
 
 interface CreateResponse {
   data?: Array<{ documentId?: unknown }>;
+  /** Shopware keys errors by order id; an empty PHP array arrives as `[]`. */
   errors?: unknown;
+}
+
+interface BulkError {
+  orderId: string;
+  orderNumber: string | null;
+  code: string | null;
+  detail: string | null;
+}
+
+interface BulkOrder {
+  id: string;
+  orderNumber: string | null;
+}
+
+/** The ids Shopware reports as created, in its own order. */
+export function createdDocumentIds(response: CreateResponse | undefined): string[] {
+  return rawList(response?.data)
+    .map((entry) => str(entry.documentId))
+    .filter((id): id is string => id !== null);
+}
+
+/**
+ * Shopware answers a bulk request with the created ids (without their orders) and the errors
+ * keyed by order id. An order it skipped without an error, for example one that already has
+ * the document, appears in neither list, so the ids are attributed by reading the documents
+ * back (`owners`: document id to order id) rather than by position.
+ */
+export function mapBulkResponse(
+  response: CreateResponse | undefined,
+  orders: BulkOrder[],
+  owners: Map<string, string>,
+) {
+  const errors: BulkError[] = [];
+  const failed = new Set<string>();
+  const rawErrors = response?.errors;
+  if (rawErrors && typeof rawErrors === "object" && !Array.isArray(rawErrors)) {
+    for (const [orderId, entries] of Object.entries(rawErrors as Record<string, unknown>)) {
+      failed.add(orderId);
+      const first = rawList(entries)[0] ?? raw(entries);
+      errors.push({
+        orderId,
+        orderNumber: orders.find((order) => order.id === orderId)?.orderNumber ?? null,
+        code: str(first?.code),
+        detail: str(first?.detail) ?? str(first?.title),
+      });
+    }
+  }
+  const ids = createdDocumentIds(response);
+  const documents: Array<{
+    orderId: string | null;
+    orderNumber: string | null;
+    documentId: string;
+  }> = [];
+  const attributed = new Set<string>();
+  for (const order of orders) {
+    for (const documentId of ids) {
+      if (owners.get(documentId) !== order.id) continue;
+      attributed.add(documentId);
+      documents.push({ orderId: order.id, orderNumber: order.orderNumber, documentId });
+    }
+  }
+  for (const documentId of ids) {
+    if (!attributed.has(documentId)) {
+      documents.push({ orderId: null, orderNumber: null, documentId });
+    }
+  }
+  const skipped = orders
+    .filter((order) => !failed.has(order.id) && !documents.some((d) => d.orderId === order.id))
+    .map((order) => ({ orderId: order.id, orderNumber: order.orderNumber }));
+  return { documents, errors, skipped };
+}
+
+/** Which order each of the given documents belongs to, read back from the shop. */
+async function documentOwners(client: ShopwareClient, ids: string[]): Promise<Map<string, string>> {
+  const owners = new Map<string, string>();
+  if (ids.length === 0) return owners;
+  const result = await client.search<Raw>("document", {
+    page: 1,
+    limit: ids.length,
+    filter: [equalsAny("id", ids)],
+    includes: { document: ["id", "orderId"] },
+  });
+  for (const document of result.items) {
+    const id = str(document.id);
+    const orderId = str(document.orderId);
+    if (id && orderId) owners.set(id, orderId);
+  }
+  return owners;
 }
 
 export const orderDocumentCreate = defineTool({
@@ -188,5 +283,120 @@ export const orderDocumentCreate = defineTool({
       includes: DOCUMENT_INCLUDES,
     });
     return { dryRun: false as const, result: mapDocument(document) };
+  },
+});
+
+const documentType = z
+  .string()
+  .trim()
+  .regex(/^[a-z][a-z0-9_]{1,60}$/, "Use the document type's technical name, e.g. invoice");
+
+export const orderDocumentsBulkCreate = defineTool({
+  name: "order_documents_bulk_create",
+  title: "Create documents for many orders (guarded)",
+  description:
+    "Generate one document type for several orders in one request: either the given orderIds, " +
+    "or, by default, the paid, not cancelled orders that have no document of that type yet, " +
+    "oldest first, up to maxOrders. Closes the 'paid orders without an invoice' audit finding. " +
+    "Every order counts as one real write against the write budget, checked before anything " +
+    "is sent. dryRun=true (default) lists the orders and the request; to apply, call again " +
+    "with the dry run's `apply` arguments (the same orderIds and dryRun: false) so the orders " +
+    "invoiced are the ones shown. Returns { dryRun: true, matching, orders[], missing[]?, " +
+    "apply, wouldSend } or { dryRun: false, created, documents[], skipped[], errors[], " +
+    "orders[], writesLeft? }.",
+  write: true,
+  selfCharging: true,
+  annotations: { idempotentHint: false },
+  inputSchema: {
+    type: documentType.describe("invoice, delivery_note, credit_note, storno or another type"),
+    orderIds: z.array(idSchema).min(1).max(50).optional().describe("Explicit orders"),
+    maxOrders: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(20)
+      .describe("Cap for the default selection"),
+    comment: z.string().trim().max(1000).optional().describe("Printed on every document"),
+    dryRun: dryRunField,
+  },
+  handler: async (input, ctx) => {
+    const filter = input.orderIds
+      ? [equalsAny("id", input.orderIds)]
+      : [
+          equals("transactions.stateMachineState.technicalName", "paid"),
+          notCancelled(),
+          {
+            type: "not" as const,
+            operator: "and" as const,
+            queries: [equals("documents.documentType.technicalName", input.type)],
+          },
+        ];
+    const found = await ctx.client.search<Raw>("order", {
+      page: 1,
+      limit: input.orderIds ? input.orderIds.length : input.maxOrders,
+      "total-count-mode": 1,
+      filter,
+      sort: [{ field: "orderDateTime", order: "ASC" }],
+      associations: associations([
+        "orderCustomer",
+        "currency",
+        "stateMachineState",
+        "transactions.stateMachineState",
+        "deliveries.stateMachineState",
+      ]),
+    });
+    const orders = found.items
+      .map(mapOrderSummary)
+      .filter((order): order is OrderSummary & { id: string } => order.id !== null);
+    if (orders.length === 0) throw badRequest(`No orders to create a ${input.type} for`);
+    const missing = (input.orderIds ?? []).filter((id) => !orders.some((order) => order.id === id));
+    const path = `/api/_action/order/document/${input.type}/create`;
+    const body = orders.map((order) => ({
+      orderId: order.id,
+      fileType: "pdf",
+      static: false,
+      config: input.comment ? { documentComment: input.comment } : {},
+    }));
+    if (input.dryRun) {
+      const dry: DryRunResult & {
+        matching: number;
+        orders: typeof orders;
+        missing?: string[];
+        apply: Record<string, unknown>;
+      } = {
+        dryRun: true,
+        matching: found.total,
+        orders,
+        ...(missing.length > 0 ? { missing } : {}),
+        apply: {
+          type: input.type,
+          orderIds: orders.map((order) => order.id),
+          ...(input.comment ? { comment: input.comment } : {}),
+          dryRun: false,
+        },
+        wouldSend: { method: "POST", url: ctx.client.url(path), body },
+      };
+      return dry;
+    }
+    // One real write per order, refused as a whole when the budget cannot take the batch.
+    chargeWrites(ctx, orders.length, "order_documents_bulk_create");
+    const response = await ctx.client.request<CreateResponse | undefined>(path, {
+      method: "POST",
+      body,
+      idempotent: false,
+    });
+    const owners = await documentOwners(ctx.client, createdDocumentIds(response));
+    const { documents, errors, skipped } = mapBulkResponse(response, orders, owners);
+    return {
+      dryRun: false as const,
+      created: documents.length,
+      documents,
+      skipped,
+      errors,
+      orders,
+      ...(missing.length > 0 ? { missing } : {}),
+      ...(writesLeft(ctx) !== null ? { writesLeft: writesLeft(ctx) } : {}),
+    };
   },
 });

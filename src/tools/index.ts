@@ -2,7 +2,12 @@ import { shopAudit } from "./audit.js";
 import { categoriesList } from "./categories.js";
 import { customerReport } from "./customer-report.js";
 import { customersGet, customersSearch, customerUpdate } from "./customers.js";
-import { documentDownload, orderDocumentCreate, orderDocumentsList } from "./documents.js";
+import {
+  documentDownload,
+  orderDocumentCreate,
+  orderDocumentsBulkCreate,
+  orderDocumentsList,
+} from "./documents.js";
 import { entitySchema, entitySearch } from "./entities.js";
 import { stockForecast } from "./forecast.js";
 import { orderHistory } from "./history.js";
@@ -25,6 +30,8 @@ import { salesChannelsList } from "./sales-channels.js";
 import { shopSettings } from "./settings.js";
 import { shopInfo } from "./shop.js";
 import { stockGet, stockSet } from "./stock.js";
+import { tagAssign } from "./tags.js";
+import { scheduledTasksList } from "./tasks.js";
 import type { ToolDefinition } from "./types.js";
 
 /** Every tool, in the order they appear in generated docs. */
@@ -47,6 +54,7 @@ export const tools: ToolDefinition[] = [
   paymentMethodsList,
   shippingMethodsList,
   pluginsList,
+  scheduledTasksList,
   stockGet,
   stockForecast,
   salesReport,
@@ -63,10 +71,12 @@ export const tools: ToolDefinition[] = [
   orderTransactionTransition,
   orderNote,
   orderDocumentCreate,
+  orderDocumentsBulkCreate,
   promotionToggle,
   promotionCreate,
   customerUpdate,
   reviewModerate,
+  tagAssign,
 ];
 
 export const readTools = tools.filter((tool) => !tool.write);

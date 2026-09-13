@@ -24,6 +24,7 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`payment_methods_list`](#payment_methods_list) | read | List payment methods |
 | [`shipping_methods_list`](#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](#plugins_list) | read | List plugins and apps |
+| [`scheduled_tasks_list`](#scheduled_tasks_list) | read | Scheduled tasks |
 | [`stock_get`](#stock_get) | read | Get stock |
 | [`stock_forecast`](#stock_forecast) | read | Stock forecast |
 | [`sales_report`](#sales_report) | read | Sales report |
@@ -40,10 +41,12 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`order_transaction_transition`](#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`order_note`](#order_note) | write (guarded) | Add internal order note (guarded) |
 | [`order_document_create`](#order_document_create) | write (guarded) | Create order document (guarded) |
+| [`order_documents_bulk_create`](#order_documents_bulk_create) | write (guarded) | Create documents for many orders (guarded) |
 | [`promotion_toggle`](#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 | [`promotion_create`](#promotion_create) | write (guarded) | Create promotion (guarded) |
 | [`customer_update`](#customer_update) | write (guarded) | Update customer (guarded) |
 | [`review_moderate`](#review_moderate) | write (guarded) | Moderate review (guarded) |
+| [`tag_assign`](#tag_assign) | write (guarded) | Assign tags (guarded) |
 
 ## shop_info
 
@@ -353,6 +356,21 @@ List installed plugins and apps with version, active/installed state and the ava
 | `activeOnly` | `boolean` | no | Only return active extensions. default `false` |
 | `type` | `"all" \| "plugin" \| "app"` | no | Filter by extension type. default `"all"` |
 
+## scheduled_tasks_list
+
+_Scheduled tasks_
+
+**Read tool** — always registered.
+
+Shopware's scheduled tasks (indexing, cleanups, cache invalidation, plugin jobs) with status, interval, last and next run, and per task whether it is overdue past a grace period, failed, or stuck running for over a day. Many overdue tasks with no recent last run mean the scheduler or message worker is not running, which shows up as stale search results, missing thumbnails and unsent mails. Read-only. Returns { total, summary: { byStatus, overdue, failed, stuck, longestOverdueMinutes, lastRun }, tasks[], problems[], truncated }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `graceMinutes` | `integer` | no | A waiting task past its next run by more than this counts as overdue. default `15`, min 1, max 10080 |
+| `onlyProblems` | `boolean` | no | Return only overdue, failed or stuck tasks. default `false` |
+
 ## stock_get
 
 _Get stock_
@@ -431,7 +449,7 @@ _Shop health audit_
 
 **Read tool** — always registered.
 
-Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
 
 ### Input
 
@@ -645,6 +663,24 @@ Generate a document for an order with Shopware's own document generator: invoice
 | `comment` | `string` | no | Printed on the document |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
+## order_documents_bulk_create
+
+_Create documents for many orders (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Generate one document type for several orders in one request: either the given orderIds, or, by default, the paid, not cancelled orders that have no document of that type yet, oldest first, up to maxOrders. Closes the 'paid orders without an invoice' audit finding. Every order counts as one real write against the write budget, checked before anything is sent. dryRun=true (default) lists the orders and the request; to apply, call again with the dry run's `apply` arguments (the same orderIds and dryRun: false) so the orders invoiced are the ones shown. Returns { dryRun: true, matching, orders[], missing[]?, apply, wouldSend } or { dryRun: false, created, documents[], skipped[], errors[], orders[], writesLeft? }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `type` | `string` | yes | invoice, delivery_note, credit_note, storno or another type |
+| `orderIds` | `string[]` | no | Explicit orders |
+| `maxOrders` | `integer` | no | Cap for the default selection. default `20`, min 1, max 50 |
+| `comment` | `string` | no | Printed on every document |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
 ## promotion_toggle
 
 _Toggle promotion (guarded)_
@@ -716,6 +752,24 @@ Approve or hide one product review (sets its status; approved reviews are shown 
 | `reviewId` | `string` | yes | Review UUID |
 | `approved` | `boolean` | yes | true to publish, false to hide |
 | `comment` | `string` | no | Public reply shown under the review; omit to leave it unchanged |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## tag_assign
+
+_Assign tags (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Add tags to or remove tags from one customer, order or product, by tag name. Names match the shop's tags regardless of case; tags that do not exist yet are created in the same request; other tags on the record stay. Shopware's rules, flows and admin filters work with tags, so 'mark this customer as VIP' or 'flag this order for review' becomes a tag. dryRun=true (default) returns the requests without changing anything; call again with dryRun=false to apply. Counts as one write. Returns { dryRun: true, wouldSend[], unchanged } or { dryRun: false, result: { entity, id, tags[] } }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `entity` | `"customer" \| "order" \| "product"` | yes |  |
+| `id` | `string` | yes | UUID of the customer, order or product |
+| `add` | `string[]` | no | Tag names to add |
+| `remove` | `string[]` | no | Tag names to remove |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
 ## Plugin-aware tools

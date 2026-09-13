@@ -212,3 +212,15 @@ Shopware keeps every setting in one table: shop name and mail passwords side by 
 
 The FroshTools pack calls the plugin's own read routes and maps their answers; it never clears a cache, purges a queue or runs a task, although the plugin can. A pack is tested against the installed plugin before it ships, and its tools exist only in shops where the plugin is active.
 
+## Bulk writes spend the budget per record
+
+`order_documents_bulk_create` sends one request for up to fifty orders, because that is how Shopware's document generator works and one round trip is cheaper for everyone. The write budget still counts every order: a cap of twenty real writes means twenty invoices, not twenty calls. The unit is the record, not the HTTP request, which is why `tag_assign` or `product_cover_set` count once however many requests they send. The bulk tool charges the budget itself, before it sends anything, so a capped process refuses the whole batch rather than half of it and a refused batch costs nothing. Shopware answers with the created ids but not their orders, and it skips an order without an error when the document already exists, so the tool reads the new documents back and attributes them by order id instead of by position; an order that got neither a document nor an error is reported as skipped. The dry run also returns the exact `apply` arguments, with the orders pinned by id, so the real run cannot drift to different orders when a paid order arrives in between.
+
+## Tags are named, not addressed
+
+`tag_assign` takes tag names, because that is what people say ('mark him as VIP'), matches them the way Shopware's database does, without regard to case, and creates a tag that does not exist yet inside the same `PATCH`, so a failed request leaves no orphan tag behind. It adds to and removes from the record's tags without ever replacing the list, since `PATCH` with a `tags` array in Shopware means 'attach these' and a removal is its own request. A tag is the smallest mark Shopware's rules, flows and admin filters all understand, which is why it is a core tool and not a plugin's.
+
+## Scheduled tasks are read, not run
+
+`scheduled_tasks_list` reads the `scheduled_task` table and calls a waiting task overdue when it is past its next run by more than a grace period. It never runs, resets or deactivates a task: that is the scheduler's job, and a task started from an API call would hide the fact that the scheduler is down. The audit uses the same reading with an hour of grace, because a stalled scheduler explains many other findings, from missing invoices to stale search results.
+

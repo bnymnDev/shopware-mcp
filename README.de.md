@@ -50,11 +50,11 @@ einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat:
 
 | | |
 |---|---|
-| **Kuratierte Werkzeuge** | Produkte, Bestellungen samt Verlauf, Belege, Kunden, Kategorien, Aktionen, Bewertungen, Zahlungs- und Versandarten, Plugins, Bestand, Verkaufskanäle, die Shop-Einstellungen: neunzehn Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Ein Audit** | `shop_audit` prüft fünfzehn Dinge in einem Aufruf: bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
+| **Kuratierte Werkzeuge** | Produkte, Bestellungen samt Verlauf, Belege, Kunden, Kategorien, Aktionen, Bewertungen, Zahlungs- und Versandarten, Plugins, Bestand, Verkaufskanäle, geplante Aufgaben, die Shop-Einstellungen: zwanzig Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
+| **Ein Audit** | `shop_audit` prüft sechzehn Dinge in einem Aufruf: bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, geplante Aufgaben, die nicht mehr laufen, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
 | **Reports und eine Prognose** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. `stock_forecast` macht aus Absatzgeschwindigkeit und Bestand Reichweite in Tagen, Ausverkaufsdatum und Nachbestellmenge. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
 | **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab und lässt Shopware über die Treffermenge aggregieren: Bestellungen je Zahlungsart, Umsatz je Monat, alles, was terms, sum oder histogram hergeben. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
-| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen, Produkt oder Aktion anlegen, Produktbild setzen, Bewertung freigeben, Kunde ändern: dreizehn schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
+| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen, Produkt oder Aktion anlegen, Produktbild setzen, Bewertung freigeben, Kunde ändern, fünfzig Rechnungen auf einmal, ein Tag setzen: fünfzehn schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
 
 <p align="center">
   <picture>
@@ -72,6 +72,14 @@ Konfiguration.
 ---
 
 ## So sieht es aus
+
+<p align="center">
+  <a href="https://bnymndev.github.io/shopware-mcp/#video">
+    <img src="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/video/poster.jpg" alt="Dreißig Sekunden Intro-Video: eine echte shop_audit-Antwort im Terminal, die Zahlen, das Sicherheitsmodell, die Installation" width="100%">
+  </a>
+  <br>
+  <sub>Dreißig Sekunden, ohne Ton: <a href="https://bnymndev.github.io/shopware-mcp/#video">auf der Website ansehen</a> oder <a href="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/video/shopware-mcp-intro.mp4">die MP4 öffnen</a>.</sub>
+</p>
 
 Jede Aufnahme ist echte Ausgabe des Servers gegen einen Shopware-6.7.13-Testshop
 mit generierten Demodaten, abgespielt aus den Transkripten in
@@ -159,6 +167,15 @@ Message-Queue samt Worker und die Sicherheitshinweise zu Abhängigkeiten. Der
 Agent unterscheidet veraltete Suchergebnisse von einem toten Worker.
 
 ![FroshTools-Pack: frosh_health zeigt die fehlgeschlagenen Plattformprüfungen, frosh_queue 134 wartende Nachrichten ohne Worker, der Agent nennt die Ursache](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/ops.svg)
+
+**Sechsundfünfzig Rechnungen, drei auf einmal.** `order_documents_bulk_create`
+findet die bezahlten Bestellungen ohne Rechnung, älteste zuerst, und zeigt den
+einen Request, der sie erzeugen würde, bevor er läuft. Jede Bestellung zählt
+gegen das Schreib-Budget. Dann erklärt `scheduled_tasks_list`, wie der Rückstau
+entstand: 31 von 33 Aufgaben überfällig, keine je gelaufen, der Scheduler steht.
+`tag_assign` markiert die Bestellung für das Team und legt das Tag dabei an.
+
+![order_documents_bulk_create als Probelauf und echt für drei Bestellungen, scheduled_tasks_list mit 31 überfälligen Aufgaben, tag_assign legt das Tag invoice-sent an](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/bulk.svg)
 
 **Vorher wissen, was geht.** `shopware-mcp doctor` prüft, was die Integration lesen darf, liest ihre Rolle für die Schreibrechte, wo das erlaubt ist, und nennt je Werkzeug das fehlende Recht. Ein Administrator bekommt lauter Haken, eine Support-Rolle erfährt genau, was zu vergeben ist.
 
@@ -285,7 +302,9 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 | „Zwei kamen vom Kunden zurück, buche sie auf SW10084." | `stock_set { delta: 2 }` |
 | „Was muss ich in den nächsten zwei Wochen nachbestellen?" | `stock_forecast`, oder der Prompt `reorder_list` |
 | „Bestellungen je Zahlungsart im letzten Monat, mit Umsatz?" | `entity_search` auf `order` mit einer `terms`-Aggregation und einer `sum` darin |
-| „Welche bezahlten Bestellungen haben noch keine Rechnung?" | `shop_audit`, dann `order_document_create` je Bestellung |
+| „Welche bezahlten Bestellungen haben noch keine Rechnung? Erzeuge sie." | `shop_audit`, dann `order_documents_bulk_create { type: "invoice" }`, zuerst als Probelauf |
+| „Laufen die Cronjobs überhaupt?" | `scheduled_tasks_list { onlyProblems: true }` |
+| „Markiere diesen Kunden als VIP." | `tag_assign { entity: "customer", add: ["VIP"] }` |
 | „Ist der Gastkauf an, und was ist der Standardsteuersatz?" | `shop_settings` |
 | „Gib SW10084 dieses Bild: https://…/bank.jpg" | `product_cover_set`, der Shop lädt es selbst |
 | „Thumbnails fehlen, ist die Plattform in Ordnung?" | `frosh_health` und `frosh_queue`, wenn FroshTools installiert ist |
@@ -319,6 +338,7 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`payment_methods_list`](docs/tools.md#payment_methods_list) | read | List payment methods |
 | [`shipping_methods_list`](docs/tools.md#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](docs/tools.md#plugins_list) | read | List plugins and apps |
+| [`scheduled_tasks_list`](docs/tools.md#scheduled_tasks_list) | read | Scheduled tasks |
 | [`stock_get`](docs/tools.md#stock_get) | read | Get stock |
 | [`stock_forecast`](docs/tools.md#stock_forecast) | read | Stock forecast |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
@@ -335,10 +355,12 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`order_transaction_transition`](docs/tools.md#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`order_note`](docs/tools.md#order_note) | write (guarded) | Add internal order note (guarded) |
 | [`order_document_create`](docs/tools.md#order_document_create) | write (guarded) | Create order document (guarded) |
+| [`order_documents_bulk_create`](docs/tools.md#order_documents_bulk_create) | write (guarded) | Create documents for many orders (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
 | [`promotion_create`](docs/tools.md#promotion_create) | write (guarded) | Create promotion (guarded) |
 | [`customer_update`](docs/tools.md#customer_update) | write (guarded) | Update customer (guarded) |
 | [`review_moderate`](docs/tools.md#review_moderate) | write (guarded) | Moderate review (guarded) |
+| [`tag_assign`](docs/tools.md#tag_assign) | write (guarded) | Assign tags (guarded) |
 <!-- TOOLS:END -->
 
 Jeder Parameter jedes Werkzeugs: [docs/tools.md](docs/tools.md). Suchen liefern
@@ -369,9 +391,9 @@ unter `src/extensions/`; Pull Requests sind willkommen.
 ## Sicherheit
 
 - **Standardmäßig nur lesend.** Ohne `--allow-write` (oder `SHOPWARE_MCP_ALLOW_WRITE=true`) werden die Schreibwerkzeuge gar nicht registriert. Was ein Agent nicht sieht, kann er nicht aufrufen.
-- **Jeder Schreibzugriff ist zuerst ein Probelauf.** Alle dreizehn Schreibwerkzeuge, von `stock_set` bis `review_moderate`, stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
+- **Jeder Schreibzugriff ist zuerst ein Probelauf.** Alle fünfzehn Schreibwerkzeuge, von `stock_set` bis `tag_assign`, stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
 - **Ein Schreib-Budget.** `SHOPWARE_MCP_MAX_WRITES=20` weist den einundzwanzigsten echten Schreibzugriff eines Prozesses mit `WRITE_BUDGET_EXHAUSTED` ab; Probeläufe bleiben frei. Kein Prompt kann das aufheben.
-- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung; `product_create` legt ein einfaches Produkt an, mehr nicht; `product_cover_set` fügt ein Bild hinzu (JPEG, PNG, WebP, GIF oder AVIF, nie SVG), das der Shop selbst lädt. `promotion_create` erzeugt einen Warenkorbrabatt, inaktiv, solange nichts anderes gesagt wird. `customer_update` ändert Aktiv-Status und Kundengruppe. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie. Nichts löscht. Sonst nichts.
+- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung; `product_create` legt ein einfaches Produkt an, mehr nicht; `product_cover_set` fügt ein Bild hinzu (JPEG, PNG, WebP, GIF oder AVIF, nie SVG), das der Shop selbst lädt. `promotion_create` erzeugt einen Warenkorbrabatt, inaktiv, solange nichts anderes gesagt wird. `customer_update` ändert Aktiv-Status und Kundengruppe. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie; `order_documents_bulk_create` macht höchstens fünfzig je Aufruf und belastet das Schreib-Budget je Bestellung. `tag_assign` setzt oder entfernt Tags nach Namen und lässt den Rest des Datensatzes in Ruhe. Nichts löscht. Sonst nichts.
 - **Bereinigte Lesezugriffe.** `entity_search` entfernt Passwörter, Schlüssel, Tokens und Hashes aus jeder Antwort und verweigert Entitäten, die Zugangsdaten oder Systeminterna enthalten: Benutzer, Integrationen, ACL-Rollen, Apps, Systemkonfiguration.
 - **Nirgends Geheimnisse.** Zugangsdaten erscheinen nie in Ausgaben, Logs oder Fehlermeldungen. Logs gehen nur nach stderr.
 - **Keine Telemetrie.** Der Server spricht mit Ihrem Shop und mit Ihrem Host. Mit niemandem sonst.

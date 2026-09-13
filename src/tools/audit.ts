@@ -13,6 +13,7 @@ import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
 import { mapSalesChannel } from "./sales-channels.js";
 import { translated } from "./shared.js";
 import { fetchShopInfo } from "./shop.js";
+import { listScheduledTasks } from "./tasks.js";
 import { defineTool } from "./types.js";
 
 type Severity = "critical" | "warning" | "info";
@@ -397,6 +398,18 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       },
     },
     {
+      id: "scheduled_tasks_stuck",
+      severity: "warning",
+      title: "Scheduled tasks overdue by more than an hour, failed or stuck running",
+      hint:
+        "The scheduler or the message worker is not running: search indexes, thumbnails and " +
+        "mails wait with it. Check the cron or worker; scheduled_tasks_list has the details.",
+      run: async () => {
+        const result = await listScheduledTasks(client, 60);
+        return { count: result.problems.length, items: result.problems.slice(0, limit) };
+      },
+    },
+    {
       id: "plugins_outdated",
       severity: "info",
       title: "Extensions with an available update",
@@ -475,8 +488,8 @@ export const shopAudit = defineTool({
     "not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock " +
     "products, products without cover image, delivery time or sales channel visibility, " +
     "expired promotions still active, sales channels in maintenance mode, storefronts missing " +
-    "legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation " +
-    "and extensions with pending updates. Each finding has a " +
+    "legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, " +
+    "scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a " +
     "severity, total count, sample items and a hint. " +
     "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
     "labelling) appear to be covered by an installed extension, guessed from extension names. " +

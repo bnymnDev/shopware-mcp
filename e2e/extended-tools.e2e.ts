@@ -6,6 +6,7 @@ import { detectExtensionTools } from "../src/extensions/index.js";
 import { shopAudit } from "../src/tools/audit.js";
 import { customerReport } from "../src/tools/customer-report.js";
 import { customersSearch, customerUpdate } from "../src/tools/customers.js";
+import { orderDocumentsBulkCreate, orderDocumentsList } from "../src/tools/documents.js";
 import { entitySearch } from "../src/tools/entities.js";
 import { stockForecast } from "../src/tools/forecast.js";
 import { orderHistory } from "../src/tools/history.js";
@@ -18,6 +19,8 @@ import { reviewModerate, reviewsSearch } from "../src/tools/reviews.js";
 import { salesChannelsList } from "../src/tools/sales-channels.js";
 import { shopSettings } from "../src/tools/settings.js";
 import { stockGet, stockSet } from "../src/tools/stock.js";
+import { tagAssign } from "../src/tools/tags.js";
+import { scheduledTasksList } from "../src/tools/tasks.js";
 import type { ToolContext } from "../src/tools/types.js";
 import { E2E_ENABLED, e2eContext } from "./setup.js";
 
@@ -284,7 +287,7 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
       ctx,
     );
     expect(audit.warnings).toBeUndefined();
-    expect(audit.summary.checksRun).toBe(15);
+    expect(audit.summary.checksRun).toBe(16);
   });
 
   it("product_cover_set uploads bytes and a URL, sets the cover, and the pictures are removed again", async () => {
@@ -356,6 +359,103 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
       transports: { name: string | null }[];
     };
     expect(queued.transports.map((t) => t.name)).toContain("async");
+  });
+
+  it("scheduled_tasks_list reads the scheduler state", async () => {
+    const all = await scheduledTasksList.handler({ graceMinutes: 15, onlyProblems: false }, ctx);
+    expect(all.total).toBeGreaterThan(0);
+    expect(all.tasks[0]).toMatchObject({
+      id: expect.stringMatching(HEX),
+      name: expect.any(String),
+      class: expect.stringContaining("\\"),
+      runIntervalSeconds: expect.any(Number),
+    });
+    const counted = Object.values(all.summary.byStatus).reduce((sum, n) => sum + n, 0);
+    expect(counted).toBe(all.tasks.length);
+    const problems = await scheduledTasksList.handler(
+      { graceMinutes: 15, onlyProblems: true },
+      ctx,
+    );
+    expect(problems.tasks).toEqual(problems.problems);
+    expect(problems.tasks.every((task) => task.problem !== null)).toBe(true);
+  });
+
+  it("order_documents_bulk_create invoices two paid orders and the invoices are removed again", async () => {
+    const dry = await orderDocumentsBulkCreate.handler(
+      { type: "invoice", maxOrders: 2, dryRun: true },
+      ctx,
+    );
+    if (dry.dryRun !== true) throw new Error("expected a dry run");
+    expect(dry.matching).toBeGreaterThanOrEqual(dry.orders.length);
+    if (dry.orders.length === 0) return;
+    const ids = dry.orders.map((order) => order.id);
+    expect(dry.wouldSend).toMatchObject({ method: "POST", body: expect.any(Array) });
+    expect(dry.apply).toMatchObject({ type: "invoice", orderIds: ids, dryRun: false });
+    const created = await orderDocumentsBulkCreate.handler(
+      { type: "invoice", orderIds: ids, maxOrders: 20, comment: "shopware-mcp e2e", dryRun: false },
+      ctx,
+    );
+    if (created.dryRun !== false) throw new Error("expected a real write");
+    try {
+      expect(created.errors).toEqual([]);
+      expect(created.skipped).toEqual([]);
+      expect(created.created).toBe(ids.length);
+      expect(created.documents.map((document) => document.orderId)).toEqual(ids);
+      const first = ids[0] ?? "";
+      const listed = await orderDocumentsList.handler({ orderId: first }, ctx);
+      const invoice = listed.items.find((document) => document.type === "invoice");
+      expect(invoice?.id).toBe(created.documents[0]?.documentId);
+      const again = await orderDocumentsBulkCreate.handler(
+        { type: "invoice", maxOrders: 50, dryRun: true },
+        ctx,
+      );
+      if (again.dryRun !== true) throw new Error("expected a dry run");
+      expect(again.orders.map((order) => order.id)).not.toContain(first);
+    } finally {
+      for (const document of created.documents) {
+        await ctx.client.request(`/api/document/${document.documentId}`, { method: "DELETE" });
+      }
+    }
+  });
+
+  it("tag_assign creates, adds and removes tags by name on a customer", async () => {
+    const customers = await customersSearch.handler({ page: 1, limit: 1 }, ctx);
+    const customerId = customers.items[0]?.id ?? "";
+    expect(customerId).toMatch(HEX);
+    const names = [`e2e-${suffix()}`, `e2e-${suffix()}`];
+    const dry = await tagAssign.handler(
+      { entity: "customer", id: customerId, add: names, dryRun: true },
+      ctx,
+    );
+    if (dry.dryRun !== true) throw new Error("expected a dry run");
+    expect(dry.unchanged).toBe(false);
+    const sent = dry.wouldSend;
+    if (!Array.isArray(sent)) throw new Error("expected a request list");
+    expect(sent.map((request) => request.method)).toEqual(["PATCH"]);
+    const added = await tagAssign.handler(
+      { entity: "customer", id: customerId, add: names, dryRun: false },
+      ctx,
+    );
+    if (added.dryRun !== false) throw new Error("expected a real write");
+    const createdTags = added.result.tags.filter((tag) => names.includes(tag.name));
+    try {
+      expect(createdTags.map((tag) => tag.name).sort()).toEqual([...names].sort());
+      const noop = await tagAssign.handler(
+        { entity: "customer", id: customerId, add: names, dryRun: true },
+        ctx,
+      );
+      expect(noop).toMatchObject({ dryRun: true, unchanged: true });
+      const removed = await tagAssign.handler(
+        { entity: "customer", id: customerId, remove: names, dryRun: false },
+        ctx,
+      );
+      if (removed.dryRun !== false) throw new Error("expected a real write");
+      expect(removed.result.tags.some((tag) => names.includes(tag.name))).toBe(false);
+    } finally {
+      for (const tag of createdTags) {
+        await ctx.client.request(`/api/tag/${tag.id}`, { method: "DELETE" });
+      }
+    }
   });
 
   it("stock_set applies a delta on top of the current stock", async () => {

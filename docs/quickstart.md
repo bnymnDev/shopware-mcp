@@ -93,7 +93,7 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 npx shopware-mcp --allow-write
 ```
 
-Now the thirteen write tools are registered: `stock_set`, `product_update`, `product_create`, `product_cover_set`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create`, `promotion_toggle`, `promotion_create`, `customer_update` and `review_moderate`. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process:
+Now the fifteen write tools are registered: `stock_set`, `product_update`, `product_create`, `product_cover_set`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create`, `order_documents_bulk_create`, `promotion_toggle`, `promotion_create`, `customer_update`, `review_moderate` and `tag_assign`. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process; a bulk call counts once per order:
 
 ```
 stock_set { productId: "…", stock: 3 }                  → { dryRun: true, wouldSend: { method: "PATCH", url: "…/api/product/…", body: { stock: 3 } } }

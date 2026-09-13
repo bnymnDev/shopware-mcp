@@ -1,0 +1,82 @@
+{
+  "total": 7,
+  "data": [
+    {
+      "name": "log_entry.cleanup",
+      "scheduledTaskClass": "Shopware\\Core\\Framework\\Log\\ScheduledTask\\LogCleanupTask",
+      "runInterval": 86400,
+      "defaultRunInterval": 86400,
+      "status": "scheduled",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.856+00:00",
+      "id": "01a068fb8f6e71d2b3a3311a8c0c1cbd",
+      "apiAlias": "scheduled_task"
+    },
+    {
+      "name": "shopware.invalidate_cache",
+      "scheduledTaskClass": "Shopware\\Core\\Framework\\Adapter\\Cache\\InvalidateCacheTask",
+      "runInterval": 300,
+      "defaultRunInterval": 300,
+      "status": "scheduled",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.882+00:00",
+      "id": "01a068fb8f8973388d52bc0031d2469f",
+      "apiAlias": "scheduled_task"
+    },
+    {
+      "name": "app.system_heartbeat",
+      "scheduledTaskClass": "Shopware\\Core\\Framework\\App\\ScheduledTask\\SystemHeartbeatTask",
+      "runInterval": 604800,
+      "defaultRunInterval": 604800,
+      "status": "scheduled",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.892+00:00",
+      "id": "01a068fb8f9470f989730ab9778c0937",
+      "apiAlias": "scheduled_task"
+    },
+    {
+      "name": "version.cleanup",
+      "scheduledTaskClass": "Shopware\\Core\\Framework\\DataAbstractionLayer\\Version\\Cleanup\\CleanupVersionTask",
+      "runInterval": 86400,
+      "defaultRunInterval": 86400,
+      "status": "scheduled",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.896+00:00",
+      "id": "01a068fb8f977319a038d9ebd45043ce",
+      "apiAlias": "scheduled_task"
+    },
+    {
+      "name": "telemetry.collect_periodic_metrics",
+      "scheduledTaskClass": "Shopware\\Core\\Framework\\Telemetry\\Metrics\\ScheduledTask\\CollectPeriodicMetricsTask",
+      "runInterval": 300,
+      "defaultRunInterval": 300,
+      "status": "skipped",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.903+00:00",
+      "id": "01a068fb8f9f7119959e3a5ed871bd2f",
+      "apiAlias": "scheduled_task"
+    },
+    {
+      "name": "product_export_generate_task",
+      "scheduledTaskClass": "Shopware\\Core\\Content\\ProductExport\\ScheduledTask\\ProductExportGenerateTask",
+      "runInterval": 60,
+      "defaultRunInterval": 60,
+      "status": "scheduled",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.926+00:00",
+      "id": "01a068fb8fb57388a8c94add43c2da12",
+      "apiAlias": "scheduled_task"
+    },
+    {
+      "name": "shopware.elasticsearch.create.alias",
+      "scheduledTaskClass": "Shopware\\Elasticsearch\\Framework\\Indexing\\CreateAliasTask",
+      "runInterval": 300,
+      "defaultRunInterval": 300,
+      "status": "skipped",
+      "lastExecutionTime": null,
+      "nextExecutionTime": "2026-09-03T20:35:11.947+00:00",
+      "id": "01a068fb8fcb7272bf175a3ac5e0320a",
+      "apiAlias": "scheduled_task"
+    }
+  ]
+}

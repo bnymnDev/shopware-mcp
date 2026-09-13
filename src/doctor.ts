@@ -38,6 +38,7 @@ const REQUIREMENTS: Record<string, Requirement> = {
   payment_methods_list: { reads: ["payment_method"] },
   shipping_methods_list: { reads: ["shipping_method"] },
   plugins_list: { reads: ["plugin"], optionalRoutes: ["/api/_action/extension/installed"] },
+  scheduled_tasks_list: { reads: ["scheduled_task"] },
   stock_get: { reads: ["product"] },
   stock_forecast: { reads: ["order_line_item", "product"] },
   sales_report: { reads: ["order", "order_line_item", "product"] },
@@ -51,6 +52,7 @@ const REQUIREMENTS: Record<string, Requirement> = {
       "sales_channel",
       "plugin",
       "product_review",
+      "scheduled_task",
     ],
     optionalRoutes: [SYSTEM_CONFIG, "/api/_action/extension/installed"],
   },
@@ -78,6 +80,7 @@ const REQUIREMENTS: Record<string, Requirement> = {
   },
   order_note: { reads: ["order"], writes: ["order:update"] },
   order_document_create: { reads: ["order", "document"], writes: ["document:create"] },
+  order_documents_bulk_create: { reads: ["order", "document"], writes: ["document:create"] },
   promotion_toggle: { reads: ["promotion"], writes: ["promotion:update"] },
   promotion_create: {
     reads: ["promotion"],
@@ -85,6 +88,21 @@ const REQUIREMENTS: Record<string, Requirement> = {
   },
   customer_update: { reads: ["customer"], writes: ["customer:update"] },
   review_moderate: { reads: ["product_review"], writes: ["product_review:update"] },
+  tag_assign: {
+    reads: ["tag", "customer", "order", "product"],
+    writes: [
+      "tag:create",
+      "customer:update",
+      "customer_tag:create",
+      "customer_tag:delete",
+      "order:update",
+      "order_tag:create",
+      "order_tag:delete",
+      "product:update",
+      "product_tag:create",
+      "product_tag:delete",
+    ],
+  },
 };
 
 export type Readiness = "ready" | "blocked" | "unknown";

@@ -1,0 +1,21 @@
+WEBVTT
+
+NOTE Caption track for a silent video. The cues describe what is on screen.
+
+00:00.000 --> 00:05.400
+shopware-mcp. Talk to your Shopware shop. An MCP server for the Shopware 6 Admin API.
+
+00:05.400 --> 00:09.000
+A terminal. The user asks: Is everything okay with the shop? The agent calls shop_audit.
+
+00:09.000 --> 00:14.800
+The audit finds 2 critical and 4 warning items: paid orders not shipped, a storefront in maintenance mode, an expired promotion still active.
+
+00:14.800 --> 00:20.600
+One small server. Shopware does the counting. Tools with model-friendly descriptions, most read-only, audit checks in one call, guarded writes.
+
+00:20.600 --> 00:25.600
+Read-only by default. Every write is a dry run first and shows the exact request. A write budget caps the rest. Nothing deletes.
+
+00:25.600 --> 00:30.000
+npx shopware-mcp init. Claude Desktop, Claude Code, Cursor, VS Code, Zed, Docker. github.com/bnymnDev/shopware-mcp. MIT, no telemetry, Shopware 6.6 and 6.7.

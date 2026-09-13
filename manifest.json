@@ -156,6 +156,10 @@
       "description": "List plugins and apps"
     },
     {
+      "name": "scheduled_tasks_list",
+      "description": "Scheduled tasks"
+    },
+    {
       "name": "stock_get",
       "description": "Get stock"
     },
@@ -220,6 +224,10 @@
       "description": "Create order document (guarded)"
     },
     {
+      "name": "order_documents_bulk_create",
+      "description": "Create documents for many orders (guarded)"
+    },
+    {
       "name": "promotion_toggle",
       "description": "Toggle promotion (guarded)"
     },
@@ -234,6 +242,10 @@
     {
       "name": "review_moderate",
       "description": "Moderate review (guarded)"
+    },
+    {
+      "name": "tag_assign",
+      "description": "Assign tags (guarded)"
     }
   ],
   "tools_generated": false,

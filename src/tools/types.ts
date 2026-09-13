@@ -22,6 +22,8 @@ export interface ToolDefinition<Shape extends ZodRawShape = ZodRawShape, Result 
   inputSchema: Shape;
   /** Write tools are only registered when write access is enabled. */
   write: boolean;
+  /** The tool charges the write budget itself, once per record, instead of once per call. */
+  selfCharging?: boolean;
   annotations: ToolAnnotations;
   handler(input: z.output<z.ZodObject<Shape>>, ctx: ToolContext): Promise<Result>;
 }
@@ -32,6 +34,7 @@ interface ToolInit<Shape extends ZodRawShape, Result> {
   description: string;
   inputSchema: Shape;
   write?: boolean;
+  selfCharging?: boolean;
   annotations?: ToolAnnotations;
   handler: (input: z.output<z.ZodObject<Shape>>, ctx: ToolContext) => Promise<Result>;
 }
