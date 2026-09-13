@@ -309,9 +309,10 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
         const applied = await productCoverSet.handler({ productId, ...image, dryRun: false }, ctx);
         if (applied.dryRun) throw new Error("expected a write");
         const cover = applied.result.media.at(-1);
-        expect(cover?.mediaId).toMatch(HEX);
+        if (!cover?.id || !cover.mediaId) throw new Error("no product media came back");
+        expect(cover.mediaId).toMatch(HEX);
         expect(applied.result.coverUrl).toContain(image.fileName);
-        added.push({ productMediaId: cover?.id ?? "", mediaId: cover?.mediaId ?? "" });
+        added.push({ productMediaId: cover.id, mediaId: cover.mediaId });
       }
     } finally {
       await ctx.client.request(`/api/product/${productId}`, {

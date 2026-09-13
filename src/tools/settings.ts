@@ -22,7 +22,8 @@ export const SETTINGS_DOMAINS = {
 export type SettingsDomain = keyof typeof SETTINGS_DOMAINS;
 
 /** Keys that end like a credential; `passwordMinLength` is a rule, `smtpPassword` is not. */
-const SENSITIVE_SETTING = /(password|secret|token|apikey|licen[cs]e(key)?|credential|dsn)$/i;
+const SENSITIVE_SETTING =
+  /(password|secret|token|apikey|(private|access|secret|licen[cs]e)key|licen[cs]e|credential|dsn)$/i;
 
 export async function readSettings(
   client: { request<T>(path: string): Promise<T> },

@@ -213,6 +213,35 @@ describe("ShopwareClient", () => {
   });
 });
 
+describe("ShopwareClient raw bodies", () => {
+  it("sends bytes with the given content type and refuses a JSON body alongside", async () => {
+    mock.use(
+      http.post(`${SHOP_URL}/api/_action/media/:id/upload`, async ({ request }) => {
+        const bytes = new Uint8Array(await request.arrayBuffer());
+        return HttpResponse.json({
+          type: request.headers.get("content-type"),
+          length: bytes.length,
+          first: bytes[0],
+        });
+      }),
+    );
+    const client = new ShopwareClient(testConfig());
+    const result = await client.request("/api/_action/media/x/upload", {
+      method: "POST",
+      rawBody: new Uint8Array([0x89, 0x50, 0x4e, 0x47]),
+      headers: { "content-type": "image/png" },
+    });
+    expect(result).toEqual({ type: "image/png", length: 4, first: 0x89 });
+    await expect(
+      client.request("/api/_action/media/x/upload", {
+        method: "POST",
+        rawBody: new Uint8Array([1]),
+        body: { url: "x" },
+      }),
+    ).rejects.toThrow(/either body or rawBody/);
+  });
+});
+
 describe("ShopwareClient resilience", () => {
   it("sends a user agent and the optional language header", async () => {
     const client = new ShopwareClient({

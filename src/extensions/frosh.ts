@@ -23,6 +23,9 @@ const STATE_NAMES: Record<string, State> = {
   STATE_ERROR: "error",
 };
 
+/** Checks whose "current" value is infrastructure data (DSN, server path), not a finding. */
+const INFRASTRUCTURE_CHECKS = new Set(["database-info", "installation-path"]);
+
 function mapCheck(check: Raw, category: "health" | "performance") {
   const raw = str(check.state) ?? "";
   return {
@@ -58,9 +61,11 @@ export const froshHealth = defineTool({
         ? ctx.client.request<unknown>(`${BASE}/performance/status`)
         : Promise.resolve([]),
     ]);
+    const relevant = (list: unknown) =>
+      rawList(list).filter((check) => !INFRASTRUCTURE_CHECKS.has(str(check.id) ?? ""));
     const checks = [
-      ...rawList(health).map((check) => mapCheck(check, "health")),
-      ...rawList(performance).map((check) => mapCheck(check, "performance")),
+      ...relevant(health).map((check) => mapCheck(check, "health")),
+      ...relevant(performance).map((check) => mapCheck(check, "performance")),
     ];
     const selected = input.state ? checks.filter((c) => input.state?.includes(c.state)) : checks;
     return {
@@ -99,10 +104,11 @@ export const froshQueue = defineTool({
         workerLastSeenSeconds: num(transport.workerLastSeenSeconds),
         browsable: bool(transport.browsable),
       })),
-      messages: rawList(messages).map((message) => ({
-        name: str(message.name),
-        size: num(message.size),
-      })),
+      // The list repeats each transport's total under `messenger.transport.<name>`; the
+      // transports above carry those, so only message classes remain here.
+      messages: rawList(messages)
+        .filter((message) => !(str(message.name) ?? "").startsWith("messenger.transport."))
+        .map((message) => ({ name: str(message.name), size: num(message.size) })),
     };
   },
 });
@@ -113,7 +119,8 @@ export const froshComposerAudit = defineTool({
   description:
     "Known security advisories for the shop's PHP dependencies, as FroshTools reads them from " +
     "Composer (cached by the plugin). Use it for 'does the shop run vulnerable packages?'. " +
-    "Read-only. Returns { packages, vulnerable, advisories[], cachedAt }.",
+    "`error` is set when the plugin could not reach the advisory database; the counts are " +
+    "then not a clean bill. Read-only. Returns { packages, vulnerable, advisories[], cachedAt, error }.",
   inputSchema: {},
   handler: async (_input, ctx) => {
     const audit = await ctx.client.request<Raw>(`${BASE}/composer-audit`);
@@ -130,6 +137,7 @@ export const froshComposerAudit = defineTool({
         link: str(advisory.link),
       })),
       cachedAt: cachedAt ? new Date(cachedAt * 1000).toISOString() : null,
+      error: str(audit.error),
     };
   },
 });

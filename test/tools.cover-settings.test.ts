@@ -89,6 +89,80 @@ describe("product_cover_set", () => {
     expect(applied).toMatchObject({ dryRun: false, result: { id: expect.any(String) } });
   });
 
+  it("rolls back an unattached media record when the upload fails", async () => {
+    mock.use(
+      http.post(`${SHOP_URL}/api/_action/media/:id/upload`, () =>
+        HttpResponse.json(
+          { errors: [{ code: "CONTENT__MEDIA_ILLEGAL_FILE_TYPE", detail: "no" }] },
+          { status: 400 },
+        ),
+      ),
+      http.delete(`${SHOP_URL}/api/media/:id`, () => new HttpResponse(null, { status: 204 })),
+    );
+    await expect(
+      invoke(
+        productCoverSet,
+        { productId: PRODUCT, imageBase64: PNG, mimeType: "image/png", dryRun: false },
+        ctx,
+      ),
+    ).rejects.toMatchObject({
+      status: 400,
+      detail: expect.stringMatching(/^Step 2\/4 \(upload file\) failed: .*removed again$/),
+    });
+    // The failing upload goes to the override handler; nothing after it is attempted.
+    expect(writeRequests().map((r) => `${r.method} ${r.path.split("?")[0]}`)).toEqual([
+      "POST /api/media",
+    ]);
+  });
+
+  it("appends after the last picture even when positions have gaps", async () => {
+    mock.use(
+      searchHandler({
+        product: () => ({
+          total: 1,
+          data: [
+            {
+              id: PRODUCT,
+              productNumber: "SW10001",
+              media: [
+                { id: "a", position: 0 },
+                { id: "b", position: 7 },
+              ],
+            },
+          ],
+        }),
+      }),
+    );
+    const steps = stepsOf(
+      await invoke(productCoverSet, { productId: PRODUCT, imageUrl: "https://x.test/p.png" }, ctx),
+    );
+    expect(steps[2]?.body).toMatchObject({ position: 8 });
+  });
+
+  it("decodes base64 strictly and checks the bytes against the declared type", async () => {
+    const dataUrl = await invoke(
+      productCoverSet,
+      { productId: PRODUCT, imageBase64: `data:image/png;base64,${PNG}`, mimeType: "image/png" },
+      ctx,
+    );
+    expect(stepsOf(dataUrl)[1]?.body).toEqual({ bytes: 70 });
+    await expect(
+      invoke(
+        productCoverSet,
+        { productId: PRODUCT, imageBase64: PNG, mimeType: "image/jpeg" },
+        ctx,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", detail: expect.stringContaining("image/jpeg") });
+    await expect(
+      invoke(
+        productCoverSet,
+        { productId: PRODUCT, imageBase64: "not base64!!", mimeType: "image/png" },
+        ctx,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(writeRequests()).toHaveLength(0);
+  });
+
   it("validates the image source", async () => {
     await expect(invoke(productCoverSet, { productId: PRODUCT }, ctx)).rejects.toMatchObject({
       code: "BAD_REQUEST",
@@ -148,6 +222,25 @@ describe("shop_settings", () => {
     expect(JSON.stringify(result)).not.toContain("leak");
   });
 
+  it("drops licence keys and DSNs and refuses domains outside the allowlist", async () => {
+    mock.use(
+      http.get(`${SHOP_URL}/api/_action/system-config`, () =>
+        HttpResponse.json({
+          "core.tax.defaultTaxRate": "abc",
+          "core.tax.licenseKey": "x",
+          "core.tax.privateKey": "x",
+          "core.tax.dsn": "mysql://user:pw@host/db",
+          "core.tax.accessKey": "x",
+        }),
+      ),
+    );
+    const result = await invoke(shopSettings, { domains: ["core.tax"] }, ctx);
+    expect(result.settings["core.tax"]).toEqual({ defaultTaxRate: "abc" });
+    await expect(
+      invoke(shopSettings, { domains: ["core.mailerSettings" as "core.tax"] }, ctx),
+    ).rejects.toThrow();
+  });
+
   it("defaults to the trading domains shop-wide", async () => {
     const result = await invoke(shopSettings, {}, ctx);
     expect(Object.keys(result.settings)).toEqual([
@@ -177,9 +270,11 @@ describe("FroshTools pack", () => {
   it("maps health and performance checks and filters by state", async () => {
     const all = await invoke(froshHealth, {}, ctx);
     const states = [
-      ...(fixture<Array<{ state: string }>>("frosh-health") ?? []),
-      ...(fixture<Array<{ state: string }>>("frosh-performance") ?? []),
-    ].map((check) => check.state);
+      ...(fixture<Array<{ id: string; state: string }>>("frosh-health") ?? []),
+      ...(fixture<Array<{ id: string; state: string }>>("frosh-performance") ?? []),
+    ]
+      .filter((check) => !["database-info", "installation-path"].includes(check.id))
+      .map((check) => check.state);
     expect(all.summary).toEqual({
       ok: states.filter((s) => s === "STATE_OK").length,
       info: states.filter((s) => s === "STATE_INFO").length,
@@ -212,10 +307,45 @@ describe("FroshTools pack", () => {
       workerLastSeenSeconds: null,
       browsable: true,
     });
-    expect(queue.messages[1]).toEqual({
+    expect(queue.messages[0]).toEqual({
       name: "Shopware\\Core\\Content\\Media\\Message\\GenerateThumbnailsMessage",
       size: 69,
     });
+    expect(queue.messages.map((m) => m.name)).not.toContain("messenger.transport.async");
+  });
+
+  it("hides infrastructure values from the health checks", async () => {
+    const all = await invoke(froshHealth, {}, ctx);
+    const ids = all.checks.map((check) => check.id);
+    expect(ids).not.toContain("database-info");
+    expect(ids).not.toContain("installation-path");
+    expect(JSON.stringify(all)).not.toMatch(/@127|\/home\//);
+  });
+
+  it("reports advisories and a failed advisory lookup", async () => {
+    mock.use(
+      http.get(`${SHOP_URL}/api/_action/frosh-tools/composer-audit`, () =>
+        HttpResponse.json({
+          packages: 201,
+          vulnerable: 1,
+          advisories: [
+            {
+              packageName: "vendor/lib",
+              title: "RCE",
+              cve: "CVE-2026-1",
+              severity: "high",
+              affectedVersions: "<2.0",
+              link: "https://x",
+            },
+          ],
+          error: "Packagist unreachable",
+        }),
+      ),
+    );
+    const audit = await invoke(froshComposerAudit, {}, ctx);
+    expect(audit.vulnerable).toBe(1);
+    expect(audit.advisories[0]).toMatchObject({ package: "vendor/lib", cve: "CVE-2026-1" });
+    expect(audit.error).toBe("Packagist unreachable");
   });
 
   it("maps the composer audit", async () => {
@@ -226,6 +356,7 @@ describe("FroshTools pack", () => {
       vulnerable: 0,
       advisories: [],
       cachedAt: new Date(cachedAt * 1000).toISOString(),
+      error: null,
     });
   });
 });

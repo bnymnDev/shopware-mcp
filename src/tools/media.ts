@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { associations, equals } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
-import { badRequest } from "../errors.js";
+import { badRequest, ShopwareMcpError } from "../errors.js";
+import { logger } from "../logger.js";
 import { fetchProductDetail } from "./products.js";
-import { dryRunField, idSchema, newId, rawList, str } from "./shared.js";
+import { dryRunField, idSchema, newId, num, rawList, str } from "./shared.js";
 import { type DryRunResult, defineTool, type WouldSend } from "./types.js";
 
 /** Image types Shopware renders as product pictures; SVG is left out on purpose (scripts). */
@@ -26,6 +27,32 @@ function extensionFromUrl(url: string): Extension | null {
   const match = /\.([a-z0-9]+)$/.exec(path);
   const candidate = match?.[1] === "jpeg" ? "jpg" : match?.[1];
   return EXTENSIONS.includes(candidate as Extension) ? (candidate as Extension) : null;
+}
+
+const BASE64 = /^[A-Za-z0-9+/]+={0,2}$/;
+
+/** Decode strictly: an optional data-URL prefix, then base64 only, then the bytes must look like the image. */
+function decodeImage(encoded: string, mimeType: string): Uint8Array {
+  const payload = encoded.replace(/^data:[^,]*,/, "").replace(/\s+/g, "");
+  if (!BASE64.test(payload) || payload.length % 4 !== 0) {
+    throw badRequest("imageBase64 is not valid base64");
+  }
+  const bytes = new Uint8Array(Buffer.from(payload, "base64"));
+  if (bytes.length > MAX_IMAGE_BYTES) throw badRequest("Image is larger than 8 MB");
+  const head = Buffer.from(bytes.subarray(0, 12));
+  const looksLike =
+    mimeType === "image/png"
+      ? head.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+      : mimeType === "image/jpeg"
+        ? head.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))
+        : mimeType === "image/gif"
+          ? head.subarray(0, 4).toString("latin1") === "GIF8"
+          : mimeType === "image/webp"
+            ? head.subarray(0, 4).toString("latin1") === "RIFF" &&
+              head.subarray(8, 12).toString("latin1") === "WEBP"
+            : head.subarray(4, 12).toString("latin1") === "ftypavif";
+  if (!looksLike) throw badRequest(`imageBase64 does not look like ${mimeType}`);
+  return bytes;
 }
 
 const safeFileName = (value: string): string =>
@@ -101,9 +128,7 @@ export const productCoverSet = defineTool({
     } else {
       if (!input.mimeType) throw badRequest("mimeType is required with imageBase64");
       extension = MIME_TO_EXTENSION[input.mimeType] ?? "jpg";
-      bytes = new Uint8Array(Buffer.from(input.imageBase64 ?? "", "base64"));
-      if (bytes.length === 0) throw badRequest("imageBase64 is not valid base64");
-      if (bytes.length > MAX_IMAGE_BYTES) throw badRequest("Image is larger than 8 MB");
+      bytes = decodeImage(input.imageBase64 ?? "", input.mimeType);
     }
 
     const [product, folderId] = await Promise.all([
@@ -113,7 +138,9 @@ export const productCoverSet = defineTool({
       }),
       productMediaFolderId(ctx.client),
     ]);
-    const position = rawList(product.media).length;
+    // After the last picture, even when positions have gaps.
+    const position =
+      Math.max(-1, ...rawList(product.media).map((entry) => num(entry.position) ?? -1)) + 1;
     const fileName = safeFileName(input.fileName ?? str(product.productNumber) ?? "product-image");
     const mediaId = newId();
     const productMediaId = newId();
@@ -123,13 +150,15 @@ export const productCoverSet = defineTool({
 
     const mediaBody: Raw = { id: mediaId, ...(folderId ? { mediaFolderId: folderId } : {}) };
     if (input.alt !== undefined) mediaBody.alt = input.alt;
-    const steps: { request: WouldSend; run: () => Promise<unknown> }[] = [
+    const steps: { name: string; request: WouldSend; run: () => Promise<unknown> }[] = [
       {
+        name: "create media",
         request: { method: "POST", url: ctx.client.url("/api/media"), body: mediaBody },
         run: () =>
           ctx.client.request("/api/media", { method: "POST", body: mediaBody, idempotent: false }),
       },
       {
+        name: "upload file",
         request: {
           method: "POST",
           url: ctx.client.url(uploadPath),
@@ -150,6 +179,7 @@ export const productCoverSet = defineTool({
               }),
       },
       {
+        name: "attach to product",
         request: {
           method: "POST",
           url: ctx.client.url("/api/product-media"),
@@ -163,6 +193,7 @@ export const productCoverSet = defineTool({
           }),
       },
       {
+        name: "set cover",
         request: {
           method: "PATCH",
           url: ctx.client.url(`/api/product/${input.productId}`),
@@ -179,7 +210,30 @@ export const productCoverSet = defineTool({
       const dry: DryRunResult = { dryRun: true, wouldSend: steps.map((step) => step.request) };
       return dry;
     }
-    for (const step of steps) await step.run();
+    for (const [index, step] of steps.entries()) {
+      try {
+        await step.run();
+      } catch (error) {
+        // A media record that never got attached is removed again; an attached picture without
+        // the cover flag is visible in the admin and left for a person to decide.
+        let cleanup = "";
+        if (index > 0 && index < 3) {
+          cleanup = await ctx.client
+            .request(`/api/media/${mediaId}`, { method: "DELETE" })
+            .then(() => `; media ${mediaId} removed again`)
+            .catch(() => `; media ${mediaId} is left behind and can be deleted in the admin`);
+          logger.warn("product_cover_set rolled back", { step: step.name, mediaId });
+        } else if (index === 3) {
+          cleanup = `; the picture is attached as product media ${productMediaId} but not the cover`;
+        }
+        const detail = error instanceof ShopwareMcpError ? error.detail : String(error);
+        throw new ShopwareMcpError(
+          error instanceof ShopwareMcpError ? error.status : 0,
+          error instanceof ShopwareMcpError ? error.code : "INTERNAL",
+          `Step ${index + 1}/4 (${step.name}) failed: ${detail}${cleanup}`,
+        );
+      }
+    }
     return { dryRun: false, result: await fetchProductDetail(ctx.client, input.productId) };
   },
 });

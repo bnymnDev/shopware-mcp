@@ -756,7 +756,7 @@ _No parameters._
 
 Registered when installed and active: FroshTools.
 
-Known security advisories for the shop's PHP dependencies, as FroshTools reads them from Composer (cached by the plugin). Use it for 'does the shop run vulnerable packages?'. Read-only. Returns { packages, vulnerable, advisories[], cachedAt }.
+Known security advisories for the shop's PHP dependencies, as FroshTools reads them from Composer (cached by the plugin). Use it for 'does the shop run vulnerable packages?'. `error` is set when the plugin could not reach the advisory database; the counts are then not a clean bill. Read-only. Returns { packages, vulnerable, advisories[], cachedAt, error }.
 
 _No parameters._
 

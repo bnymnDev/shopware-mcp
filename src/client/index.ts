@@ -111,6 +111,9 @@ export class ShopwareClient {
     options: RequestOptions,
     state: { authRetried: boolean; transientRetried: boolean },
   ): Promise<T> {
+    if (options.rawBody && options.body !== undefined) {
+      throw new Error("request(): pass either body or rawBody, not both");
+    }
     const token = await this.auth.getToken();
     const method = options.method ?? "GET";
     const headers: Record<string, string> = {
