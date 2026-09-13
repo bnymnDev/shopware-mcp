@@ -1,6 +1,7 @@
 import { type McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { INHERITANCE_HEADERS, type Raw } from "../client/index.js";
 import { toErrorShape } from "../errors.js";
+import { fetchCustomerDetail } from "../tools/customers.js";
 import { fetchOrderDetail } from "../tools/orders.js";
 import { fetchProductDetail } from "../tools/products.js";
 import { listSalesChannels } from "../tools/sales-channels.js";
@@ -20,6 +21,7 @@ export const RESOURCE_URIS = {
   salesChannels: "shopware://sales-channels",
   order: "shopware://order/{orderNumber}",
   product: "shopware://product/{productNumber}",
+  customer: "shopware://customer/{customerNumber}",
 } as const;
 
 const first = (value: string | string[] | undefined): string =>
@@ -86,6 +88,27 @@ export function registerResources(server: McpServer, ctx: ToolContext): void {
           INHERITANCE_HEADERS,
         );
         return jsonContents(uri, await fetchProductDetail(ctx.client, String(product.id)));
+      } catch (error) {
+        return jsonContents(uri, toErrorShape(error));
+      }
+    },
+  );
+
+  server.registerResource(
+    "customer",
+    new ResourceTemplate(RESOURCE_URIS.customer, { list: undefined }),
+    {
+      title: "Customer by number",
+      description:
+        "One customer with addresses, group and payment methods (same as customers_get).",
+      mimeType: "application/json",
+    },
+    async (uri, variables) => {
+      try {
+        const { mapped } = await fetchCustomerDetail(ctx.client, {
+          customerNumber: first(variables.customerNumber),
+        });
+        return jsonContents(uri, mapped);
       } catch (error) {
         return jsonContents(uri, toErrorShape(error));
       }

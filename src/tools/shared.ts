@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { DEFAULT_CURRENCY_ID, UUID_PATTERN } from "../client/constants.js";
 import type { CurrencyInfo, Raw, SearchResult } from "../client/index.js";
@@ -11,6 +12,12 @@ export const dryRunField = z
   .boolean()
   .default(true)
   .describe("true (default): return the request that would be sent without writing anything");
+
+/**
+ * A fresh Shopware entity id. Create tools choose the id themselves so the created record can be
+ * read back without relying on the response body, which Shopware omits by default.
+ */
+export const newId = (): string => randomUUID().replace(/-/g, "");
 
 export function isRaw(value: unknown): value is Raw {
   return typeof value === "object" && value !== null && !Array.isArray(value);

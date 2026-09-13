@@ -1,0 +1,202 @@
+{
+  "title": "shopware-mcp · product_create + promotion_create, with --allow-write",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp --allow-write"
+    },
+    {
+      "kind": "prompt",
+      "text": "Add the product \"Oak Bench\", SW10200, 119 euro, 3 in stock, visible in the storefront."
+    },
+    {
+      "kind": "prompt",
+      "text": "Then a 10 % launch code BENCH10, valid until the end of October."
+    },
+    {
+      "kind": "call",
+      "tool": "sales_channels_list",
+      "args": "{}"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"total\": 2, \"items\": ["
+    },
+    {
+      "kind": "result",
+      "text": "  { \"id\": \"98432def39fc4624b33213a56b8c944d\", \"name\": \"Headless\", \"type\": \"Headless\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "  { \"id\": \"01a068fb91ad7260939028219e459a91\", \"name\": \"Storefront\", \"type\": \"Storefront\", … } ] }"
+    },
+    {
+      "kind": "call",
+      "tool": "product_create",
+      "args": [
+        "{ name: \"Oak Bench\", productNumber: \"SW10200\", priceGross: 119, stock: 3,",
+        "  salesChannelIds: [\"01a068fb91ad7260939028219e459a91\"] }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": true,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"tax\": { \"id\": \"01a068fb6a0f70578a5a7480f03a26cd\", \"rate\": 19, \"name\": \"Standard rate\" },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"wouldSend\": { \"method\": \"POST\", \"url\": \"http://127.0.0.1:8000/api/product\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"body\": { \"id\": \"3706760b37b74311ab079577eb3b452a\", \"name\": \"Oak Bench\", \"productNumber\": \"SW10200\","
+    },
+    {
+      "kind": "result",
+      "text": "              \"taxId\": \"01a068fb6a0f70578a5a7480f03a26cd\","
+    },
+    {
+      "kind": "result",
+      "text": "              \"price\": [ { \"currencyId\": \"b7d2554b0ce847cd82f3ac9bd1c0dfca\", \"gross\": 119, \"net\": 100,"
+    },
+    {
+      "kind": "result",
+      "text": "                           \"linked\": true } ],"
+    },
+    {
+      "kind": "result",
+      "text": "              \"stock\": 3, \"active\": true,"
+    },
+    {
+      "kind": "result",
+      "text": "              \"visibilities\": [ { \"salesChannelId\": \"01a068fb91ad7260939028219e459a91\","
+    },
+    {
+      "kind": "result",
+      "text": "                                  \"visibility\": 30 } ] } } }"
+    },
+    {
+      "kind": "agent",
+      "text": "Dry run. This would create SW10200 at 119.00 gross / 100.00 net with the shop's default"
+    },
+    {
+      "kind": "agent",
+      "text": "tax (Standard rate, 19 %), 3 in stock, shown everywhere in the Storefront channel. Create it?"
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "prompt",
+      "text": "Yes, and the code too."
+    },
+    {
+      "kind": "call",
+      "tool": "product_create",
+      "args": [
+        "{ name: \"Oak Bench\", productNumber: \"SW10200\", priceGross: 119, stock: 3,",
+        "  salesChannelIds: [\"01a068fb91ad7260939028219e459a91\"], dryRun: false }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": false, \"result\": { \"id\": \"d1514d67fb6a479790f2cb154e6ef93d\", \"productNumber\": \"SW10200\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"name\": \"Oak Bench\", \"price\": { \"gross\": 119, \"net\": 100, \"currency\": \"EUR\", … }, \"stock\": 3,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"availableStock\": 3, \"available\": true, \"active\": true,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"tax\": { \"name\": \"Standard rate\", \"taxRate\": 19 }, \"variants\": [], … } }"
+    },
+    {
+      "kind": "call",
+      "tool": "promotion_create",
+      "args": [
+        "{ name: \"Oak Bench launch\", code: \"BENCH10\",",
+        "  discount: { type: \"percentage\", value: 10 },",
+        "  salesChannelIds: [\"01a068fb91ad7260939028219e459a91\"],",
+        "  validUntil: \"2026-10-31T23:59:59+00:00\" }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": true, \"wouldSend\": { \"method\": \"POST\", \"url\": \"http://127.0.0.1:8000/api/promotion\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"body\": { \"id\": \"94387cb699b34be2b8fe1c086b9d1d90\", \"name\": \"Oak Bench launch\", \"active\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "              \"useCodes\": true, \"code\": \"BENCH10\", \"validUntil\": \"2026-10-31T23:59:59+00:00\","
+    },
+    {
+      "kind": "result",
+      "text": "              \"discounts\": [ { \"scope\": \"cart\", \"type\": \"percentage\", \"value\": 10,"
+    },
+    {
+      "kind": "result",
+      "text": "                               \"considerAdvancedRules\": false } ],"
+    },
+    {
+      "kind": "result",
+      "text": "              \"salesChannels\": [ { \"salesChannelId\": \"01a068fb91ad7260939028219e459a91\","
+    },
+    {
+      "kind": "result",
+      "text": "                                   \"priority\": 1 } ], … } } }"
+    },
+    {
+      "kind": "agent",
+      "text": "The promotion is created inactive, so it can be checked before customers see it. Creating it."
+    },
+    {
+      "kind": "call",
+      "tool": "promotion_create",
+      "args": [
+        "{ name: \"Oak Bench launch\", code: \"BENCH10\",",
+        "  discount: { type: \"percentage\", value: 10 },",
+        "  salesChannelIds: [\"01a068fb91ad7260939028219e459a91\"],",
+        "  validUntil: \"2026-10-31T23:59:59+00:00\", dryRun: false }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": false, \"result\": { \"id\": \"f54acb2bcdd041afb4998d335ed94f7d\", \"name\": \"Oak Bench launch\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"active\": false, \"code\": \"BENCH10\", \"useCodes\": true, \"validFrom\": null,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"validUntil\": \"2026-10-31T23:59:59.000+00:00\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"discounts\": [ { \"scope\": \"cart\", \"type\": \"percentage\", \"value\": 10, \"maxValue\": null, … } ], … } }"
+    },
+    {
+      "kind": "agent",
+      "text": "Done. SW10200 \"Oak Bench\" is live in the Storefront at 119.00 EUR with 3 in stock."
+    },
+    {
+      "kind": "agent",
+      "text": "BENCH10 takes 10 % off the cart until 31 October and is still inactive; say the word"
+    },
+    {
+      "kind": "agent",
+      "text": "and I switch it on with promotion_toggle."
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import {
   bool,
   dryRunField,
   idSchema,
+  newId,
   num,
   pickPrice,
   raw,
@@ -245,5 +246,133 @@ export const productUpdate = defineTool({
     }
     await ctx.client.request(path, { method: "PATCH", body });
     return { dryRun: false, result: await fetchProductDetail(ctx.client, input.productId) };
+  },
+});
+
+const SYSTEM_CONFIG_TAX = "/api/_action/system-config?domain=core.tax";
+
+/** Storefront visibility "show everywhere" (search, listings, product page). */
+const VISIBILITY_ALL = 30;
+
+interface TaxChoice {
+  id: string;
+  rate: number;
+  name: string | null;
+}
+
+/**
+ * The tax to apply: the given id, the given rate, or the shop's default tax setting; when
+ * that is unset, the highest configured rate. The choice is echoed in the dry run.
+ */
+async function resolveTax(
+  client: ShopwareClient,
+  input: { taxId?: string; taxRate?: number },
+): Promise<TaxChoice> {
+  if (input.taxId) {
+    const tax = await client.findById<Raw>("tax", input.taxId);
+    return { id: input.taxId, rate: num(tax.taxRate) ?? 0, name: str(tax.name) };
+  }
+  if (input.taxRate !== undefined) {
+    const taxes = await client.search<Raw>("tax", {
+      page: 1,
+      limit: 1,
+      filter: [equals("taxRate", input.taxRate)],
+    });
+    const tax = taxes.items[0];
+    if (!tax) throw badRequest(`No tax with a rate of ${input.taxRate} %; pass taxId instead`);
+    return { id: String(tax.id), rate: input.taxRate, name: str(tax.name) };
+  }
+  const config = await client
+    .request<Raw>(SYSTEM_CONFIG_TAX)
+    .then((value) => str(value["core.tax.defaultTaxRate"]))
+    .catch(() => null);
+  if (config) {
+    const tax = await client.findById<Raw>("tax", config);
+    return { id: config, rate: num(tax.taxRate) ?? 0, name: str(tax.name) };
+  }
+  const taxes = await client.search<Raw>("tax", {
+    page: 1,
+    limit: 1,
+    sort: [{ field: "taxRate", order: "DESC" }],
+  });
+  const tax = taxes.items[0];
+  if (!tax) throw badRequest("The shop has no tax rate configured; pass taxId");
+  return { id: String(tax.id), rate: num(tax.taxRate) ?? 0, name: str(tax.name) };
+}
+
+const round2 = (value: number): number => Math.round(value * 100) / 100;
+
+export const productCreate = defineTool({
+  name: "product_create",
+  title: "Create product (guarded)",
+  description:
+    "Create a simple (non-variant) product: name, product number, gross price in the default " +
+    "currency (net is derived from the tax rate), tax (by id, by rate, or the shop's default " +
+    "tax when omitted), stock, and optionally description, EAN, manufacturer and the sales " +
+    "channels it is visible in (without any it exists but is not shown in a storefront). " +
+    "dryRun=true (default) returns the exact POST request without changing anything; call " +
+    "again with dryRun=false to apply. Returns { dryRun, wouldSend, tax } or " +
+    "{ dryRun: false, result: <new product> }.",
+  write: true,
+  annotations: { idempotentHint: false },
+  inputSchema: {
+    name: z.string().min(1).max(255),
+    productNumber: z.string().min(1).max(64).describe("Unique product number, e.g. SW10200"),
+    priceGross: z.number().min(0).describe("Gross price in the shop's default currency"),
+    currencyId: idSchema.optional().describe("Currency UUID; defaults to the default currency"),
+    taxId: idSchema.optional().describe("Tax UUID"),
+    taxRate: z.number().min(0).max(100).optional().describe("Tax rate to look up, e.g. 19"),
+    stock: z.number().int().min(0).default(0),
+    active: z.boolean().default(true),
+    description: z.string().max(20_000).optional(),
+    ean: z.string().max(64).optional(),
+    manufacturerId: idSchema.optional(),
+    salesChannelIds: z
+      .array(idSchema)
+      .max(50)
+      .optional()
+      .describe("Sales channels the product is visible in (use sales_channels_list)"),
+    dryRun: dryRunField,
+  },
+  handler: async (input, ctx) => {
+    if (input.taxId && input.taxRate !== undefined) throw badRequest("Pass taxId or taxRate");
+    const tax = await resolveTax(ctx.client, input);
+    const id = newId();
+    const body: Raw = {
+      id,
+      name: input.name,
+      productNumber: input.productNumber,
+      taxId: tax.id,
+      price: [
+        {
+          currencyId: input.currencyId ?? DEFAULT_CURRENCY_ID,
+          gross: input.priceGross,
+          net: round2(input.priceGross / (1 + tax.rate / 100)),
+          linked: true,
+        },
+      ],
+      stock: input.stock,
+      active: input.active,
+    };
+    if (input.description !== undefined) body.description = input.description;
+    if (input.ean !== undefined) body.ean = input.ean;
+    if (input.manufacturerId !== undefined) body.manufacturerId = input.manufacturerId;
+    if (input.salesChannelIds && input.salesChannelIds.length > 0) {
+      body.visibilities = input.salesChannelIds.map((salesChannelId) => ({
+        salesChannelId,
+        visibility: VISIBILITY_ALL,
+      }));
+    }
+    const path = "/api/product";
+    if (input.dryRun) {
+      const dry: DryRunResult & { tax: TaxChoice } = {
+        dryRun: true,
+        wouldSend: { method: "POST", url: ctx.client.url(path), body },
+        tax,
+      };
+      return dry;
+    }
+    await ctx.client.request(path, { method: "POST", body, idempotent: false });
+    return { dryRun: false, result: await fetchProductDetail(ctx.client, id) };
   },
 });

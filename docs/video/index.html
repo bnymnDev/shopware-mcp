@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>shopware-mcp</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #12141a; }
+      body { font-family: "JetBrains Mono", "DejaVu Sans Mono", monospace; color: #e6e8eb; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #12141a; }
+      .clip { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 120px; }
+      .kicker { color: #62c9ff; font-size: 26px; letter-spacing: 0.18em; text-transform: uppercase; }
+      .title { font-size: 112px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.1; }
+      .title em { font-style: normal; color: #62c9ff; }
+      .sub { font-size: 34px; color: #9aa3ad; max-width: 1300px; line-height: 1.5; }
+      .mark { display: flex; align-items: center; gap: 28px; }
+      .mark svg { width: 96px; height: 96px; }
+      .mark span { font-size: 72px; font-weight: 700; }
+
+      /* terminal */
+      .term { position: absolute; left: 160px; top: 120px; width: 1600px; height: 840px; background: #0f1116; border: 2px solid #2b3140; border-radius: 18px; overflow: hidden; }
+      .term .bar { height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 28px; border-bottom: 2px solid #2b3140; color: #9aa3ad; font-size: 24px; }
+      .term .bar i { width: 18px; height: 18px; border-radius: 50%; display: block; }
+      .term .bar .t { margin-left: auto; margin-right: auto; }
+      .term .lines { padding: 32px 40px; font-size: 24px; line-height: 1.9; }
+      .term .line { display: block; white-space: pre; }
+      .sh { color: #e6e8eb; } .sh b { color: #6e7681; font-weight: 400; }
+      .pr { color: #e6e8eb; } .pr b { color: #62c9ff; font-weight: 400; }
+      .call { color: #9aa3ad; } .call b { color: #62c9ff; font-weight: 400; }
+      .res { color: #9aa3ad; }
+      .ag { color: #e6e8eb; } .ag b { color: #3fb950; font-weight: 400; }
+      .red { color: #ff7b72; } .amber { color: #d29922; }
+
+      /* stats */
+      .stats { display: grid; grid-template-columns: repeat(2, 640px); gap: 40px; justify-content: center; align-content: center; height: 100%; padding: 120px; }
+      .stat { background: #1a1e27; border: 2px solid #2b3140; border-radius: 20px; padding: 48px 56px; display: block; }
+      .stat .n { font-size: 120px; font-weight: 700; color: #62c9ff; line-height: 1; display: block; }
+      .stat .l { font-size: 34px; color: #9aa3ad; margin-top: 18px; display: block; }
+      .stats-title { position: absolute; top: 96px; left: 0; right: 0; text-align: center; font-size: 44px; color: #e6e8eb; }
+
+      /* safety */
+      .json b { color: #62c9ff; font-weight: 400; }
+      .json i { color: #3fb950; font-style: normal; }
+      .safety { display: grid; grid-template-columns: 720px 880px; gap: 80px; align-items: center; justify-content: center; height: 100%; padding: 120px; }
+      .safety .copy { display: block; }
+      .safety h2 { font-size: 76px; line-height: 1.15; font-weight: 700; display: block; }
+      .safety h2 span { display: block; }
+      .safety p { font-size: 32px; color: #9aa3ad; margin-top: 32px; line-height: 1.5; display: block; }
+      .json { background: #0f1116; border: 2px solid #2b3140; border-radius: 18px; padding: 44px 48px; font-size: 30px; line-height: 1.7; color: #9aa3ad; white-space: pre; display: block; }
+
+      /* end */
+      .cmd { background: #1a1e27; border: 2px solid #2b3140; border-radius: 16px; padding: 28px 48px; font-size: 52px; margin-top: 56px; display: inline-block; }
+      .cmd b { color: #6e7681; font-weight: 400; }
+      .hosts { font-size: 30px; color: #9aa3ad; margin-top: 44px; display: block; }
+      .url { font-size: 36px; color: #62c9ff; margin-top: 64px; display: block; }
+      .foot { font-size: 26px; color: #6e7681; margin-top: 20px; display: block; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="30" data-width="1920" data-height="1080">
+
+      <section id="s1" class="clip center" data-start="0" data-duration="5.4" data-track-index="1">
+        <div id="s1-mark" class="mark">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1a1e27" stroke="#2b3140" stroke-width="1.5"/><path d="M9 11h14M9 16h10M9 21h14" stroke="#62c9ff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+          <span>shopware-mcp</span>
+        </div>
+        <div id="s1-title" class="title" style="margin-top: 72px">Talk to your <em>Shopware</em> shop.</div>
+        <div id="s1-sub" class="sub" style="margin-top: 40px">An MCP server for the Shopware 6 Admin API. Claude, Cursor, VS Code or any other host, one shop, plain questions.</div>
+      </section>
+
+      <section id="s2" class="clip" data-start="5.4" data-duration="9.4" data-track-index="1">
+        <div class="term">
+          <div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span class="t">shopware-mcp · shop_audit</span></div>
+          <div class="lines">
+            <span class="line sh"><b>$</b> npx shopware-mcp</span>
+            <span class="line pr"><b>›</b> Is everything okay with the shop?</span>
+            <span class="line call"><b>→ shop_audit</b> {}</span>
+            <span class="line res">  { "summary": { "critical": 2, "warning": 4, "info": 4, "checksRun": 13, "healthy": false },</span>
+            <span class="line res">    "findings": [ { "id": "orders_paid_not_shipped", "severity": "critical", "count": 3, … },</span>
+            <span class="line res">                  { "id": "sales_channels_maintenance", "severity": "critical", "count": 1, … },</span>
+            <span class="line res">                  { "id": "promotions_expired_active", "severity": "warning", "count": 1, … }, … ] }</span>
+            <span class="line ag"><b>agent ›</b> Not quite. 2 critical, 4 warnings:</span>
+            <span class="line ag">        <span class="red">●</span> 3 paid orders not shipped for over 7 days: #10056 (60 days, 42,685.02 €), …</span>
+            <span class="line ag">        <span class="red">●</span> The Storefront is in maintenance mode. Customers see a maintenance page.</span>
+            <span class="line ag">        <span class="amber">●</span> "Summer Sale 2026" (SUMMER26) is still active, two weeks past its end date.</span>
+            <span class="line ag">        Shall I deactivate the promotion? Dry run first, nothing changes until you say so.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="s3" class="clip" data-start="14.8" data-duration="5.8" data-track-index="1">
+        <div class="stats-title" id="s3-title">One small server. Shopware does the counting.</div>
+        <div class="stats">
+          <div class="stat" id="st1"><span class="n" data-count="35">0</span><span class="l">tools, each with a description written for a model</span></div>
+          <div class="stat" id="st2"><span class="n" data-count="23">0</span><span class="l">read-only: products, orders, customers, reviews, reports</span></div>
+          <div class="stat" id="st3"><span class="n" data-count="13">0</span><span class="l">audit checks in one call, prioritised with a hint each</span></div>
+          <div class="stat" id="st4"><span class="n" data-count="12">0</span><span class="l">guarded writes: ship, mark paid, create, moderate</span></div>
+        </div>
+      </section>
+
+      <section id="s4" class="clip" data-start="20.6" data-duration="5" data-track-index="1">
+        <div class="safety">
+          <div class="copy" id="s4-copy">
+            <h2><span>Read-only</span><span>by default.</span></h2>
+            <p>Every write is a dry run first and shows the exact request it would send. A write budget caps the rest. Nothing deletes.</p>
+          </div>
+          <div class="json" id="s4-json">{ <b>"dryRun"</b>: <i>true</i>,
+  <b>"wouldSend"</b>: {
+    <b>"method"</b>: "PATCH",
+    <b>"url"</b>: "…/api/product/01a0690afb2a…",
+    <b>"body"</b>: { <b>"stock"</b>: 40 } } }
+
+<b>"dryRun"</b>: <i>false</i>  →  re-read from Shopware</div>
+        </div>
+      </section>
+
+      <section id="s5" class="clip center" data-start="25.6" data-duration="4.4" data-track-index="1">
+        <div id="s5-mark" class="mark">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1a1e27" stroke="#2b3140" stroke-width="1.5"/><path d="M9 11h14M9 16h10M9 21h14" stroke="#62c9ff" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+          <span>shopware-mcp</span>
+        </div>
+        <div id="s5-cmd" class="cmd"><b>$</b> npx shopware-mcp init</div>
+        <span id="s5-hosts" class="hosts">Claude Desktop · Claude Code · Cursor · VS Code · Zed · Docker</span>
+        <span id="s5-url" class="url">github.com/bnymnDev/shopware-mcp</span>
+        <span id="s5-foot" class="foot">MIT · no telemetry · Shopware 6.6 and 6.7</span>
+      </section>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const rise = (target, at, duration = 0.6) =>
+        tl.fromTo(target, { autoAlpha: 0, y: 28 }, { autoAlpha: 1, y: 0, duration, ease: "power3.out" }, at);
+      const fadeOut = (target, at, duration = 0.4) =>
+        tl.to(target, { autoAlpha: 0, duration, ease: "power2.in" }, at);
+
+      // Scene 1: mark, title, subtitle.
+      rise("#s1-mark", 0.2);
+      rise("#s1-title", 0.7, 0.8);
+      rise("#s1-sub", 1.3);
+      fadeOut("#s1", 4.9);
+
+      // Scene 2: terminal lines appear one after another.
+      tl.fromTo("#s2 .term", { autoAlpha: 0, scale: 0.97 }, { autoAlpha: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 5.4);
+      const lines = gsap.utils.toArray("#s2 .line");
+      lines.forEach((line, index) => {
+        tl.fromTo(line, { autoAlpha: 0, x: -12 }, { autoAlpha: 1, x: 0, duration: 0.35, ease: "power2.out" }, 5.9 + index * 0.55);
+      });
+      fadeOut("#s2", 14.3);
+
+      // Scene 3: stat cards with counters.
+      rise("#s3-title", 14.9);
+      ["#st1", "#st2", "#st3", "#st4"].forEach((id, index) => {
+        rise(id, 15.2 + index * 0.18, 0.5);
+        const number = document.querySelector(id).querySelector(".n");
+        const target = Number(number.dataset.count);
+        const counter = { value: 0 };
+        tl.to(counter, {
+          value: target, duration: 1.1, ease: "power2.out",
+          onUpdate: () => { number.textContent = String(Math.round(counter.value)); },
+        }, 15.3 + index * 0.18);
+      });
+      fadeOut("#s3", 20.2);
+
+      // Scene 4: safety copy and the dry-run card.
+      rise("#s4-copy", 20.7, 0.7);
+      tl.fromTo("#s4-json", { autoAlpha: 0, x: 40 }, { autoAlpha: 1, x: 0, duration: 0.7, ease: "power3.out" }, 21.1);
+      fadeOut("#s4", 25.2);
+
+      // Scene 5: end card.
+      rise("#s5-mark", 25.7);
+      tl.fromTo("#s5-cmd", { autoAlpha: 0, scale: 0.94 }, { autoAlpha: 1, scale: 1, duration: 0.6, ease: "back.out(1.4)" }, 26.1);
+      rise("#s5-hosts", 26.6);
+      rise("#s5-url", 26.9);
+      rise("#s5-foot", 27.1);
+
+      window.__timelines.main = tl;
+    </script>
+  </body>
+</html>

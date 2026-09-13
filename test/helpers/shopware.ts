@@ -6,7 +6,7 @@ import { setupServer } from "msw/node";
 import { type ZodRawShape, z } from "zod";
 import { ShopwareClient } from "../../src/client/index.js";
 import { type Config, MAX_LIMIT } from "../../src/config.js";
-import type { ToolContext, ToolDefinition } from "../../src/tools/types.js";
+import type { ToolContext, ToolDefinition, WouldSend } from "../../src/tools/types.js";
 
 export const SHOP_URL = "https://shop.test";
 export const DOCUMENT_ID = "d0c0d0c0d0c0d0c0d0c0d0c0d0c0d0c0";
@@ -65,6 +65,10 @@ export const searchFixtures: Record<string, string> = {
   category: "categories",
   promotion: "promotions",
   plugin: "plugins",
+  "product-review": "reviews",
+  "state-machine-history": "state-machine-history",
+  "shipping-method": "shipping-methods",
+  tax: "taxes",
 };
 
 export function tokenHandler(): HttpHandler {
@@ -122,6 +126,10 @@ export function defaultHandlers(): HttpHandler[] {
       return HttpResponse.json(fixture("extensions-installed"));
     }),
     http.patch(`${SHOP_URL}/api/:entity/:id`, async ({ request }) => {
+      await capture(request);
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.post(`${SHOP_URL}/api/:entity`, async ({ request }) => {
       await capture(request);
       return new HttpResponse(null, { status: 204 });
     }),
@@ -196,4 +204,13 @@ export async function invoke<Shape extends ZodRawShape, Result>(
 ): Promise<Result> {
   const parsed = z.object(tool.inputSchema).parse(input) as z.output<z.ZodObject<Shape>>;
   return tool.handler(parsed, ctx);
+}
+
+/** The single request a dry run would send; fails loudly on a real write or a request list. */
+export function wouldSendOf(result: unknown): WouldSend {
+  const dry = result as { dryRun?: boolean; wouldSend?: WouldSend | WouldSend[] };
+  if (dry.dryRun !== true || !dry.wouldSend || Array.isArray(dry.wouldSend)) {
+    throw new Error("expected a dry run with one request");
+  }
+  return dry.wouldSend;
 }

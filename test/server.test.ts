@@ -54,12 +54,16 @@ describe("MCP server", () => {
     expect(writeTools.map((tool) => tool.name)).toEqual([
       "stock_set",
       "product_update",
+      "product_create",
       "order_state_transition",
       "order_delivery_transition",
       "order_transaction_transition",
       "order_note",
       "order_document_create",
       "promotion_toggle",
+      "promotion_create",
+      "customer_update",
+      "review_moderate",
     ]);
   });
 
@@ -107,6 +111,7 @@ describe("MCP server", () => {
 
     const { resourceTemplates } = await client.listResourceTemplates();
     expect(resourceTemplates.map((template) => template.uriTemplate).sort()).toEqual([
+      "shopware://customer/{customerNumber}",
       "shopware://order/{orderNumber}",
       "shopware://product/{productNumber}",
     ]);
@@ -117,8 +122,10 @@ describe("MCP server", () => {
 
     const { prompts } = await client.listPrompts();
     expect(prompts.map((prompt) => prompt.name).sort()).toEqual([
+      "customer_profile",
       "low_stock_report",
       "order_summary",
+      "review_moderation",
       "weekly_review",
     ]);
     const weekly = await client.getPrompt({ name: "weekly_review" });

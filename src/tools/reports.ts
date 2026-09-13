@@ -1,33 +1,16 @@
 import { z } from "zod";
 import { equals, equalsAny, type ShopwareFilter } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
-import { badRequest } from "../errors.js";
 import { bucketsOf, round2, sumOf } from "./aggregations.js";
+import {
+  change,
+  isoDate,
+  notCancelled,
+  previousPeriod as periodBefore,
+  resolvePeriod,
+} from "./periods.js";
 import { idSchema, str, translated } from "./shared.js";
 import { defineTool } from "./types.js";
-
-const DAY_MS = 86_400_000;
-
-const isoDate = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/, "Use an ISO date like 2026-08-01");
-
-const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
-
-const HAS_OFFSET = /(Z|[+-]\d{2}:?\d{2})$/;
-
-/**
- * A date without a time means the whole day: its start for `from`, its last millisecond for `to`.
- * A time without an offset is read as UTC, like a bare date, rather than as the server's zone.
- */
-function toIso(value: string | undefined, fallback: Date, endOfDay = false): string {
-  if (!value) return fallback.toISOString();
-  const normalized = value.includes("T") && !HAS_OFFSET.test(value) ? `${value}Z` : value;
-  const parsed = new Date(normalized);
-  if (Number.isNaN(parsed.getTime())) throw badRequest(`Invalid date: ${value}`);
-  if (endOfDay && DATE_ONLY.test(value)) parsed.setUTCHours(23, 59, 59, 999);
-  return parsed.toISOString();
-}
 
 function orderFilters(from: string, to: string, input: SalesReportInput): ShopwareFilter[] {
   const filters: ShopwareFilter[] = [
@@ -76,21 +59,6 @@ async function periodTotals(
   };
 }
 
-function change(current: number, previous: number) {
-  return {
-    absolute: round2(current - previous),
-    percent: previous === 0 ? null : round2(((current - previous) / previous) * 100),
-  };
-}
-
-function notCancelled(prefix = ""): ShopwareFilter {
-  return {
-    type: "not",
-    operator: "and",
-    queries: [equals(`${prefix}stateMachineState.technicalName`, "cancelled")],
-  };
-}
-
 export interface SalesReportInput {
   from?: string;
   to?: string;
@@ -102,14 +70,8 @@ export interface SalesReportInput {
 }
 
 export async function buildSalesReport(client: ShopwareClient, input: SalesReportInput) {
-  const now = new Date();
-  const from = toIso(input.from, new Date(now.getTime() - 30 * DAY_MS));
-  const to = toIso(input.to, now, true);
-  if (from > to) throw badRequest("`from` must be before `to`");
-
-  // The period of equal length that ends right before `from`.
-  const previousTo = new Date(Date.parse(from) - 1);
-  const previousFrom = new Date(previousTo.getTime() - (Date.parse(to) - Date.parse(from)));
+  const { from, to } = resolvePeriod(input, 30);
+  const previous = periodBefore({ from, to });
 
   const lineItemFilters: ShopwareFilter[] = [
     equals("type", "product"),
@@ -166,7 +128,7 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
       ],
     }),
     input.compareWithPrevious
-      ? periodTotals(client, previousFrom.toISOString(), previousTo.toISOString(), input)
+      ? periodTotals(client, previous.from, previous.to, input)
       : Promise.resolve(null),
   ]);
 

@@ -1,8 +1,11 @@
 import { shopAudit } from "./audit.js";
 import { categoriesList } from "./categories.js";
-import { customersGet, customersSearch } from "./customers.js";
+import { customerReport } from "./customer-report.js";
+import { customersGet, customersSearch, customerUpdate } from "./customers.js";
 import { documentDownload, orderDocumentCreate, orderDocumentsList } from "./documents.js";
 import { entitySchema, entitySearch } from "./entities.js";
+import { orderHistory } from "./history.js";
+import { paymentMethodsList, shippingMethodsList } from "./methods.js";
 import {
   orderDeliveryTransition,
   orderNote,
@@ -12,9 +15,10 @@ import {
   orderTransactionTransition,
 } from "./orders.js";
 import { pluginsList } from "./plugins.js";
-import { productsGet, productsSearch, productUpdate } from "./products.js";
-import { promotionsList, promotionToggle } from "./promotions.js";
+import { productCreate, productsGet, productsSearch, productUpdate } from "./products.js";
+import { promotionCreate, promotionsList, promotionToggle } from "./promotions.js";
 import { salesReport } from "./reports.js";
+import { reviewModerate, reviewsSearch } from "./reviews.js";
 import { salesChannelsList } from "./sales-channels.js";
 import { shopInfo } from "./shop.js";
 import { stockGet, stockSet } from "./stock.js";
@@ -28,26 +32,35 @@ export const tools: ToolDefinition[] = [
   productsGet,
   ordersSearch,
   ordersGet,
+  orderHistory,
   orderDocumentsList,
   documentDownload,
   customersSearch,
   customersGet,
   categoriesList,
   promotionsList,
+  reviewsSearch,
+  paymentMethodsList,
+  shippingMethodsList,
   pluginsList,
   stockGet,
   salesReport,
+  customerReport,
   shopAudit,
   entitySchema,
   entitySearch,
   stockSet,
   productUpdate,
+  productCreate,
   orderStateTransition,
   orderDeliveryTransition,
   orderTransactionTransition,
   orderNote,
   orderDocumentCreate,
   promotionToggle,
+  promotionCreate,
+  customerUpdate,
+  reviewModerate,
 ];
 
 export const readTools = tools.filter((tool) => !tool.write);

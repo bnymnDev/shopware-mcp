@@ -7,6 +7,7 @@ import { mapOrderSummary } from "./orders.js";
 import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
+import { mapReview } from "./reviews.js";
 import { mapSalesChannel } from "./sales-channels.js";
 import { translated } from "./shared.js";
 import { fetchShopInfo } from "./shop.js";
@@ -332,6 +333,34 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       ),
     },
     {
+      id: "products_not_visible",
+      severity: "info",
+      title: "Active products not visible in any sales channel",
+      hint:
+        "They exist but no storefront lists them; assign a sales channel visibility " +
+        "(product_create does this via salesChannelIds) or deactivate them.",
+      run: productCheck(
+        [equals("active", true), NO_CHILDREN, equals("visibilities.id", null)],
+        "productNumber",
+      ),
+    },
+    {
+      id: "reviews_pending",
+      severity: "info",
+      title: "Product reviews awaiting moderation",
+      hint: "Approve or hide them with review_moderate; unanswered reviews age badly.",
+      run: async () => {
+        const result = await client.search<Raw>("product-review", {
+          page: 1,
+          limit,
+          filter: [equals("status", false)],
+          sort: [{ field: "createdAt", order: "ASC" }],
+          associations: associations(["product", "customer"]),
+        });
+        return { count: result.total, items: result.items.map(mapReview) };
+      },
+    },
+    {
       id: "plugins_outdated",
       severity: "info",
       title: "Extensions with an available update",
@@ -408,9 +437,10 @@ export const shopAudit = defineTool({
   description:
     "Run a one-shot health check across the shop and return prioritised findings: paid orders " +
     "not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock " +
-    "products, products without cover image or delivery time, expired promotions still active, " +
-    "sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, " +
-    "privacy, revocation, shipping) and extensions with pending updates. Each finding has a " +
+    "products, products without cover image, delivery time or sales channel visibility, " +
+    "expired promotions still active, sales channels in maintenance mode, storefronts missing " +
+    "legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation " +
+    "and extensions with pending updates. Each finding has a " +
     "severity, total count, sample items and a hint. " +
     "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
     "labelling) appear to be covered by an installed extension, guessed from extension names. " +

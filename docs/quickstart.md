@@ -77,6 +77,11 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 - "How was last week against the week before?" → `sales_report` with `compareWithPrevious: true`, or the `weekly_review` prompt.
 - "Send me the invoice for 10042." → `order_documents_list`, then `document_download`; the PDF arrives as an embedded resource.
 - "Note on 10042: customer called, ships Monday." → `order_note`.
+- "What happened to order 10042?" → `order_history` lists every transition with who triggered it.
+- "Who were our best customers this quarter?" → `customer_report` with `from`/`to` and `topCustomers`.
+- "Which reviews are waiting for approval?" → `reviews_search` with a filter on `status`, or the `review_moderation` prompt; `review_moderate` approves or hides one.
+- "Which payment methods does the storefront offer?" → `payment_methods_list` and `shipping_methods_list`.
+- "Create a 10 % code AUTUMN10 for October." → `promotion_create`, inactive until you activate it.
 
 ## 5. Enable writes (optional)
 
@@ -84,7 +89,7 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 npx shopware-mcp --allow-write
 ```
 
-Now `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create` and `promotion_toggle` are registered. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process:
+Now the twelve write tools are registered: `stock_set`, `product_update`, `product_create`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create`, `promotion_toggle`, `promotion_create`, `customer_update` and `review_moderate`. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process:
 
 ```
 stock_set { productId: "…", stock: 3 }                  → { dryRun: true, wouldSend: { method: "PATCH", url: "…/api/product/…", body: { stock: 3 } } }
@@ -93,6 +98,9 @@ order_delivery_transition { orderId: "…", transition: "ship", trackingCodes: [
                                                           → { dryRun: true, wouldSend: [ PATCH …/api/order-delivery/…, POST …/state/ship ] }
 order_transaction_transition { orderId: "…", transition: "paid", dryRun: false }
                                                           → { dryRun: false, result: { orderNumber: "10038", paymentState: "paid", … } }
+stock_set { productId: "…", delta: 2 }                  → { dryRun: true, currentStock: 38, wouldSend: { …, body: { stock: 40 } } }
+promotion_create { name: "Autumn 10", code: "AUTUMN10", discount: { type: "percentage", value: 10 }, salesChannelIds: ["…"] }
+                                                          → { dryRun: true, wouldSend: { method: "POST", url: "…/api/promotion", body: { …, active: false } } }
 ```
 
 ## Filters cheat sheet

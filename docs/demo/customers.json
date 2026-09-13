@@ -1,0 +1,122 @@
+{
+  "title": "shopware-mcp · customer_report",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp"
+    },
+    {
+      "kind": "prompt",
+      "text": "Who were our best customers since mid-June, and how does the period compare to the one before?"
+    },
+    {
+      "kind": "call",
+      "tool": "customer_report",
+      "args": "{ from: \"2026-06-15\", topCustomers: 3, compareWithPrevious: true }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"period\": { \"from\": \"2026-06-15T00:00:00.000Z\", \"to\": \"2026-09-13T11:57:33.778Z\" },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"newCustomers\": { \"total\": 11, \"registered\": 11, \"guests\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "                    \"byGroup\": [ { \"group\": \"Net price customer group\", \"customers\": 3 },"
+    },
+    {
+      "kind": "result",
+      "text": "                                 { \"group\": \"Standard customer group\", \"customers\": 8 } ] },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"orderingCustomers\": { \"total\": 4, \"repeat\": 2, \"repeatShare\": 50,"
+    },
+    {
+      "kind": "result",
+      "text": "                         \"guestOrders\": 0, \"guestOrderShare\": 0 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"orders\": { \"total\": 6, \"revenueGross\": 178364.73 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"previousPeriod\": { \"from\": \"2026-03-16T12:02:26.221Z\", \"to\": \"2026-06-14T23:59:59.999Z\","
+    },
+    {
+      "kind": "result",
+      "text": "                      \"newCustomers\": 7, \"orderingCustomers\": 6, \"orders\": 9,"
+    },
+    {
+      "kind": "result",
+      "text": "                      \"revenueGross\": 557096.36 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"change\": { \"newCustomers\": { \"absolute\": 4, \"percent\": 57.14 },"
+    },
+    {
+      "kind": "result",
+      "text": "              \"orders\": { \"absolute\": -3, \"percent\": -33.33 },"
+    },
+    {
+      "kind": "result",
+      "text": "              \"revenueGross\": { \"absolute\": -378731.63, \"percent\": -67.98 }, … },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"topCustomers\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"customerNumber\": \"10000\", \"name\": \"Dominique Aufderhar\", \"orders\": 2,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"revenueGross\": 173215.24, \"revenueShare\": 97.11, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"customerNumber\": \"10001\", \"name\": \"Jairo Johns\", \"orders\": 2,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"revenueGross\": 2703.73, \"revenueShare\": 1.52, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"customerNumber\": \"10008\", \"name\": \"Sandra Leffler\", \"orders\": 1,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"revenueGross\": 1542.89, \"revenueShare\": 0.87, … } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "Since 15 June: 11 new accounts (8 standard, 3 net-price group, no guests), up 57 % on the"
+    },
+    {
+      "kind": "agent",
+      "text": "quarter before. Only 4 customers ordered, 2 of them more than once: 6 orders for"
+    },
+    {
+      "kind": "agent",
+      "text": "178,364.73 EUR, down 68 % against 557,096.36 EUR before. One account carries the period:"
+    },
+    {
+      "kind": "agent",
+      "text": "Dominique Aufderhar (10000), 2 orders, 173,215.24 EUR, 97 % of revenue. Jairo Johns (10001)"
+    },
+    {
+      "kind": "agent",
+      "text": "and Sandra Leffler (10008) follow with 2,703.73 and 1,542.89 EUR. Worth a look: revenue"
+    },
+    {
+      "kind": "agent",
+      "text": "depends on a single customer."
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+{
+  "total": 4,
+  "data": [
+    {
+      "_uniqueIdentifier": "01a068fb6a0070b29f0358826da66587",
+      "versionId": null,
+      "translated": {
+        "name": "Cash on delivery",
+        "distinguishableName": "Cash on delivery",
+        "description": "Payment upon receipt of goods.",
+        "customFields": {}
+      },
+      "createdAt": "2026-09-03T20:35:02.272+00:00",
+      "updatedAt": null,
+      "pluginId": null,
+      "handlerIdentifier": "Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler\\CashPayment",
+      "name": "Cash on delivery",
+      "distinguishableName": "Cash on delivery",
+      "description": "Payment upon receipt of goods.",
+      "position": 1,
+      "active": true,
+      "afterOrderEnabled": true,
+      "plugin": null,
+      "translations": null,
+      "orderTransactions": null,
+      "customers": null,
+      "salesChannelDefaultAssignments": null,
+      "salesChannels": [
+        {
+          "translated": {
+            "name": "Storefront",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Storefront",
+          "id": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "sales_channel"
+        },
+        {
+          "translated": {
+            "name": "Headless",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Headless",
+          "id": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "sales_channel"
+        }
+      ],
+      "availabilityRule": null,
+      "availabilityRuleId": null,
+      "mediaId": null,
+      "media": null,
+      "formattedHandlerIdentifier": "handler_shopware_cashpayment",
+      "shortName": "cash_payment",
+      "technicalName": "payment_cashpayment",
+      "appPaymentMethod": null,
+      "customFields": null,
+      "id": "01a068fb6a0070b29f0358826da66587",
+      "apiAlias": "payment_method"
+    },
+    {
+      "_uniqueIdentifier": "01a068fb6a02717ab706f09085a6ffa3",
+      "versionId": null,
+      "translated": {
+        "name": "Paid in advance",
+        "distinguishableName": "Paid in advance",
+        "description": "Pay in advance and get your order afterwards",
+        "customFields": {}
+      },
+      "createdAt": "2026-09-03T20:35:02.274+00:00",
+      "updatedAt": null,
+      "pluginId": null,
+      "handlerIdentifier": "Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler\\PrePayment",
+      "name": "Paid in advance",
+      "distinguishableName": "Paid in advance",
+      "description": "Pay in advance and get your order afterwards",
+      "position": 2,
+      "active": true,
+      "afterOrderEnabled": true,
+      "plugin": null,
+      "translations": null,
+      "orderTransactions": null,
+      "customers": null,
+      "salesChannelDefaultAssignments": null,
+      "salesChannels": [
+        {
+          "translated": {
+            "name": "Storefront",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Storefront",
+          "id": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "sales_channel"
+        },
+        {
+          "translated": {
+            "name": "Headless",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Headless",
+          "id": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "sales_channel"
+        }
+      ],
+      "availabilityRule": null,
+      "availabilityRuleId": null,
+      "mediaId": null,
+      "media": null,
+      "formattedHandlerIdentifier": "handler_shopware_prepayment",
+      "shortName": "pre_payment",
+      "technicalName": "payment_prepayment",
+      "appPaymentMethod": null,
+      "customFields": null,
+      "id": "01a068fb6a02717ab706f09085a6ffa3",
+      "apiAlias": "payment_method"
+    },
+    {
+      "_uniqueIdentifier": "01a068fb69fc701bab6e8e100e5257a9",
+      "versionId": null,
+      "translated": {
+        "name": "Direct Debit",
+        "distinguishableName": "Direct Debit",
+        "description": "Pre-authorized payment, funds are withdrawn directly from the debited account.",
+        "customFields": {}
+      },
+      "createdAt": "2026-09-03T20:35:02.268+00:00",
+      "updatedAt": null,
+      "pluginId": null,
+      "handlerIdentifier": "Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler\\DebitPayment",
+      "name": "Direct Debit",
+      "distinguishableName": "Direct Debit",
+      "description": "Pre-authorized payment, funds are withdrawn directly from the debited account.",
+      "position": 4,
+      "active": false,
+      "afterOrderEnabled": true,
+      "plugin": null,
+      "translations": null,
+      "orderTransactions": null,
+      "customers": null,
+      "salesChannelDefaultAssignments": null,
+      "salesChannels": [
+        {
+          "translated": {
+            "name": "Storefront",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Storefront",
+          "id": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "sales_channel"
+        },
+        {
+          "translated": {
+            "name": "Headless",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Headless",
+          "id": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "sales_channel"
+        }
+      ],
+      "availabilityRule": null,
+      "availabilityRuleId": null,
+      "mediaId": null,
+      "media": null,
+      "formattedHandlerIdentifier": "handler_shopware_debitpayment",
+      "shortName": "debit_payment",
+      "technicalName": "payment_debitpayment",
+      "appPaymentMethod": null,
+      "customFields": null,
+      "id": "01a068fb69fc701bab6e8e100e5257a9",
+      "apiAlias": "payment_method"
+    },
+    {
+      "_uniqueIdentifier": "01a068fb69fe71e6948ffd608d7cb535",
+      "versionId": null,
+      "translated": {
+        "name": "Invoice",
+        "distinguishableName": "Invoice",
+        "description": "Payment by invoice. Shopware provides automatic invoicing for all customers on orders after the first. This is to avoid defaults on payment.",
+        "customFields": {}
+      },
+      "createdAt": "2026-09-03T20:35:02.270+00:00",
+      "updatedAt": null,
+      "pluginId": null,
+      "handlerIdentifier": "Shopware\\Core\\Checkout\\Payment\\Cart\\PaymentHandler\\InvoicePayment",
+      "name": "Invoice",
+      "distinguishableName": "Invoice",
+      "description": "Payment by invoice. Shopware provides automatic invoicing for all customers on orders after the first. This is to avoid defaults on payment.",
+      "position": 5,
+      "active": true,
+      "afterOrderEnabled": true,
+      "plugin": null,
+      "translations": null,
+      "orderTransactions": null,
+      "customers": null,
+      "salesChannelDefaultAssignments": null,
+      "salesChannels": [
+        {
+          "translated": {
+            "name": "Storefront",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Storefront",
+          "id": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "sales_channel"
+        },
+        {
+          "translated": {
+            "name": "Headless",
+            "customFields": [],
+            "homeSlotConfig": null,
+            "homeEnabled": true,
+            "homeName": null,
+            "homeMetaTitle": null,
+            "homeMetaDescription": null,
+            "homeKeywords": null
+          },
+          "name": "Headless",
+          "id": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "sales_channel"
+        }
+      ],
+      "availabilityRule": null,
+      "availabilityRuleId": null,
+      "mediaId": null,
+      "media": null,
+      "formattedHandlerIdentifier": "handler_shopware_invoicepayment",
+      "shortName": "invoice_payment",
+      "technicalName": "payment_invoicepayment",
+      "appPaymentMethod": null,
+      "customFields": null,
+      "id": "01a068fb69fe71e6948ffd608d7cb535",
+      "apiAlias": "payment_method"
+    }
+  ],
+  "aggregations": []
+}

@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>shopware-mcp · Talk to your Shopware 6 shop</title>
+<meta name="description" content="An MCP server for the Shopware 6 Admin API. 35 curated tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
+<meta property="og:title" content="shopware-mcp">
+<meta property="og:description" content="Talk to your Shopware 6 shop from Claude, Cursor, VS Code or any MCP host. Read-only by default, every write a dry run first.">
+<meta property="og:image" content="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/banner-dark.svg">
+<meta name="theme-color" content="#12141a">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2312141a'/%3E%3Cpath d='M9 11h14M9 16h10M9 21h14' stroke='%2362c9ff' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12141a; --card: #1a1e27; --line: #2b3140; --text: #e6e8eb; --muted: #9aa3ad; --faint: #6e7681;
+    --blue: #62c9ff; --blue-deep: #4db5f0; --green: #3fb950; --amber: #d29922; --red: #ff7b72;
+    --on-accent: #0b0d12; --ring: #ffffff;
+    --font: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7f9; --card: #ffffff; --line: #d8dde6; --text: #1b1f27; --muted: #5c6570; --faint: #8a919c;
+      --blue: #0b7bd6; --blue-deep: #189eff; --green: #1a7f37; --amber: #9a6700; --red: #c0392b;
+      --on-accent: #ffffff; --ring: #0b0d12;
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 4px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; }
+  code, pre { font-family: var(--font); }
+  code { background: var(--card); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; font-size: 0.92em; }
+  pre { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0; font-size: 13px; line-height: 1.55; }
+  pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+  h1, h2, h3 { line-height: 1.2; margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: 1.6rem; margin-bottom: 8px; }
+  h3 { font-size: 1.05rem; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  .kicker { color: var(--blue); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 10px; }
+  section { padding-block: 64px; border-top: 1px solid var(--line); }
+  section.flush { border-top: 0; }
+
+  /* nav */
+  nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  nav .wrap { display: flex; align-items: center; gap: 18px; height: 56px; }
+  nav .brand { font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+  nav .brand svg { width: 22px; height: 22px; }
+  nav .links { margin-left: auto; display: flex; gap: 18px; font-size: 0.9rem; flex-wrap: wrap; }
+  nav .links a { color: var(--muted); }
+  nav .links a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 720px) { nav .links a.optional { display: none; } }
+
+  /* hero */
+  .hero { padding-block: 80px 56px; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.3rem); max-width: 18ch; }
+  .hero h1 em { font-style: normal; color: var(--blue); }
+  .hero .lead { font-size: 1.1rem; max-width: 62ch; color: var(--muted); margin-top: 18px; }
+  .install { display: flex; align-items: stretch; gap: 0; margin-top: 28px; max-width: 560px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow: hidden; }
+  .install pre { border: 0; border-radius: 0; flex: 1; padding: 12px 14px; }
+  .install pre .dollar { color: var(--faint); }
+  .install button { border: 0; border-left: 1px solid var(--line); background: transparent; color: var(--muted); padding: 0 14px; cursor: pointer; font-family: var(--font); font-size: 0.85rem; transition: color 150ms ease, background 150ms ease; }
+  .install button:hover { color: var(--text); background: color-mix(in srgb, var(--line) 50%, transparent); }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 6px; font-weight: 500; border: 1px solid var(--line); color: var(--text); background: var(--card); cursor: pointer; transition: border-color 150ms ease, background 150ms ease, color 150ms ease; }
+  .btn:hover { text-decoration: none; border-color: var(--muted); }
+  .btn.primary { background: var(--blue); border-color: var(--blue); color: var(--on-accent); }
+  .btn.primary:hover { background: var(--blue-deep); border-color: var(--blue-deep); }
+  .btn svg { width: 16px; height: 16px; }
+  .facts { display: flex; gap: 10px 22px; flex-wrap: wrap; margin-top: 26px; font-size: 0.85rem; color: var(--muted); }
+  .facts span::before { content: "▪ "; color: var(--green); }
+
+  /* recordings */
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 20px 0 14px; }
+  .tabs button { font-family: var(--font); font-size: 0.85rem; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; transition: color 150ms ease, border-color 150ms ease; }
+  .tabs button:hover { color: var(--text); }
+  .tabs button[aria-selected="true"] { color: var(--text); border-color: var(--blue); }
+  .recording { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #0f1116; }
+  .recording img { display: block; width: 100%; height: auto; }
+  .caption { color: var(--muted); font-size: 0.9rem; margin-top: 12px; max-width: 80ch; }
+
+  /* grid */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; transition: border-color 150ms ease; }
+  .card:hover { border-color: var(--muted); }
+  .card svg { width: 22px; height: 22px; color: var(--blue); margin-bottom: 10px; }
+  .card h3 { margin-bottom: 6px; }
+  .card p { color: var(--muted); font-size: 0.92rem; margin: 0; }
+  .card code { font-size: 0.85em; }
+
+  /* ask table */
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; }
+  td:first-child { color: var(--text); }
+  td:last-child { color: var(--muted); }
+  .table-wrap { overflow-x: auto; }
+
+  /* safety */
+  .safety li { margin-bottom: 10px; color: var(--muted); }
+  .safety li strong { color: var(--text); }
+  .safety ul { padding-left: 20px; margin: 16px 0 0; }
+
+  /* hosts */
+  .hosts { margin-top: 20px; display: grid; grid-template-columns: 220px 1fr; gap: 16px; }
+  @media (max-width: 720px) { .hosts { grid-template-columns: 1fr; } }
+  .hosts .list { display: flex; flex-direction: column; gap: 6px; }
+  .hosts .list button { text-align: left; font-family: var(--font); font-size: 0.9rem; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; transition: color 150ms ease, border-color 150ms ease; }
+  .hosts .list button:hover { color: var(--text); }
+  .hosts .list button[aria-selected="true"] { color: var(--text); border-color: var(--blue); }
+  .hosts .panel { min-width: 0; }
+  .hosts .panel p { color: var(--muted); font-size: 0.9rem; }
+  [hidden] { display: none; }
+
+  /* steps */
+  .steps { counter-reset: step; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 24px; }
+  .step { position: relative; padding-left: 44px; color: var(--muted); font-size: 0.95rem; }
+  .step::before { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--blue); color: var(--blue); display: grid; place-items: center; font-weight: 700; font-size: 0.9rem; }
+  .step strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+  footer { border-top: 1px solid var(--line); padding-block: 36px; color: var(--muted); font-size: 0.88rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: center; }
+  footer .spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="shopware-mcp home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--card)" stroke="var(--line)"/><path d="M9 11h14M9 16h10M9 21h14" stroke="var(--blue)" stroke-width="3" stroke-linecap="round" fill="none"/></svg>
+      shopware-mcp
+    </a>
+    <div class="links">
+      <a href="#recordings">Recordings</a>
+      <a href="#box" class="optional">Tools</a>
+      <a href="#safety" class="optional">Safety</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/bnymnDev/shopware-mcp" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/shopware-mcp" rel="noopener" class="optional">npm</a>
+    </div>
+  </div>
+</nav>
+
+<main id="top">
+  <section class="hero flush">
+    <div class="wrap">
+      <div class="kicker">MCP server for the Shopware 6 Admin API</div>
+      <h1>Talk to your <em>Shopware</em> shop. Read-only until you say otherwise.</h1>
+      <p class="lead">One small server that speaks MCP to Claude, Cursor, VS Code or any other host, and the Admin API to your shop. Stuck orders, last month's numbers, low stock, a launch code, a shipped parcel: one sentence each, with Shopware doing the counting.</p>
+      <div class="install">
+        <pre><code><span class="dollar">$</span> npx shopware-mcp init</code></pre>
+        <button type="button" data-copy="npx shopware-mcp init" aria-label="Copy install command">copy</button>
+      </div>
+      <div class="cta">
+        <a class="btn primary" href="#install">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17l6-5-6-5"/><path d="M12 19h8"/></svg>
+          Get started in 60 seconds
+        </a>
+        <a class="btn" href="https://github.com/bnymnDev/shopware-mcp" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+          Source on GitHub
+        </a>
+      </div>
+      <div class="facts">
+        <span>35 tools, 23 of them read-only</span>
+        <span>Every write a dry run first</span>
+        <span>Shopware 6.6 and 6.7</span>
+        <span>No telemetry</span>
+        <span>MIT</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="recordings">
+    <div class="wrap">
+      <div class="kicker">See it work</div>
+      <h2>Real output, replayed.</h2>
+      <p class="muted">Every recording is the server's own output against a Shopware 6.7 test shop with generated demo data. Tool calls and results are verbatim, shortened to fit the screen. The prose is what an MCP host says with them.</p>
+      <div class="tabs" role="tablist" aria-label="Recordings">
+        <button type="button" role="tab" aria-selected="true" data-rec="audit" data-caption="One question, thirteen checks. Three paid orders wait for shipment, the storefront is in maintenance, a summer promotion outlived August. The answer names order numbers and amounts, and offers the safe next step.">shop_audit</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="report" data-caption="Numbers the shop computed itself: totals, channels, states, a monthly timeline and the top product for eight months, from one call. No order was paged through.">sales_report</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="support" data-caption="Ship it, then prove it. A delivery transition is two requests, shown before they are sent. The order's history afterwards names the transition, the states and who made it.">ship + history</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="launch" data-caption="A product and its launch code from one sentence. product_create picks the shop's default tax and derives the net price, and says so in the dry run. The promotion arrives inactive.">product + promotion</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="moderate" data-caption="Moderation with a reply. Two reviews wait for approval. The spam stays hidden, the complaint is approved together with the shop's public answer.">reviews</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="customers" data-caption="People, not just revenue. New accounts by group, how many customers ordered and came back, the guest share, and the top customers with their share of the period.">customer_report</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="anything" data-caption="No tool for that? There is a schema for that. The agent reads the entity's schema, spots mediaId, and filters on it. The same path reaches every entity, custom ones included.">any entity</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="doctor" data-caption="Know before the agent finds out. shopware-mcp doctor probes what the integration may read, reads its role for the write privileges, and names the missing one per tool.">doctor</button>
+      </div>
+      <div class="recording" role="tabpanel">
+        <img id="rec" src="demo/audit.svg" width="940" height="600" alt="Animated terminal recording of shopware-mcp answering a question">
+      </div>
+      <p class="caption" id="rec-caption">One question, thirteen checks. Three paid orders wait for shipment, the storefront is in maintenance, a summer promotion outlived August. The answer names order numbers and amounts, and offers the safe next step.</p>
+    </div>
+  </section>
+
+  <section id="box">
+    <div class="wrap">
+      <div class="kicker">What's in the box</div>
+      <h2>Curated tools, not a thin API wrapper.</h2>
+      <p class="muted">Each tool returns compact JSON with exact totals, a description written for a model, and Shopware's own Criteria filters. No invented query language.</p>
+      <div class="grid">
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <h3>Eighteen curated reads</h3>
+          <p>Products, orders and their history, documents, customers, categories, promotions, reviews, payment and shipping methods, plugins, stock, sales channels. <code>{ term, filter, sort, page, limit }</code> in, <code>{ total, items }</code> out.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          <h3>A health audit</h3>
+          <p><code>shop_audit</code> runs thirteen checks in one call, from paid-but-unshipped orders to storefronts missing a legal page, and reports which EU duties look covered by an installed extension.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
+          <h3>Two reports</h3>
+          <p><code>sales_report</code> and <code>customer_report</code> let Shopware aggregate: revenue by channel and state, timelines, top products, new and returning customers, and the change against the period before.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <h3>Twelve guarded writes</h3>
+          <p>Ship, mark paid, remind, refund, correct stock, note, generate a document, create a product or promotion, moderate a review, update a customer. Registered only with <code>--allow-write</code>, dry run by default, a write budget on top.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+          <h3>Any entity</h3>
+          <p><code>entity_schema</code> describes any of the 200+ entities, custom ones included, and <code>entity_search</code> queries them. Secrets scrubbed, credential entities refused, long text truncated.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4M15 3v4M5 7h14v4a7 7 0 0 1-14 0z"/><path d="M12 18v3"/></svg>
+          <h3>Plugin-aware</h3>
+          <p>The server detects installed extensions and adds tools for the ones it knows, without touching the plugins. Your own pack is one file under <code>src/extensions/</code>.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 9 18l-5-5"/></svg>
+          <h3>Doctor and init</h3>
+          <p><code>shopware-mcp doctor</code> says per tool whether this integration can use it and which privilege is missing. <code>init</code> tests the credentials and writes the host config for you.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+          <h3>Packaged four ways</h3>
+          <p>npm with build provenance, a Docker image on GHCR for amd64 and arm64, a one-click <code>.mcpb</code> bundle for Claude Desktop, and a listing in the official MCP registry.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ask">
+    <div class="wrap">
+      <div class="kicker">Ask it anything</div>
+      <h2>You say. The agent calls.</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>You say</th><th>The agent calls</th></tr></thead>
+          <tbody>
+            <tr><td>"Is everything okay with the shop?"</td><td><code>shop_audit</code></td></tr>
+            <tr><td>"How did we do in August?"</td><td><code>sales_report { from, to, interval: "week" }</code></td></tr>
+            <tr><td>"Who were our best customers this quarter?"</td><td><code>customer_report { from, to, topCustomers: 20 }</code></td></tr>
+            <tr><td>"What happened to order 10042, and who did it?"</td><td><code>order_history</code></td></tr>
+            <tr><td>"Order 10042 shipped with DHL, tracking 00340434."</td><td><code>order_delivery_transition { transition: "ship", trackingCodes }</code></td></tr>
+            <tr><td>"Send me the invoice for 10042."</td><td><code>order_documents_list</code>, then <code>document_download</code> hands over the PDF</td></tr>
+            <tr><td>"Which reviews are waiting for approval?"</td><td><code>reviews_search</code>, or the <code>review_moderation</code> prompt</td></tr>
+            <tr><td>"Create a 10 % code AUTUMN10 for October."</td><td><code>promotion_create</code>, inactive until you say otherwise</td></tr>
+            <tr><td>"Which manufacturers have no logo?"</td><td><code>entity_schema</code>, then <code>entity_search</code> on <code>product_manufacturer</code></td></tr>
+            <tr><td>"Which of my tools will fail with this integration?"</td><td>not a tool: <code>npx shopware-mcp doctor</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="safety">
+    <div class="wrap">
+      <div class="kicker">Safety</div>
+      <h2>A brake on every write.</h2>
+      <div class="safety">
+        <ul>
+          <li><strong>Read-only by default.</strong> Without <code>--allow-write</code> the write tools are not registered. An agent cannot discover what it cannot call.</li>
+          <li><strong>Every write is a dry run first.</strong> The tools return the exact request they would send. Only an explicit <code>dryRun: false</code> touches the shop, and the result is re-read from Shopware.</li>
+          <li><strong>A write budget.</strong> <code>SHOPWARE_MCP_MAX_WRITES=20</code> refuses the twenty-first real write of a process. No prompt can lift it.</li>
+          <li><strong>Narrow writes, nothing deletes.</strong> The transition tools only move state machines; nothing moves money. Promotions are created inactive. There is no delete tool.</li>
+          <li><strong>No secrets anywhere.</strong> Credentials never appear in output, logs or errors. <code>entity_search</code> scrubs passwords, keys and tokens and refuses entities that hold credentials.</li>
+          <li><strong>No telemetry.</strong> The server talks to your shop and to your host. Nothing else.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="wrap">
+      <div class="kicker">60 seconds</div>
+      <h2>Three steps, one of them optional.</h2>
+      <div class="steps">
+        <div class="step"><strong>Create an Integration</strong> in your Shopware admin under Settings → System → Integrations. Copy the access key and the secret; for production give it a read role.</div>
+        <div class="step"><strong>Run the wizard.</strong> <code>npx shopware-mcp init</code> asks for URL, key and secret, tests them against the shop and prints or writes the host configuration.</div>
+        <div class="step"><strong>Ask a question.</strong> Or run <code>npx shopware-mcp doctor</code> first to see which tools this integration can use and what is missing.</div>
+      </div>
+      <div class="hosts">
+        <div class="list" role="tablist" aria-label="Hosts">
+          <button type="button" role="tab" aria-selected="true" data-host="claude-desktop">Claude Desktop</button>
+          <button type="button" role="tab" aria-selected="false" data-host="claude-code">Claude Code</button>
+          <button type="button" role="tab" aria-selected="false" data-host="cursor">Cursor, VS Code, Zed</button>
+          <button type="button" role="tab" aria-selected="false" data-host="docker">Docker</button>
+          <button type="button" role="tab" aria-selected="false" data-host="manual">By hand</button>
+        </div>
+        <div class="panel">
+          <div data-panel="claude-desktop" role="tabpanel">
+            <p>Download <code>shopware-mcp.mcpb</code> from the <a href="https://github.com/bnymnDev/shopware-mcp/releases/latest" rel="noopener">latest release</a> and double-click it, or add this to <code>claude_desktop_config.json</code> (<code>npx shopware-mcp init --for claude-desktop --write</code> does it for you):</p>
+<pre><code>{
+  "mcpServers": {
+    "shopware": {
+      "command": "npx",
+      "args": ["-y", "shopware-mcp"],
+      "env": {
+        "SHOPWARE_URL": "https://shop.example.com",
+        "SHOPWARE_CLIENT_ID": "SWIA...",
+        "SHOPWARE_CLIENT_SECRET": "..."
+      }
+    }
+  }
+}</code></pre>
+          </div>
+          <div data-panel="claude-code" role="tabpanel" hidden>
+            <p>One command; add <code>--allow-write</code> after <code>shopware-mcp</code> when you want the write tools.</p>
+<pre><code>claude mcp add shopware \
+  -e SHOPWARE_URL=https://shop.example.com \
+  -e SHOPWARE_CLIENT_ID=SWIA... \
+  -e SHOPWARE_CLIENT_SECRET=... \
+  -- npx -y shopware-mcp</code></pre>
+          </div>
+          <div data-panel="cursor" role="tabpanel" hidden>
+            <p>They all take the same three fields. Cursor reads <code>.cursor/mcp.json</code>, VS Code <code>.vscode/mcp.json</code> (under <code>servers</code>), Zed its <code>context_servers</code> block. <code>init --for cursor|vscode|zed</code> prints the right shape.</p>
+<pre><code>{
+  "mcpServers": {
+    "shopware": {
+      "command": "npx",
+      "args": ["-y", "shopware-mcp"],
+      "env": {
+        "SHOPWARE_URL": "https://shop.example.com",
+        "SHOPWARE_CLIENT_ID": "SWIA...",
+        "SHOPWARE_CLIENT_SECRET": "..."
+      }
+    }
+  }
+}</code></pre>
+          </div>
+          <div data-panel="docker" role="tabpanel" hidden>
+            <p>The image serves Streamable HTTP on <code>/mcp</code>. Add <code>SHOPWARE_MCP_HTTP_TOKEN</code> and the endpoint requires a bearer token; without one, keep it on localhost.</p>
+<pre><code>docker run --rm -p 127.0.0.1:3333:3333 \
+  -e SHOPWARE_URL=https://shop.example.com \
+  -e SHOPWARE_CLIENT_ID=SWIA... \
+  -e SHOPWARE_CLIENT_SECRET=... \
+  ghcr.io/bnymndev/shopware-mcp</code></pre>
+          </div>
+          <div data-panel="manual" role="tabpanel" hidden>
+            <p>Three environment variables, then the server on stdio or HTTP.</p>
+<pre><code>export SHOPWARE_URL=https://shop.example.com
+export SHOPWARE_CLIENT_ID=SWIA...
+export SHOPWARE_CLIENT_SECRET=...
+
+npx shopware-mcp                       # stdio (default)
+npx shopware-mcp --http --port 3333    # Streamable HTTP on http://127.0.0.1:3333/mcp
+npx shopware-mcp --allow-write         # also register the guarded write tools
+npx shopware-mcp doctor                # which tools can this integration use</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>MIT licensed. Vendor-neutral core, plugin packs on top.</span>
+    <span class="spacer"></span>
+    <a href="https://github.com/bnymnDev/shopware-mcp" rel="noopener">GitHub</a>
+    <a href="https://www.npmjs.com/package/shopware-mcp" rel="noopener">npm</a>
+    <a href="https://github.com/bnymnDev/shopware-mcp/blob/main/docs/tools.md" rel="noopener">Tool reference</a>
+    <a href="https://github.com/bnymnDev/shopware-mcp/blob/main/README.de.md" rel="noopener">Deutsch</a>
+    <a href="https://github.com/bnymnDev/shopware-mcp/blob/main/SECURITY.md" rel="noopener">Security</a>
+  </div>
+</footer>
+
+<script>
+  // Recording tabs: swapping the src restarts the SMIL animation.
+  const rec = document.getElementById("rec");
+  const recCaption = document.getElementById("rec-caption");
+  for (const tab of document.querySelectorAll('[data-rec]')) {
+    tab.addEventListener("click", () => {
+      for (const other of document.querySelectorAll('[data-rec]')) other.setAttribute("aria-selected", String(other === tab));
+      rec.src = `demo/${tab.dataset.rec}.svg`;
+      recCaption.textContent = tab.dataset.caption;
+    });
+  }
+  // Host tabs.
+  for (const tab of document.querySelectorAll('[data-host]')) {
+    tab.addEventListener("click", () => {
+      for (const other of document.querySelectorAll('[data-host]')) other.setAttribute("aria-selected", String(other === tab));
+      for (const panel of document.querySelectorAll('[data-panel]')) panel.hidden = panel.dataset.panel !== tab.dataset.host;
+    });
+  }
+  // Copy button.
+  for (const button of document.querySelectorAll('[data-copy]')) {
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy);
+        button.textContent = "copied";
+      } catch {
+        button.textContent = "select";
+      }
+      setTimeout(() => { button.textContent = "copy"; }, 1500);
+    });
+  }
+</script>
+</body>
+</html>

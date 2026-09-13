@@ -78,22 +78,41 @@ export const stockSet = defineTool({
   name: "stock_set",
   title: "Set stock (guarded)",
   description:
-    "Set the absolute stock of one product or variant. dryRun=true (default) returns the exact " +
-    "PATCH request without changing anything; call again with dryRun=false to apply. " +
+    "Set the stock of one product or variant: either an absolute `stock` or a `delta` " +
+    "(e.g. -3 after a manual sale, +50 after a delivery) applied to the current stock, which is " +
+    "read first. dryRun=true (default) returns the exact PATCH request without changing " +
+    "anything; call again with dryRun=false to apply. " +
     "Returns { dryRun, wouldSend } or { dryRun: false, result: <product stock> }.",
   write: true,
   inputSchema: {
     productId: idSchema.describe("Product or variant UUID"),
-    stock: z.number().int().min(0).describe("New absolute stock quantity"),
+    stock: z.number().int().min(0).optional().describe("New absolute stock quantity"),
+    delta: z.number().int().optional().describe("Change relative to the current stock"),
     dryRun: dryRunField,
   },
   handler: async (input, ctx) => {
+    if ((input.stock === undefined) === (input.delta === undefined)) {
+      throw badRequest("Provide exactly one of: stock, delta");
+    }
+    let stock = input.stock ?? 0;
+    let current: number | null = null;
+    if (input.delta !== undefined) {
+      const product = await ctx.client.findById<Raw>("product", input.productId, {
+        includes: { product: ["id", "stock"] },
+      });
+      current = num(product.stock) ?? 0;
+      stock = current + input.delta;
+      if (stock < 0) {
+        throw badRequest(`Current stock is ${current}; a delta of ${input.delta} would go below 0`);
+      }
+    }
     const path = `/api/product/${input.productId}`;
-    const body = { stock: input.stock };
+    const body = { stock };
     if (input.dryRun) {
-      const dry: DryRunResult = {
+      const dry: DryRunResult & { currentStock: number | null } = {
         dryRun: true,
         wouldSend: { method: "PATCH", url: ctx.client.url(path), body },
+        currentStock: current,
       };
       return dry;
     }

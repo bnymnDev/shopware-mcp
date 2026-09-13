@@ -1,0 +1,138 @@
+{
+  "total": 60,
+  "data": [
+    {
+      "id": "01a0690afda47162a7e8f040c507ae0e",
+      "apiAlias": "order"
+    }
+  ],
+  "aggregations": {
+    "revenue": {
+      "name": "revenue",
+      "sum": 2332415.8,
+      "apiAlias": "revenue_aggregation"
+    },
+    "distinctCustomers": {
+      "name": "distinctCustomers",
+      "count": 10,
+      "apiAlias": "distinctCustomers_aggregation"
+    },
+    "byGuest": {
+      "name": "byGuest",
+      "buckets": [
+        {
+          "key": "0",
+          "count": 60,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "byGuest_aggregation"
+    },
+    "byCustomer": {
+      "name": "byCustomer",
+      "buckets": [
+        {
+          "key": "01a0690928de701bb4a5a788944ea120",
+          "count": 8,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 884243.35
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928e1723987de3bf84e96289b",
+          "count": 3,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 2875.71
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928e370399f7e51e76aa11c4c",
+          "count": 5,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 3819.66
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928e5734da1ea9b961a3e4c41",
+          "count": 7,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 5420.85
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928e77026b4dc1a15d280189a",
+          "count": 5,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 595695.19
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928e9714dafde0ad4d8334974",
+          "count": 6,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 6555.52
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928eb72dcb73d0bf3734a72bd",
+          "count": 3,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 2415.92
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928ed7085834ab9605763dd4b",
+          "count": 6,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 4885.95
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928ef7090969ff1d324115df3",
+          "count": 9,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 11469.37
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "01a0690928f1703ebf786c33c326cba4",
+          "count": 8,
+          "revenue": {
+            "extensions": [],
+            "name": "revenue",
+            "sum": 815034.2800000001
+          },
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "byCustomer_aggregation"
+    }
+  }
+}

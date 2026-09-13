@@ -87,4 +87,60 @@ export function registerPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "customer_profile",
+    {
+      title: "Customer profile for support",
+      description: "Who is this customer, what did they order, and what happened last?",
+      argsSchema: {
+        customer: z.string().min(1).describe("Customer number or e-mail address"),
+      },
+    },
+    ({ customer }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Load the customer "${customer}" with customers_get (customerNumber or email, ` +
+              "whichever it looks like). Then run orders_search with filter " +
+              '[{ "type": "equals", "field": "orderCustomer.customerId", "value": "<id>" }] ' +
+              "sorted by orderDateTime DESC, and order_history for the newest order. Write a " +
+              "profile for a support colleague: account status and group, since when, order " +
+              "count and lifetime revenue, the last three orders with state, payment and " +
+              "delivery state, and what happened last on the newest order. Flag anything " +
+              "that needs action (unpaid, unshipped, inactive account). Use only the tool " +
+              "results.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
+    "review_moderation",
+    {
+      title: "Review moderation queue",
+      description: "Go through product reviews awaiting approval and propose a decision for each.",
+    },
+    () => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              'Run reviews_search with filter [{ "type": "equals", "field": "status", ' +
+              '"value": false }] sorted by createdAt ASC. For each review, propose approve or ' +
+              "hide with a one-line reason (spam, offensive, off-topic, or a genuine review), " +
+              "and where a short public reply from the shop would help, draft it. Then list " +
+              "the exact review_moderate calls, dry run first, and wait for confirmation " +
+              "before applying any of them.",
+          },
+        },
+      ],
+    }),
+  );
 }

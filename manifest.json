@@ -85,39 +85,39 @@
   "tools": [
     {
       "name": "shop_info",
-      "description": "Version, edition, default currency and language"
-    },
-    {
-      "name": "shop_audit",
-      "description": "One-shot health check with prioritised findings"
-    },
-    {
-      "name": "sales_report",
-      "description": "Revenue, order counts, timeline and top products for a period"
+      "description": "Shop info"
     },
     {
       "name": "sales_channels_list",
-      "description": "Sales channels with domains"
+      "description": "List sales channels"
     },
     {
       "name": "products_search",
-      "description": "Search products with Criteria filters"
+      "description": "Search products"
     },
     {
       "name": "products_get",
-      "description": "Full product incl. variants, properties, media"
-    },
-    {
-      "name": "stock_get",
-      "description": "Stock per product and variant"
+      "description": "Get product"
     },
     {
       "name": "orders_search",
-      "description": "Search orders with state, payment and delivery state"
+      "description": "Search orders"
     },
     {
       "name": "orders_get",
-      "description": "Order with line items, addresses, transactions, deliveries"
+      "description": "Get order"
+    },
+    {
+      "name": "order_history",
+      "description": "Order history"
+    },
+    {
+      "name": "order_documents_list",
+      "description": "List order documents"
+    },
+    {
+      "name": "document_download",
+      "description": "Download document PDF"
     },
     {
       "name": "customers_search",
@@ -125,43 +125,103 @@
     },
     {
       "name": "customers_get",
-      "description": "Customer with addresses and payment methods"
+      "description": "Get customer"
     },
     {
       "name": "categories_list",
-      "description": "Flat category list with product counts"
+      "description": "List categories"
     },
     {
       "name": "promotions_list",
-      "description": "Promotions with codes, validity and discounts"
+      "description": "List promotions"
+    },
+    {
+      "name": "reviews_search",
+      "description": "Search product reviews"
+    },
+    {
+      "name": "payment_methods_list",
+      "description": "List payment methods"
+    },
+    {
+      "name": "shipping_methods_list",
+      "description": "List shipping methods"
     },
     {
       "name": "plugins_list",
-      "description": "Installed plugins and apps with update info"
+      "description": "List plugins and apps"
     },
     {
-      "name": "entity_search",
-      "description": "Search any other Shopware entity (secrets stripped)"
+      "name": "stock_get",
+      "description": "Get stock"
+    },
+    {
+      "name": "sales_report",
+      "description": "Sales report"
+    },
+    {
+      "name": "customer_report",
+      "description": "Customer report"
+    },
+    {
+      "name": "shop_audit",
+      "description": "Shop health audit"
     },
     {
       "name": "entity_schema",
-      "description": "Fields and associations of any entity"
+      "description": "Entity schema"
+    },
+    {
+      "name": "entity_search",
+      "description": "Search any entity"
     },
     {
       "name": "stock_set",
-      "description": "Set stock (write, dry run by default)"
+      "description": "Set stock (guarded)"
     },
     {
       "name": "product_update",
-      "description": "Update name, description, active, price (write, dry run by default)"
+      "description": "Update product (guarded)"
+    },
+    {
+      "name": "product_create",
+      "description": "Create product (guarded)"
     },
     {
       "name": "order_state_transition",
-      "description": "process / complete / cancel / reopen (write, dry run by default)"
+      "description": "Transition order state (guarded)"
+    },
+    {
+      "name": "order_delivery_transition",
+      "description": "Transition delivery state (guarded)"
+    },
+    {
+      "name": "order_transaction_transition",
+      "description": "Transition payment state (guarded)"
+    },
+    {
+      "name": "order_note",
+      "description": "Add internal order note (guarded)"
+    },
+    {
+      "name": "order_document_create",
+      "description": "Create order document (guarded)"
     },
     {
       "name": "promotion_toggle",
-      "description": "Activate or deactivate a promotion (write, dry run by default)"
+      "description": "Toggle promotion (guarded)"
+    },
+    {
+      "name": "promotion_create",
+      "description": "Create promotion (guarded)"
+    },
+    {
+      "name": "customer_update",
+      "description": "Update customer (guarded)"
+    },
+    {
+      "name": "review_moderate",
+      "description": "Moderate review (guarded)"
     }
   ],
   "tools_generated": false,

@@ -1,10 +1,11 @@
 /**
  * Keeps server.json (MCP registry manifest) and manifest.json (Claude Desktop extension)
- * in sync with package.json. Run automatically by `pnpm release:version`.
+ * in sync with package.json and the tool definitions. Run automatically by `pnpm release:version`.
  *
  * Usage: pnpm sync:server [--check]
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { tools } from "../src/tools/index.js";
 
 interface PackageJson {
   name: string;
@@ -65,6 +66,8 @@ const updates: { path: string; next: string; current: string }[] = [];
 {
   const { text, value } = readJson("manifest.json");
   value.version = pkg.version;
+  // The bundle advertises every tool of the server; the list is derived, never hand-maintained.
+  value.tools = tools.map((tool) => ({ name: tool.name, description: tool.title }));
   updates.push({ path: "manifest.json", next: serialize(value), current: text });
 }
 

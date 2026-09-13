@@ -163,3 +163,24 @@ Shopware answers a search with 403 when a privilege is missing, so `doctor` lear
 ## Legal pages are checked per storefront
 
 Basic information in Shopware is inherited per sales channel, so the audit asks the system-config route with `inherit=1` for every active storefront and reports the channels that miss imprint, terms, privacy, revocation or shipping information. Headless channels have no pages to link and are skipped.
+
+## Create tools choose the id
+
+`product_create` and `promotion_create` generate the entity id before sending the POST and read the record back by that id. Shopware answers a create with 204 and no body unless asked otherwise, and a client-chosen id makes the read-back independent of that; it also means a retried request cannot create a second record, only fail on the duplicate. These two tools are the only non-idempotent writes, and they are marked as such for hosts and never retried by the client.
+
+## A new product gets the shop's own tax and a derived net price
+
+Shopware has no product without a tax. `product_create` takes a tax id or a rate, and without either it reads `core.tax.defaultTaxRate`, the setting the admin uses for the same purpose, falling back to the highest configured rate. The choice is echoed in the dry run. The net price is derived from the gross price with that rate and stored `linked`, as the admin does, so the shop keeps the two consistent.
+
+## Promotions are created inactive
+
+A promotion that is live the moment it exists cannot be reviewed. `promotion_create` defaults to `active: false`, and turning it on is a second, separate call to `promotion_toggle`. Only one code per promotion is supported; individual codes, set groups and rules stay in the admin.
+
+## Reports rank within a bounded list
+
+`customer_report` asks Shopware for one terms bucket per ordering customer, capped at a thousand, and ranks them in the server. Shopware's terms aggregation cannot sort by a nested sum, and the alternative, a query per customer, would not scale. Beyond the cap the report says so and the count of distinct customers still comes from a count aggregation that is not capped.
+
+## Nothing deletes
+
+There is no delete tool, and there will not be one. Every write in this server changes a record that stays visible, and the dry run shows what changes. A deleted product, promotion or review leaves nothing to show. Deactivating is the supported way to make something disappear from the storefront.
+

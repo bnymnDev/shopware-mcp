@@ -1,0 +1,147 @@
+{
+  "title": "shopware-mcp · order_delivery_transition + order_history, with --allow-write",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp --allow-write"
+    },
+    {
+      "kind": "prompt",
+      "text": "10056 goes out today with DHL, tracking 00340434161094015902. Ship it and show me its history."
+    },
+    {
+      "kind": "call",
+      "tool": "orders_get",
+      "args": "{ orderNumber: \"10056\" }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"id\": \"01a0690b0ccd70ee84f5c7865e043424\", \"orderNumber\": \"10056\", \"state\": \"open\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"paymentState\": \"paid\", \"deliveryState\": \"open\", \"amountTotal\": 42685.02, \"currency\": \"EUR\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"customer\": { \"name\": \"Dominique Aufderhar\", \"customerNumber\": \"10000\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"deliveries\": [ { \"id\": \"01a0690b0ccd70ee84f5c7865d20ac4d\", \"state\": \"open\","
+    },
+    {
+      "kind": "result",
+      "text": "                    \"shippingMethod\": \"Standard\", \"trackingCodes\": [], … } ], … }"
+    },
+    {
+      "kind": "call",
+      "tool": "order_delivery_transition",
+      "args": [
+        "{ orderId: \"01a0690b0ccd70ee84f5c7865e043424\", transition: \"ship\",",
+        "  trackingCodes: [\"00340434161094015902\"] }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": true, \"wouldSend\": ["
+    },
+    {
+      "kind": "result",
+      "text": "  { \"method\": \"PATCH\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"url\": \"http://127.0.0.1:8000/api/order-delivery/01a0690b0ccd70ee84f5c7865d20ac4d\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"body\": { \"trackingCodes\": [ \"00340434161094015902\" ] } },"
+    },
+    {
+      "kind": "result",
+      "text": "  { \"method\": \"POST\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"url\": \"http://127.0.0.1:8000/api/_action/order_delivery/01a0690b0ccd…/state/ship\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"body\": {} } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "Two requests: the tracking code goes onto the delivery, then the delivery moves"
+    },
+    {
+      "kind": "agent",
+      "text": "open → shipped. The order is paid, so nothing blocks it. Go ahead?"
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "prompt",
+      "text": "Yes."
+    },
+    {
+      "kind": "call",
+      "tool": "order_delivery_transition",
+      "args": [
+        "{ orderId: \"01a0690b0ccd70ee84f5c7865e043424\", transition: \"ship\",",
+        "  trackingCodes: [\"00340434161094015902\"], dryRun: false }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": false, \"result\": { \"orderNumber\": \"10056\", \"state\": \"open\", \"paymentState\": \"paid\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"deliveryState\": \"shipped\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"deliveries\": [ { \"state\": \"shipped\", \"trackingCodes\": [ \"00340434161094015902\" ], … } ], … } }"
+    },
+    {
+      "kind": "call",
+      "tool": "order_history",
+      "args": "{ orderNumber: \"10056\" }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"orderId\": \"01a0690b0ccd70ee84f5c7865e043424\", \"orderNumber\": \"10056\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"orderDate\": \"2026-07-06T22:15:47.000+00:00\", \"total\": 1, \"entries\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"at\": \"2026-09-13T11:58:44.690+00:00\", \"entity\": \"order_delivery\", \"action\": \"ship\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"from\": \"open\", \"to\": \"shipped\", \"by\": { \"type\": \"integration\", \"name\": \"shopware-mcp e2e\" } } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "Shipped. Order 10056 (Dominique Aufderhar, 42,685.02 EUR, paid) now carries the tracking"
+    },
+    {
+      "kind": "agent",
+      "text": "code 00340434161094015902. Its history has one entry: the delivery went open → shipped just"
+    },
+    {
+      "kind": "agent",
+      "text": "now, by this integration. The order itself is still \"open\"; complete it with"
+    },
+    {
+      "kind": "agent",
+      "text": "order_state_transition once the parcel is delivered."
+    }
+  ]
+}

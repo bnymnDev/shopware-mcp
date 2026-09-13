@@ -1,0 +1,64 @@
+{
+  "total": 3,
+  "data": [
+    {
+      "customerNumber": "10000",
+      "firstName": "Dominique",
+      "lastName": "Aufderhar",
+      "company": null,
+      "email": "01a0690928de701bb4a5a788944ea120sheaney@example.net",
+      "guest": false,
+      "id": "01a0690928de701bb4a5a788944ea120",
+      "apiAlias": "customer"
+    },
+    {
+      "customerNumber": "10001",
+      "firstName": "Jairo",
+      "lastName": "Johns",
+      "company": null,
+      "email": "01a0690928e1723987de3bf84e96289bfavian.schinner@example.org",
+      "guest": false,
+      "id": "01a0690928e1723987de3bf84e96289b",
+      "apiAlias": "customer"
+    },
+    {
+      "customerNumber": "10002",
+      "firstName": "Santina",
+      "lastName": "Prosacco",
+      "company": null,
+      "email": "01a0690928e370399f7e51e76aa11c4cablanda@example.com",
+      "guest": false,
+      "id": "01a0690928e370399f7e51e76aa11c4c",
+      "apiAlias": "customer"
+    }
+  ],
+  "aggregations": {
+    "byGuest": {
+      "name": "byGuest",
+      "buckets": [
+        {
+          "key": "0",
+          "count": 3,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "byGuest_aggregation"
+    },
+    "byGroup": {
+      "name": "byGroup",
+      "buckets": [
+        {
+          "key": "Net price customer group",
+          "count": 2,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "Standard customer group",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "byGroup_aggregation"
+    }
+  }
+}

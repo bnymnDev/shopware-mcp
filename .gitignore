@@ -9,3 +9,7 @@ coverage/
 e2e/.integration.json
 *.mcpb
 *.tgz
+
+# assembled by the Pages workflow
+site/demo/
+site/brand/

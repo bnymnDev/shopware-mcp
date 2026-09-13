@@ -1,0 +1,136 @@
+{
+  "title": "shopware-mcp · reviews_search + review_moderate, with --allow-write",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp --allow-write"
+    },
+    {
+      "kind": "prompt",
+      "text": "Which reviews are waiting for approval? Hide the spam, answer the genuine ones."
+    },
+    {
+      "kind": "call",
+      "tool": "reviews_search",
+      "args": "{ filter: [{ type: \"equals\", field: \"status\", value: false }] }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"total\": 2, \"averagePoints\": 1.5, \"items\": ["
+    },
+    {
+      "kind": "result",
+      "text": "  { \"id\": \"b083c188c0974cd298decffac54fe8f8\", \"productNumber\": \"SW10004\", \"points\": 1,"
+    },
+    {
+      "kind": "result",
+      "text": "    \"approved\": false, \"reviewer\": \"Jairo Johns\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"title\": \"BUY CHEAP WATCHES www.example-spam.test\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"content\": \"Best deals online click here now\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "  { \"id\": \"8ac174fbeec1492abd6452cc4d432522\", \"productNumber\": \"SW10002\", \"points\": 2,"
+    },
+    {
+      "kind": "result",
+      "text": "    \"approved\": false, \"reviewer\": \"Santina Prosacco\", \"title\": \"Disappointed\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"content\": \"The colour is nothing like the photos and one of the parts was loose in the box.\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"comment\": null, … } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "Two reviews are pending. The first is spam; it is hidden already and stays that way."
+    },
+    {
+      "kind": "agent",
+      "text": "The second is a genuine complaint, 2 stars on SW10002 Fantastic Steel Shirt. I would"
+    },
+    {
+      "kind": "agent",
+      "text": "approve it with a reply: \"We are sorry to hear that. Please contact suppo"
+    },
+    {
+      "kind": "agent",
+      "text": "rt@example.com and we will replace the part.\""
+    },
+    {
+      "kind": "call",
+      "tool": "review_moderate",
+      "args": [
+        "{ reviewId: \"8ac174fbeec1492abd6452cc4d432522\", approved: true,",
+        "  comment: \"We are sorry to hear that. Please contact support@example.com",
+        "            and we will replace the part.\" }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": true,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"wouldSend\": { \"method\": \"PATCH\","
+    },
+    {
+      "kind": "result",
+      "text": "                 \"url\": \"http://127.0.0.1:8000/api/product-review/8ac174fbeec1492abd6452cc4d432522\","
+    },
+    {
+      "kind": "result",
+      "text": "                 \"body\": { \"status\": true, \"comment\": \"We are sorry to hear that. Please …\" } } }"
+    },
+    {
+      "kind": "agent",
+      "text": "Dry run only. Approve the review with that reply?"
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "prompt",
+      "text": "Yes."
+    },
+    {
+      "kind": "call",
+      "tool": "review_moderate",
+      "args": [
+        "{ reviewId: \"8ac174fbeec1492abd6452cc4d432522\", approved: true,",
+        "  comment: \"We are sorry to hear that. Please contact support@example.com",
+        "            and we will replace the part.\", dryRun: false }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"dryRun\": false, \"result\": { \"id\": \"8ac174fbeec1492abd6452cc4d432522\", \"productNumber\": \"SW10002\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"points\": 2, \"approved\": true, \"reviewer\": \"Santina Prosacco\", \"title\": \"Disappointed\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"comment\": \"We are sorry to hear that. Please contact support@example.com and we will …\", … } }"
+    },
+    {
+      "kind": "agent",
+      "text": "Done. The review on SW10002 is public with the shop's reply; the spam review stays hidden."
+    },
+    {
+      "kind": "agent",
+      "text": "Nothing else is waiting for moderation."
+    }
+  ]
+}

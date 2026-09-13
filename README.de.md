@@ -20,6 +20,7 @@
   <a href="#in-60-sekunden">Installation</a> ·
   <a href="#werkzeuge">Werkzeuge</a> ·
   <a href="#sicherheit">Sicherheit</a> ·
+  <a href="https://bnymndev.github.io/shopware-mcp/">Website</a> ·
   <a href="README.md">English</a>
 </p>
 
@@ -49,11 +50,11 @@ einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat:
 
 | | |
 |---|---|
-| **Kuratierte Werkzeuge** | Produkte, Bestellungen, Kunden, Kategorien, Aktionen, Plugins, Bestand, Verkaufskanäle: sechzehn Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Ein Audit** | `shop_audit` prüft elf Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, ohne Bild oder ohne Lieferzeit, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
-| **Ein Report** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
+| **Kuratierte Werkzeuge** | Produkte, Bestellungen samt Verlauf, Belege, Kunden, Kategorien, Aktionen, Bewertungen, Zahlungs- und Versandarten, Plugins, Bestand, Verkaufskanäle: achtzehn Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
+| **Ein Audit** | `shop_audit` prüft dreizehn Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
+| **Zwei Reports** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
 | **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
-| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen: acht schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
+| **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen, Produkt oder Aktion anlegen, Bewertung freigeben, Kunde ändern: zwölf schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
 
 <p align="center">
   <picture>
@@ -77,7 +78,7 @@ mit generierten Demodaten, abgespielt aus den Transkripten in
 [`docs/demo/`](docs/demo). Die Aufnahmen sind auf Englisch; Werkzeugaufrufe und
 Ergebnisse sind wörtlich, zum Lesen gekürzt.
 
-**Eine Frage, neun Prüfungen.** Drei bezahlte Bestellungen warten auf den
+**Eine Frage, dreizehn Prüfungen.** Drei bezahlte Bestellungen warten auf den
 Versand, die Storefront ist im Wartungsmodus, eine Sommeraktion hat den August
 überlebt. Die Antwort nennt Bestellnummern und Beträge und bietet den sicheren
 nächsten Schritt an.
@@ -102,12 +103,38 @@ Shopware neu gelesen.
 
 ![stock_set: der Probelauf zeigt den PATCH, der Agent fragt nach, der echte Schreibzugriff folgt](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/write.svg)
 
+**Versenden, dann belegen.** Eine Lieferungs-Transition sind zwei Requests, die
+vor dem Senden gezeigt werden: die Sendungsnummer auf die Lieferung, dann der
+Statuswechsel. Der Verlauf der Bestellung nennt danach Transition, Status und
+wer sie ausgelöst hat.
+
+![order_delivery_transition und order_history: der Probelauf zeigt beide Requests, der Schreibzugriff versendet, der Verlauf zeigt die Transition und die Integration](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/support.svg)
+
+**Ein Produkt und sein Startcode, aus einem Satz.** `product_create` nimmt den
+Standardsteuersatz des Shops, leitet den Nettopreis ab und sagt das im
+Probelauf. Die Aktion kommt inaktiv an, damit niemand einen Code sieht, bevor
+er geprüft wurde.
+
+![product_create und promotion_create: der Probelauf zeigt den POST mit Steuer und Nettopreis, das Produkt wird angelegt, die Aktion folgt inaktiv](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/launch.svg)
+
+**Moderation mit Antwort.** Zwei Bewertungen warten auf Freigabe. Der Spam
+bleibt verborgen, die Beschwerde wird zusammen mit der öffentlichen Antwort des
+Shops freigegeben, und niemand musste in den Admin.
+
+![reviews_search und review_moderate: zwei offene Bewertungen, eine wird nach einem Probelauf mit Antwort freigegeben](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/moderate.svg)
+
+**Menschen, nicht nur Umsatz.** Neue Konten je Gruppe, wie viele Kunden
+bestellt haben und wie viele wiederkamen, der Gastanteil und die Top-Kunden mit
+ihrem Anteil am Zeitraum, neben dem Zeitraum davor.
+
+![customer_report: neue Kunden, bestellende und wiederkehrende Kunden, Vergleich mit dem Vorzeitraum und Top-Kunden nach Umsatz](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/customers.svg)
+
 **Ein Shop mit mehr Plugins bekommt einen größeren Agenten.** Die Kernwerkzeuge
 sind sofort da. Die Erweiterungssuche endet im Hintergrund, vier Werkzeuge
 kommen dazu, der Host wird zum Aktualisieren aufgefordert, und eine
 Compliance-Frage hat eine Antwort.
 
-![Plugin-Werkzeuge: tools/list wächst von 16 auf 20, dann beantwortet merqo_health eine Compliance-Frage](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/plugins.svg)
+![Plugin-Werkzeuge: tools/list wächst von 23 auf 27, dann beantwortet merqo_health eine Compliance-Frage](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/plugins.svg)
 
 **Vorher wissen, was geht.** `shopware-mcp doctor` prüft, was die Integration lesen darf, liest ihre Rolle für die Schreibrechte, wo das erlaubt ist, und nennt je Werkzeug das fehlende Recht. Ein Administrator bekommt lauter Haken, eine Support-Rolle erfährt genau, was zu vergeben ist.
 
@@ -223,6 +250,15 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 | „Wie war die letzte Woche im Vergleich zur Vorwoche?" | `sales_report { compareWithPrevious: true }`, oder der Prompt `weekly_review` |
 | „Schick mir die Rechnung zu 10042." | `order_documents_list`, dann liefert `document_download` die PDF |
 | „Notiz zu 10042: Kunde hat angerufen, Versand Montag." | `order_note` |
+| „Was ist mit Bestellung 10042 passiert, und wer war das?" | `order_history` |
+| „Wer ist Kunde 10042 und was hat er zuletzt bestellt?" | `customers_get` und `orders_search`, oder der Prompt `customer_profile` |
+| „Wer waren unsere besten Kunden im Quartal?" | `customer_report { from, to, topCustomers: 20 }` |
+| „Welche Bewertungen warten auf Freigabe?" | `reviews_search` mit `status: false`, oder der Prompt `review_moderation` |
+| „Gib die Bewertung von Dominique frei und bedank dich." | `review_moderate { approved: true, comment }` |
+| „Welche Zahlungsarten bietet die Storefront an?" | `payment_methods_list`, `shipping_methods_list` |
+| „Lege einen 10-%-Code AUTUMN10 für Oktober an." | `promotion_create`, inaktiv, bis Sie es anders sagen |
+| „Lege das Produkt Bank, SW10200, 119 Euro, 3 auf Lager an." | `product_create`, Nettopreis aus dem Steuersatz abgeleitet |
+| „Zwei kamen vom Kunden zurück, buche sie auf SW10084." | `stock_set { delta: 2 }` |
 | „Welche Werkzeuge scheitern mit dieser Integration?" | kein Werkzeug: `npx shopware-mcp doctor` |
 
 Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`) auf Shopware-Feldpfaden, Assoziationen wie `manufacturer.name` eingeschlossen. Was sich in der Admin-API filtern lässt, lässt sich auch hier filtern. Der [Spickzettel](docs/quickstart.md#filters-cheat-sheet) zeigt die üblichen Fälle.
@@ -240,26 +276,35 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`products_get`](docs/tools.md#products_get) | read | Get product |
 | [`orders_search`](docs/tools.md#orders_search) | read | Search orders |
 | [`orders_get`](docs/tools.md#orders_get) | read | Get order |
+| [`order_history`](docs/tools.md#order_history) | read | Order history |
 | [`order_documents_list`](docs/tools.md#order_documents_list) | read | List order documents |
 | [`document_download`](docs/tools.md#document_download) | read | Download document PDF |
 | [`customers_search`](docs/tools.md#customers_search) | read | Search customers |
 | [`customers_get`](docs/tools.md#customers_get) | read | Get customer |
 | [`categories_list`](docs/tools.md#categories_list) | read | List categories |
 | [`promotions_list`](docs/tools.md#promotions_list) | read | List promotions |
+| [`reviews_search`](docs/tools.md#reviews_search) | read | Search product reviews |
+| [`payment_methods_list`](docs/tools.md#payment_methods_list) | read | List payment methods |
+| [`shipping_methods_list`](docs/tools.md#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](docs/tools.md#plugins_list) | read | List plugins and apps |
 | [`stock_get`](docs/tools.md#stock_get) | read | Get stock |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
+| [`customer_report`](docs/tools.md#customer_report) | read | Customer report |
 | [`shop_audit`](docs/tools.md#shop_audit) | read | Shop health audit |
 | [`entity_schema`](docs/tools.md#entity_schema) | read | Entity schema |
 | [`entity_search`](docs/tools.md#entity_search) | read | Search any entity |
 | [`stock_set`](docs/tools.md#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](docs/tools.md#product_update) | write (guarded) | Update product (guarded) |
+| [`product_create`](docs/tools.md#product_create) | write (guarded) | Create product (guarded) |
 | [`order_state_transition`](docs/tools.md#order_state_transition) | write (guarded) | Transition order state (guarded) |
 | [`order_delivery_transition`](docs/tools.md#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
 | [`order_transaction_transition`](docs/tools.md#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`order_note`](docs/tools.md#order_note) | write (guarded) | Add internal order note (guarded) |
 | [`order_document_create`](docs/tools.md#order_document_create) | write (guarded) | Create order document (guarded) |
 | [`promotion_toggle`](docs/tools.md#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
+| [`promotion_create`](docs/tools.md#promotion_create) | write (guarded) | Create promotion (guarded) |
+| [`customer_update`](docs/tools.md#customer_update) | write (guarded) | Update customer (guarded) |
+| [`review_moderate`](docs/tools.md#review_moderate) | write (guarded) | Moderate review (guarded) |
 <!-- TOOLS:END -->
 
 Jeder Parameter jedes Werkzeugs: [docs/tools.md](docs/tools.md). Suchen liefern
@@ -284,9 +329,9 @@ unter `src/extensions/`; Pull Requests sind willkommen.
 ## Sicherheit
 
 - **Standardmäßig nur lesend.** Ohne `--allow-write` (oder `SHOPWARE_MCP_ALLOW_WRITE=true`) werden die Schreibwerkzeuge gar nicht registriert. Was ein Agent nicht sieht, kann er nicht aufrufen.
-- **Jeder Schreibzugriff ist zuerst ein Probelauf.** `stock_set`, `product_update`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create` und `promotion_toggle` stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
+- **Jeder Schreibzugriff ist zuerst ein Probelauf.** Alle zwölf Schreibwerkzeuge, von `stock_set` bis `review_moderate`, stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
 - **Ein Schreib-Budget.** `SHOPWARE_MCP_MAX_WRITES=20` weist den einundzwanzigsten echten Schreibzugriff eines Prozesses mit `WRITE_BUDGET_EXHAUSTED` ab; Probeläufe bleiben frei. Kein Prompt kann das aufheben.
-- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie. Sonst nichts.
+- **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung; `product_create` legt ein einfaches Produkt an, mehr nicht. `promotion_create` erzeugt einen Warenkorbrabatt, inaktiv, solange nichts anderes gesagt wird. `customer_update` ändert Aktiv-Status und Kundengruppe. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie. Nichts löscht. Sonst nichts.
 - **Bereinigte Lesezugriffe.** `entity_search` entfernt Passwörter, Schlüssel, Tokens und Hashes aus jeder Antwort und verweigert Entitäten, die Zugangsdaten oder Systeminterna enthalten: Benutzer, Integrationen, ACL-Rollen, Apps, Systemkonfiguration.
 - **Nirgends Geheimnisse.** Zugangsdaten erscheinen nie in Ausgaben, Logs oder Fehlermeldungen. Logs gehen nur nach stderr.
 - **Keine Telemetrie.** Der Server spricht mit Ihrem Shop und mit Ihrem Host. Mit niemandem sonst.

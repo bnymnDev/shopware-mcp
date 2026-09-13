@@ -5,6 +5,7 @@ import { badRequest, ShopwareMcpError } from "../errors.js";
 import { logger } from "../logger.js";
 import {
   bool,
+  dryRunField,
   fullName,
   idSchema,
   num,
@@ -15,7 +16,7 @@ import {
   translated,
   withFields,
 } from "./shared.js";
-import { defineTool } from "./types.js";
+import { type DryRunResult, defineTool } from "./types.js";
 
 const SEARCH_ASSOCIATIONS = associations(["group"]);
 const DETAIL_ASSOCIATIONS = associations([
@@ -163,5 +164,41 @@ export const customersGet = defineTool({
     }
     const { customer, mapped } = await fetchCustomerDetail(ctx.client, input);
     return withFields(mapped, customer, input.fields);
+  },
+});
+
+export const customerUpdate = defineTool({
+  name: "customer_update",
+  title: "Update customer (guarded)",
+  description:
+    "Update account fields of one customer: active flag (an inactive customer cannot log in " +
+    "or order) and/or customer group (e.g. move a B2B account to a net-price group; find group " +
+    "ids with entity_search on customer_group). dryRun=true (default) returns the exact PATCH " +
+    "request without changing anything; call again with dryRun=false to apply. " +
+    "Returns { dryRun, wouldSend } or { dryRun: false, result: <updated customer> }.",
+  write: true,
+  inputSchema: {
+    customerId: idSchema.describe("Customer UUID"),
+    active: z.boolean().optional(),
+    groupId: idSchema.optional().describe("Customer group UUID"),
+    dryRun: dryRunField,
+  },
+  handler: async (input, ctx) => {
+    const body: Raw = {};
+    if (input.active !== undefined) body.active = input.active;
+    if (input.groupId !== undefined) body.groupId = input.groupId;
+    if (Object.keys(body).length === 0)
+      throw badRequest("Provide at least one of: active, groupId");
+    const path = `/api/customer/${input.customerId}`;
+    if (input.dryRun) {
+      const dry: DryRunResult = {
+        dryRun: true,
+        wouldSend: { method: "PATCH", url: ctx.client.url(path), body },
+      };
+      return dry;
+    }
+    await ctx.client.request(path, { method: "PATCH", body });
+    const { mapped } = await fetchCustomerDetail(ctx.client, { customerId: input.customerId });
+    return { dryRun: false, result: mapped };
   },
 });

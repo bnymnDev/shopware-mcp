@@ -50,6 +50,7 @@ describe("dry runs", () => {
         url: `https://shop.test/api/product/${PRODUCT}`,
         body: { stock: 3 },
       },
+      currentStock: null,
     });
     expect(writeRequests()).toHaveLength(0);
     expect(requests.filter((r) => r.path !== "/api/oauth/token")).toHaveLength(0);

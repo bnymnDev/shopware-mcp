@@ -1,0 +1,54 @@
+{
+  "total": 3,
+  "data": [
+    {
+      "_uniqueIdentifier": "01a068fb6a0f70578a5a7480f03a26cd",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-03T20:35:02.287+00:00",
+      "updatedAt": null,
+      "taxRate": 19,
+      "name": "Standard rate",
+      "position": 1,
+      "products": null,
+      "rules": null,
+      "shippingMethods": null,
+      "customFields": null,
+      "id": "01a068fb6a0f70578a5a7480f03a26cd",
+      "apiAlias": "tax"
+    },
+    {
+      "_uniqueIdentifier": "01a068fb6a0f70578a5a7480f0d8cc09",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-03T20:35:02.288+00:00",
+      "updatedAt": null,
+      "taxRate": 7,
+      "name": "Reduced rate",
+      "position": 2,
+      "products": null,
+      "rules": null,
+      "shippingMethods": null,
+      "customFields": null,
+      "id": "01a068fb6a0f70578a5a7480f0d8cc09",
+      "apiAlias": "tax"
+    },
+    {
+      "_uniqueIdentifier": "01a068fb706d7376b47256dee0d41df6",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-03T20:35:03.917+00:00",
+      "updatedAt": null,
+      "taxRate": 0,
+      "name": "Reduced rate 2",
+      "position": 3,
+      "products": null,
+      "rules": null,
+      "shippingMethods": null,
+      "customFields": null,
+      "id": "01a068fb706d7376b47256dee0d41df6",
+      "apiAlias": "tax"
+    }
+  ],
+  "aggregations": []
+}

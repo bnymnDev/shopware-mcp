@@ -1,0 +1,190 @@
+{
+  "total": 4,
+  "data": [
+    {
+      "_uniqueIdentifier": "01a0736d9cbc720eb2442b48b8c5bd9d",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-05T21:15:58.525+00:00",
+      "updatedAt": null,
+      "stateMachineId": "01a068fb6a87736b92166b6d506e548f",
+      "stateMachine": null,
+      "entityName": "order_delivery",
+      "referencedId": "01a0690b008a73b3bd014fc9e330eb39",
+      "referencedVersionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "fromStateId": "01a068fb6a87736b92166b6d50db383c",
+      "fromStateMachineState": {
+        "translated": {
+          "name": "Open",
+          "customFields": []
+        },
+        "name": "Open",
+        "technicalName": "open",
+        "id": "01a068fb6a87736b92166b6d50db383c",
+        "apiAlias": "state_machine_state"
+      },
+      "toStateId": "01a068fb6a87736b92166b6d51f3545a",
+      "toStateMachineState": {
+        "translated": {
+          "name": "Shipped",
+          "customFields": []
+        },
+        "name": "Shipped",
+        "technicalName": "shipped",
+        "id": "01a068fb6a87736b92166b6d51f3545a",
+        "apiAlias": "state_machine_state"
+      },
+      "userId": null,
+      "user": null,
+      "integrationId": "01a068fd5d6e7014bfa5a16998762a9b",
+      "integration": {
+        "label": "shopware-mcp e2e",
+        "id": "01a068fd5d6e7014bfa5a16998762a9b",
+        "apiAlias": "integration"
+      },
+      "transitionActionName": "ship",
+      "internalComment": null,
+      "id": "01a0736d9cbc720eb2442b48b8c5bd9d",
+      "apiAlias": "state_machine_history"
+    },
+    {
+      "_uniqueIdentifier": "01a0736da08772049ffa4d3b708f4e65",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-05T21:15:59.496+00:00",
+      "updatedAt": null,
+      "stateMachineId": "01a068fb6a87736b92166b6d506e548f",
+      "stateMachine": null,
+      "entityName": "order_delivery",
+      "referencedId": "01a0690b008a73b3bd014fc9e330eb39",
+      "referencedVersionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "fromStateId": "01a068fb6a87736b92166b6d51f3545a",
+      "fromStateMachineState": {
+        "translated": {
+          "name": "Shipped",
+          "customFields": []
+        },
+        "name": "Shipped",
+        "technicalName": "shipped",
+        "id": "01a068fb6a87736b92166b6d51f3545a",
+        "apiAlias": "state_machine_state"
+      },
+      "toStateId": "01a068fb6a87736b92166b6d50db383c",
+      "toStateMachineState": {
+        "translated": {
+          "name": "Open",
+          "customFields": []
+        },
+        "name": "Open",
+        "technicalName": "open",
+        "id": "01a068fb6a87736b92166b6d50db383c",
+        "apiAlias": "state_machine_state"
+      },
+      "userId": null,
+      "user": null,
+      "integrationId": "01a068fd5d6e7014bfa5a16998762a9b",
+      "integration": {
+        "label": "shopware-mcp e2e",
+        "id": "01a068fd5d6e7014bfa5a16998762a9b",
+        "apiAlias": "integration"
+      },
+      "transitionActionName": "reopen",
+      "internalComment": null,
+      "id": "01a0736da08772049ffa4d3b708f4e65",
+      "apiAlias": "state_machine_history"
+    },
+    {
+      "_uniqueIdentifier": "01a0736da12d705d9a9d57e9a76a5952",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-05T21:15:59.662+00:00",
+      "updatedAt": null,
+      "stateMachineId": "01a068fb6a9571d5a484d502f3191db6",
+      "stateMachine": null,
+      "entityName": "order_transaction",
+      "referencedId": "01a0690b008a73b3bd014fc9e443fd50",
+      "referencedVersionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "fromStateId": "01a068fb6a9571d5a484d502f34a4fe6",
+      "fromStateMachineState": {
+        "translated": {
+          "name": "Open",
+          "customFields": []
+        },
+        "name": "Open",
+        "technicalName": "open",
+        "id": "01a068fb6a9571d5a484d502f34a4fe6",
+        "apiAlias": "state_machine_state"
+      },
+      "toStateId": "01a068fb6a9571d5a484d502f5c66097",
+      "toStateMachineState": {
+        "translated": {
+          "name": "Reminded",
+          "customFields": []
+        },
+        "name": "Reminded",
+        "technicalName": "reminded",
+        "id": "01a068fb6a9571d5a484d502f5c66097",
+        "apiAlias": "state_machine_state"
+      },
+      "userId": null,
+      "user": null,
+      "integrationId": "01a068fd5d6e7014bfa5a16998762a9b",
+      "integration": {
+        "label": "shopware-mcp e2e",
+        "id": "01a068fd5d6e7014bfa5a16998762a9b",
+        "apiAlias": "integration"
+      },
+      "transitionActionName": "remind",
+      "internalComment": null,
+      "id": "01a0736da12d705d9a9d57e9a76a5952",
+      "apiAlias": "state_machine_history"
+    },
+    {
+      "_uniqueIdentifier": "01a0736da2b470d2aca8f4fc881c437f",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-05T21:16:00.052+00:00",
+      "updatedAt": null,
+      "stateMachineId": "01a068fb6a9571d5a484d502f3191db6",
+      "stateMachine": null,
+      "entityName": "order_transaction",
+      "referencedId": "01a0690b008a73b3bd014fc9e443fd50",
+      "referencedVersionId": "0fa91ce3e96a4bc2be4bd9ce752c3425",
+      "fromStateId": "01a068fb6a9571d5a484d502f5c66097",
+      "fromStateMachineState": {
+        "translated": {
+          "name": "Reminded",
+          "customFields": []
+        },
+        "name": "Reminded",
+        "technicalName": "reminded",
+        "id": "01a068fb6a9571d5a484d502f5c66097",
+        "apiAlias": "state_machine_state"
+      },
+      "toStateId": "01a068fb6a9571d5a484d502f34a4fe6",
+      "toStateMachineState": {
+        "translated": {
+          "name": "Open",
+          "customFields": []
+        },
+        "name": "Open",
+        "technicalName": "open",
+        "id": "01a068fb6a9571d5a484d502f34a4fe6",
+        "apiAlias": "state_machine_state"
+      },
+      "userId": null,
+      "user": null,
+      "integrationId": "01a068fd5d6e7014bfa5a16998762a9b",
+      "integration": {
+        "label": "shopware-mcp e2e",
+        "id": "01a068fd5d6e7014bfa5a16998762a9b",
+        "apiAlias": "integration"
+      },
+      "transitionActionName": "reopen",
+      "internalComment": null,
+      "id": "01a0736da2b470d2aca8f4fc881c437f",
+      "apiAlias": "state_machine_history"
+    }
+  ],
+  "aggregations": []
+}

@@ -223,7 +223,7 @@ describe("sales_report", () => {
 describe("shop_audit", () => {
   it("runs every check and prioritises findings", async () => {
     const audit = await invoke(shopAudit, { stuckOrderDays: 14, lowStockThreshold: 3 }, ctx);
-    expect(audit.summary).toMatchObject({ checksRun: 11, healthy: false });
+    expect(audit.summary).toMatchObject({ checksRun: 13, healthy: false });
     expect(audit.shop).toMatchObject({ version: "6.6.10.3", edition: "Community" });
     const ids = audit.findings.map((finding) => finding.id);
     expect(ids[0]).toBe("orders_paid_not_shipped");
@@ -264,6 +264,7 @@ describe("shop_audit", () => {
         promotion: () => ({ total: 0, data: [] }),
         "sales-channel": () => ({ total: 0, data: [] }),
         plugin: () => ({ total: 0, data: [] }),
+        "product-review": () => ({ total: 0, data: [] }),
       }),
       http.get(`${SHOP_URL}/api/_action/extension/installed`, () => HttpResponse.json([])),
     );
@@ -281,7 +282,7 @@ describe("shop_audit", () => {
     );
     const degraded = await invoke(shopAudit, {}, ctx);
     expect(degraded.warnings?.[0]).toContain("promotions_expired_active skipped");
-    expect(degraded.summary.checksRun).toBe(10);
+    expect(degraded.summary.checksRun).toBe(12);
   });
 });
 

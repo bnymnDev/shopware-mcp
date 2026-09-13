@@ -16,7 +16,7 @@
     },
     {
       "kind": "result",
-      "text": "  \"summary\": { \"critical\": 2, \"warning\": 4, \"info\": 2, \"checksRun\": 11, \"healthy\": false },"
+      "text": "  \"summary\": { \"critical\": 2, \"warning\": 4, \"info\": 4, \"checksRun\": 13, \"healthy\": false },"
     },
     {
       "kind": "result",
@@ -72,7 +72,15 @@
     },
     {
       "kind": "result",
-      "text": "    { \"id\": \"products_missing_cover\", \"severity\": \"info\", \"count\": 57, … } ],"
+      "text": "    { \"id\": \"products_missing_cover\", \"severity\": \"info\", \"count\": 57, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"products_not_visible\", \"severity\": \"info\", \"count\": 2, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"reviews_pending\", \"severity\": \"info\", \"count\": 2, … } ],"
     },
     {
       "kind": "result",

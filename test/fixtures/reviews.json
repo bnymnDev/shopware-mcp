@@ -1,0 +1,376 @@
+{
+  "total": 5,
+  "data": [
+    {
+      "_uniqueIdentifier": "b083c188c0974cd298decffac54fe8f8",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-13T11:48:57.108+00:00",
+      "updatedAt": "2026-09-13T11:48:57.115+00:00",
+      "productId": "01a069093243712793c0b7ae9b0ad1ff",
+      "customerId": "01a0690928e1723987de3bf84e96289b",
+      "salesChannelId": "01a068fb91ad7260939028219e459a91",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "externalUser": null,
+      "externalEmail": null,
+      "points": 1,
+      "status": false,
+      "comment": null,
+      "salesChannel": {
+        "translated": {
+          "name": "Storefront",
+          "customFields": [],
+          "homeSlotConfig": null,
+          "homeEnabled": true,
+          "homeName": null,
+          "homeMetaTitle": null,
+          "homeMetaDescription": null,
+          "homeKeywords": null
+        },
+        "name": "Storefront",
+        "id": "01a068fb91ad7260939028219e459a91",
+        "apiAlias": "sales_channel"
+      },
+      "language": null,
+      "customer": {
+        "customerNumber": "10001",
+        "firstName": "Jairo",
+        "lastName": "Johns",
+        "id": "01a0690928e1723987de3bf84e96289b",
+        "apiAlias": "customer"
+      },
+      "product": {
+        "translated": {
+          "metaDescription": null,
+          "name": "Mediocre Wool Develaport",
+          "keywords": null,
+          "description": "Blanditiis suscipit eligendi fugit explicabo. Dolorum corporis repellendus sed sed. Officia fugiat maxime dolore est quod numquam. Totam qui officia veritatis ex dolor atque neque.",
+          "descriptionTeaser": "Blanditiis suscipit eligendi fugit explicabo. Dolorum corporis repellendus sed sed. Officia fugiat maxime dolore est quod numquam. Totam qui officia veritatis ex dolor atque neque.",
+          "metaTitle": null,
+          "packUnit": null,
+          "packUnitPlural": null,
+          "customFields": {
+            "shopwareDemoData": true
+          },
+          "slotConfig": null,
+          "customSearchKeywords": null,
+          "ogTitle": null,
+          "ogDescription": null
+        },
+        "productNumber": "SW10004",
+        "name": "Mediocre Wool Develaport",
+        "id": "01a069093243712793c0b7ae9b0ad1ff",
+        "apiAlias": "product"
+      },
+      "content": "Best deals online click here now",
+      "title": "BUY CHEAP WATCHES www.example-spam.test",
+      "customFields": {
+        "merqo_review": {
+          "source": "customer",
+          "verified": false,
+          "moderation": "pending",
+          "reasons": ["containsLink"]
+        }
+      },
+      "id": "b083c188c0974cd298decffac54fe8f8",
+      "apiAlias": "product_review"
+    },
+    {
+      "_uniqueIdentifier": "05e25348dc024418b0d3eee97fca4efc",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-13T11:48:56.806+00:00",
+      "updatedAt": "2026-09-13T11:48:56.814+00:00",
+      "productId": "01a06909324270cfa7fa522d2a697c22",
+      "customerId": "01a0690928de701bb4a5a788944ea120",
+      "salesChannelId": "98432def39fc4624b33213a56b8c944d",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "externalUser": null,
+      "externalEmail": null,
+      "points": 5,
+      "status": true,
+      "comment": null,
+      "salesChannel": {
+        "translated": {
+          "name": "Headless",
+          "customFields": [],
+          "homeSlotConfig": null,
+          "homeEnabled": true,
+          "homeName": null,
+          "homeMetaTitle": null,
+          "homeMetaDescription": null,
+          "homeKeywords": null
+        },
+        "name": "Headless",
+        "id": "98432def39fc4624b33213a56b8c944d",
+        "apiAlias": "sales_channel"
+      },
+      "language": null,
+      "customer": {
+        "customerNumber": "10000",
+        "firstName": "Dominique",
+        "lastName": "Aufderhar",
+        "id": "01a0690928de701bb4a5a788944ea120",
+        "apiAlias": "customer"
+      },
+      "product": {
+        "translated": {
+          "metaDescription": null,
+          "name": "Ergonomic Steel Dream Fire",
+          "keywords": null,
+          "description": "Dolorem alias dignissimos corrupti ratione. Totam illum adipisci dolore ut itaque. Est quaerat delectus et sit.",
+          "descriptionTeaser": "Dolorem alias dignissimos corrupti ratione. Totam illum adipisci dolore ut itaque. Est quaerat delectus et sit.",
+          "metaTitle": null,
+          "packUnit": null,
+          "packUnitPlural": null,
+          "customFields": {
+            "shopwareDemoData": true
+          },
+          "slotConfig": null,
+          "customSearchKeywords": null,
+          "ogTitle": null,
+          "ogDescription": null
+        },
+        "productNumber": "SW10003",
+        "name": "Ergonomic Steel Dream Fire",
+        "id": "01a06909324270cfa7fa522d2a697c22",
+        "apiAlias": "product"
+      },
+      "content": "Second one for my brother. Delivery was fast and the product is great.",
+      "title": "Bought it twice",
+      "customFields": {
+        "merqo_review": {
+          "source": "customer",
+          "verified": true,
+          "moderation": "approve",
+          "reasons": ["verifiedPurchase"]
+        }
+      },
+      "id": "05e25348dc024418b0d3eee97fca4efc",
+      "apiAlias": "product_review"
+    },
+    {
+      "_uniqueIdentifier": "8ac174fbeec1492abd6452cc4d432522",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-13T11:48:56.693+00:00",
+      "updatedAt": "2026-09-13T11:48:56.700+00:00",
+      "productId": "01a068fe7f997365b70f1e7c376101f8",
+      "customerId": "01a0690928e370399f7e51e76aa11c4c",
+      "salesChannelId": "98432def39fc4624b33213a56b8c944d",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "externalUser": null,
+      "externalEmail": null,
+      "points": 2,
+      "status": false,
+      "comment": null,
+      "salesChannel": {
+        "translated": {
+          "name": "Headless",
+          "customFields": [],
+          "homeSlotConfig": null,
+          "homeEnabled": true,
+          "homeName": null,
+          "homeMetaTitle": null,
+          "homeMetaDescription": null,
+          "homeKeywords": null
+        },
+        "name": "Headless",
+        "id": "98432def39fc4624b33213a56b8c944d",
+        "apiAlias": "sales_channel"
+      },
+      "language": null,
+      "customer": {
+        "customerNumber": "10002",
+        "firstName": "Santina",
+        "lastName": "Prosacco",
+        "id": "01a0690928e370399f7e51e76aa11c4c",
+        "apiAlias": "customer"
+      },
+      "product": {
+        "translated": {
+          "metaDescription": null,
+          "name": "Fantastic Steel Shirt",
+          "keywords": null,
+          "description": null,
+          "descriptionTeaser": null,
+          "metaTitle": null,
+          "packUnit": null,
+          "packUnitPlural": null,
+          "customFields": [],
+          "slotConfig": null,
+          "customSearchKeywords": null,
+          "ogTitle": null,
+          "ogDescription": null
+        },
+        "productNumber": "SW10002",
+        "name": "Fantastic Steel Shirt",
+        "id": "01a068fe7f997365b70f1e7c376101f8",
+        "apiAlias": "product"
+      },
+      "content": "The colour is nothing like the photos and one of the parts was loose in the box.",
+      "title": "Disappointed",
+      "customFields": {
+        "merqo_review": {
+          "source": "customer",
+          "verified": false,
+          "moderation": "pending",
+          "reasons": ["unverified"]
+        }
+      },
+      "id": "8ac174fbeec1492abd6452cc4d432522",
+      "apiAlias": "product_review"
+    },
+    {
+      "_uniqueIdentifier": "0303f751dae5476c87005a845562bfcb",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-13T11:48:56.556+00:00",
+      "updatedAt": "2026-09-13T11:48:56.567+00:00",
+      "productId": "01a068fe7ec6721fb6e778f47531e2aa",
+      "customerId": "01a0690928e1723987de3bf84e96289b",
+      "salesChannelId": "01a068fb91ad7260939028219e459a91",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "externalUser": null,
+      "externalEmail": null,
+      "points": 4,
+      "status": true,
+      "comment": null,
+      "salesChannel": {
+        "translated": {
+          "name": "Storefront",
+          "customFields": [],
+          "homeSlotConfig": null,
+          "homeEnabled": true,
+          "homeName": null,
+          "homeMetaTitle": null,
+          "homeMetaDescription": null,
+          "homeKeywords": null
+        },
+        "name": "Storefront",
+        "id": "01a068fb91ad7260939028219e459a91",
+        "apiAlias": "sales_channel"
+      },
+      "language": null,
+      "customer": {
+        "customerNumber": "10001",
+        "firstName": "Jairo",
+        "lastName": "Johns",
+        "id": "01a0690928e1723987de3bf84e96289b",
+        "apiAlias": "customer"
+      },
+      "product": {
+        "translated": {
+          "metaDescription": null,
+          "name": "Aerodynamic Bronze Bag",
+          "keywords": null,
+          "description": null,
+          "descriptionTeaser": null,
+          "metaTitle": null,
+          "packUnit": null,
+          "packUnitPlural": null,
+          "customFields": [],
+          "slotConfig": null,
+          "customSearchKeywords": null,
+          "ogTitle": null,
+          "ogDescription": null
+        },
+        "productNumber": "SW10001",
+        "name": "Aerodynamic Bronze Bag",
+        "id": "01a068fe7ec6721fb6e778f47531e2aa",
+        "apiAlias": "product"
+      },
+      "content": "Solid quality for the price. The manual could be clearer, otherwise happy.",
+      "title": "Good value",
+      "customFields": {
+        "merqo_review": {
+          "source": "customer",
+          "verified": false,
+          "moderation": "pending",
+          "reasons": ["unverified"]
+        }
+      },
+      "id": "0303f751dae5476c87005a845562bfcb",
+      "apiAlias": "product_review"
+    },
+    {
+      "_uniqueIdentifier": "9be0061090bf4406ac82c0b06c5362aa",
+      "versionId": null,
+      "translated": [],
+      "createdAt": "2026-09-13T11:48:55.785+00:00",
+      "updatedAt": "2026-09-13T11:48:55.999+00:00",
+      "productId": "01a068fe7ec6721fb6e778f47531e2aa",
+      "customerId": "01a0690928de701bb4a5a788944ea120",
+      "salesChannelId": "98432def39fc4624b33213a56b8c944d",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "externalUser": null,
+      "externalEmail": null,
+      "points": 5,
+      "status": true,
+      "comment": null,
+      "salesChannel": {
+        "translated": {
+          "name": "Headless",
+          "customFields": [],
+          "homeSlotConfig": null,
+          "homeEnabled": true,
+          "homeName": null,
+          "homeMetaTitle": null,
+          "homeMetaDescription": null,
+          "homeKeywords": null
+        },
+        "name": "Headless",
+        "id": "98432def39fc4624b33213a56b8c944d",
+        "apiAlias": "sales_channel"
+      },
+      "language": null,
+      "customer": {
+        "customerNumber": "10000",
+        "firstName": "Dominique",
+        "lastName": "Aufderhar",
+        "id": "01a0690928de701bb4a5a788944ea120",
+        "apiAlias": "customer"
+      },
+      "product": {
+        "translated": {
+          "metaDescription": null,
+          "name": "Aerodynamic Bronze Bag",
+          "keywords": null,
+          "description": null,
+          "descriptionTeaser": null,
+          "metaTitle": null,
+          "packUnit": null,
+          "packUnitPlural": null,
+          "customFields": [],
+          "slotConfig": null,
+          "customSearchKeywords": null,
+          "ogTitle": null,
+          "ogDescription": null
+        },
+        "productNumber": "SW10001",
+        "name": "Aerodynamic Bronze Bag",
+        "id": "01a068fe7ec6721fb6e778f47531e2aa",
+        "apiAlias": "product"
+      },
+      "content": "Arrived two days after ordering, works perfectly and the packaging was recyclable.",
+      "title": "Exactly as described",
+      "customFields": {
+        "merqo_review": {
+          "source": "customer",
+          "verified": false,
+          "moderation": "pending",
+          "reasons": ["unverified"]
+        }
+      },
+      "id": "9be0061090bf4406ac82c0b06c5362aa",
+      "apiAlias": "product_review"
+    }
+  ],
+  "aggregations": {
+    "points": {
+      "name": "points",
+      "avg": 3.4,
+      "apiAlias": "points_aggregation"
+    }
+  }
+}

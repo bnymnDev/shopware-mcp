@@ -12,26 +12,35 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`products_get`](#products_get) | read | Get product |
 | [`orders_search`](#orders_search) | read | Search orders |
 | [`orders_get`](#orders_get) | read | Get order |
+| [`order_history`](#order_history) | read | Order history |
 | [`order_documents_list`](#order_documents_list) | read | List order documents |
 | [`document_download`](#document_download) | read | Download document PDF |
 | [`customers_search`](#customers_search) | read | Search customers |
 | [`customers_get`](#customers_get) | read | Get customer |
 | [`categories_list`](#categories_list) | read | List categories |
 | [`promotions_list`](#promotions_list) | read | List promotions |
+| [`reviews_search`](#reviews_search) | read | Search product reviews |
+| [`payment_methods_list`](#payment_methods_list) | read | List payment methods |
+| [`shipping_methods_list`](#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](#plugins_list) | read | List plugins and apps |
 | [`stock_get`](#stock_get) | read | Get stock |
 | [`sales_report`](#sales_report) | read | Sales report |
+| [`customer_report`](#customer_report) | read | Customer report |
 | [`shop_audit`](#shop_audit) | read | Shop health audit |
 | [`entity_schema`](#entity_schema) | read | Entity schema |
 | [`entity_search`](#entity_search) | read | Search any entity |
 | [`stock_set`](#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](#product_update) | write (guarded) | Update product (guarded) |
+| [`product_create`](#product_create) | write (guarded) | Create product (guarded) |
 | [`order_state_transition`](#order_state_transition) | write (guarded) | Transition order state (guarded) |
 | [`order_delivery_transition`](#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
 | [`order_transaction_transition`](#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
 | [`order_note`](#order_note) | write (guarded) | Add internal order note (guarded) |
 | [`order_document_create`](#order_document_create) | write (guarded) | Create order document (guarded) |
 | [`promotion_toggle`](#promotion_toggle) | write (guarded) | Toggle promotion (guarded) |
+| [`promotion_create`](#promotion_create) | write (guarded) | Create promotion (guarded) |
+| [`customer_update`](#customer_update) | write (guarded) | Update customer (guarded) |
+| [`review_moderate`](#review_moderate) | write (guarded) | Moderate review (guarded) |
 
 ## shop_info
 
@@ -134,6 +143,22 @@ Get one order by ID or order number with line items, billing/shipping addresses,
 | `orderId` | `string` | no | Order UUID |
 | `orderNumber` | `string` | no | Order number as shown to customers |
 | `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+
+## order_history
+
+_Order history_
+
+**Read tool** — always registered.
+
+The state history of one order: every order, payment and delivery transition in chronological order with the previous and new state, the action name and who triggered it (admin user, API integration or the system). Use it for 'what happened to this order and when?'. Orders imported without transitions have an empty history. Returns { orderId, orderNumber, orderDate, total, entries[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `orderId` | `string` | no | Order UUID |
+| `orderNumber` | `string` | no | Order number as shown to the customer |
+| `limit` | `integer` | no | default `100`, min 1, max 200 |
 
 ## order_documents_list
 
@@ -238,6 +263,63 @@ List promotions (discount campaigns) with code settings, validity window, redemp
 | `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
 | `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
 
+## reviews_search
+
+_Search product reviews_
+
+**Read tool** — always registered.
+
+Search product reviews with their rating (1-5 points), text, reviewer, product and moderation state. Filter on status (false = awaiting approval), points, productId, product.productNumber or createdAt ranges. Newest first. Adds averagePoints over the whole match. Use review_moderate to approve or hide one. Returns { total, page, limit, averagePoints, items[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+
+## payment_methods_list
+
+_List payment methods_
+
+**Read tool** — always registered.
+
+List payment methods with active flag, handler (plugin), availability rule and the sales channels they are assigned to. Filter e.g. active=true or salesChannels.id. Use it for 'which payment methods do we offer?' and to explain why one is missing at checkout. Returns { total, page, limit, items[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+
+## shipping_methods_list
+
+_List shipping methods_
+
+**Read tool** — always registered.
+
+List shipping methods with active flag, delivery time, tracking URL pattern, availability rule and the sales channels they are assigned to. Filter e.g. active=true or salesChannels.id. Returns { total, page, limit, items[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | no | Full-text search term |
+| `filter` | `({ type: "equals" \| "contains" \| "range" \| "equalsAny", field: string, value: string \| number \| boolean \| (string \| number)[] \| { gte?: number \| string, gt?: number \| string, lte?: number \| string, lt?: number \| string } })[]` | no | Criteria filters, combined with AND |
+| `sort` | `({ field: string, order?: "ASC" \| "DESC" })[]` | no | Sort order; defaults per tool |
+| `page` | `integer` | no | 1-based page. default `1`, min 1 |
+| `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
+| `fields` | `string[]` | no | Extra raw entity fields to add to each item, e.g. ['customFields', 'ean']. Dot-paths allowed |
+
 ## plugins_list
 
 _List plugins and apps_
@@ -288,13 +370,32 @@ Aggregate sales figures for a period straight from Shopware: order count, gross/
 | `topProducts` | `integer` | no | default `10`, min 1, max 25 |
 | `compareWithPrevious` | `boolean` | no | Also report the preceding period of equal length and the change. default `false` |
 
+## customer_report
+
+_Customer report_
+
+**Read tool** — always registered.
+
+Customer figures for a period straight from Shopware: new accounts (registered vs guest, by customer group), how many distinct customers ordered, the repeat share (two or more orders in the period), the guest order share and the top customers by gross revenue with their share of the total. compareWithPrevious adds the period of equal length before `from` and the change. Defaults to the last 30 days, cancelled orders excluded. Returns one object.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `from` | `string` | no | Start (inclusive), ISO date. Default: 30 days ago |
+| `to` | `string` | no | End (inclusive; a date without time covers the whole day). Default: now |
+| `salesChannelId` | `string` | no | Restrict to one sales channel |
+| `excludeCancelled` | `boolean` | no | default `true` |
+| `topCustomers` | `integer` | no | default `10`, min 1, max 50 |
+| `compareWithPrevious` | `boolean` | no | Also report the preceding period of equal length and the change. default `false` |
+
 ## shop_audit
 
 _Shop health audit_
 
 **Read tool** — always registered.
 
-Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image or delivery time, expired promotions still active, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping) and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
 
 ### Input
 
@@ -346,14 +447,15 @@ _Set stock (guarded)_
 
 **Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
 
-Set the absolute stock of one product or variant. dryRun=true (default) returns the exact PATCH request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <product stock> }.
+Set the stock of one product or variant: either an absolute `stock` or a `delta` (e.g. -3 after a manual sale, +50 after a delivery) applied to the current stock, which is read first. dryRun=true (default) returns the exact PATCH request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <product stock> }.
 
 ### Input
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `productId` | `string` | yes | Product or variant UUID |
-| `stock` | `integer` | yes | New absolute stock quantity. min 0 |
+| `stock` | `integer` | no | New absolute stock quantity. min 0 |
+| `delta` | `integer` | no | Change relative to the current stock |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
 ## product_update
@@ -373,6 +475,32 @@ Update basic fields of one product: name, description, active flag and/or price 
 | `description` | `string` | no |  |
 | `active` | `boolean` | no |  |
 | `price` | `{ gross: number, net: number, currencyId?: string }` | no | New price for one currency; other currencies' prices are preserved |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## product_create
+
+_Create product (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Create a simple (non-variant) product: name, product number, gross price in the default currency (net is derived from the tax rate), tax (by id, by rate, or the shop's default tax when omitted), stock, and optionally description, EAN, manufacturer and the sales channels it is visible in (without any it exists but is not shown in a storefront). dryRun=true (default) returns the exact POST request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend, tax } or { dryRun: false, result: <new product> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | yes |  |
+| `productNumber` | `string` | yes | Unique product number, e.g. SW10200 |
+| `priceGross` | `number` | yes | Gross price in the shop's default currency. min 0 |
+| `currencyId` | `string` | no | Currency UUID; defaults to the default currency |
+| `taxId` | `string` | no | Tax UUID |
+| `taxRate` | `number` | no | Tax rate to look up, e.g. 19. min 0, max 100 |
+| `stock` | `integer` | no | default `0`, min 0 |
+| `active` | `boolean` | no | default `true` |
+| `description` | `string` | no |  |
+| `ean` | `string` | no |  |
+| `manufacturerId` | `string` | no |  |
+| `salesChannelIds` | `string[]` | no | Sales channels the product is visible in (use sales_channels_list) |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
 ## order_state_transition
@@ -474,6 +602,63 @@ Activate or deactivate one promotion. dryRun=true (default) returns the exact PA
 |---|---|---|---|
 | `promotionId` | `string` | yes | Promotion UUID |
 | `active` | `boolean` | yes | true to activate, false to deactivate |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## promotion_create
+
+_Create promotion (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Create a cart promotion with one discount: a name, an optional single code (without a code the discount applies automatically), percentage or absolute value, validity window, redemption limits and the sales channels it runs in (required; use sales_channels_list). Created inactive unless active=true, so it can be reviewed first. dryRun=true (default) returns the exact POST request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <new promotion> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `name` | `string` | yes |  |
+| `code` | `string` | no | Voucher code customers enter; omit for an automatic promotion |
+| `discount` | `{ type: "percentage" \| "absolute", value: number, maxValue?: number }` | yes | One discount on the whole cart |
+| `salesChannelIds` | `string[]` | yes | Sales channels it runs in |
+| `validFrom` | `string` | no | ISO date-time; omit for 'now' |
+| `validUntil` | `string` | no | ISO date-time; omit for 'no end' |
+| `maxRedemptionsGlobal` | `integer` | no | min 1 |
+| `maxRedemptionsPerCustomer` | `integer` | no | min 1 |
+| `active` | `boolean` | no | default `false` |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## customer_update
+
+_Update customer (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Update account fields of one customer: active flag (an inactive customer cannot log in or order) and/or customer group (e.g. move a B2B account to a net-price group; find group ids with entity_search on customer_group). dryRun=true (default) returns the exact PATCH request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <updated customer> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `customerId` | `string` | yes | Customer UUID |
+| `active` | `boolean` | no |  |
+| `groupId` | `string` | no | Customer group UUID |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
+## review_moderate
+
+_Moderate review (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Approve or hide one product review (sets its status; approved reviews are shown in the storefront) and optionally set the shop's public reply comment. dryRun=true (default) returns the exact PATCH request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <updated review> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `reviewId` | `string` | yes | Review UUID |
+| `approved` | `boolean` | yes | true to publish, false to hide |
+| `comment` | `string` | no | Public reply shown under the review; omit to leave it unchanged |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
 ## Plugin-aware tools
