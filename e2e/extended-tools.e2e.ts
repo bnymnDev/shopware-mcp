@@ -2,18 +2,21 @@ import { randomBytes } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DEFAULT_LANGUAGE_ID, STOREFRONT_TYPE_ID } from "../src/client/constants.js";
 import type { Raw } from "../src/client/index.js";
+import { detectExtensionTools } from "../src/extensions/index.js";
 import { shopAudit } from "../src/tools/audit.js";
 import { customerReport } from "../src/tools/customer-report.js";
 import { customersSearch, customerUpdate } from "../src/tools/customers.js";
 import { entitySearch } from "../src/tools/entities.js";
 import { stockForecast } from "../src/tools/forecast.js";
 import { orderHistory } from "../src/tools/history.js";
+import { productCoverSet } from "../src/tools/media.js";
 import { paymentMethodsList, shippingMethodsList } from "../src/tools/methods.js";
 import { orderDeliveryTransition, ordersSearch } from "../src/tools/orders.js";
 import { productCreate, productsSearch } from "../src/tools/products.js";
 import { promotionCreate, promotionsList } from "../src/tools/promotions.js";
 import { reviewModerate, reviewsSearch } from "../src/tools/reviews.js";
 import { salesChannelsList } from "../src/tools/sales-channels.js";
+import { shopSettings } from "../src/tools/settings.js";
 import { stockGet, stockSet } from "../src/tools/stock.js";
 import type { ToolContext } from "../src/tools/types.js";
 import { E2E_ENABLED, e2eContext } from "./setup.js";
@@ -282,6 +285,76 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
     );
     expect(audit.warnings).toBeUndefined();
     expect(audit.summary.checksRun).toBe(15);
+  });
+
+  it("product_cover_set uploads bytes and a URL, sets the cover, and the pictures are removed again", async () => {
+    const png =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    const before = await ctx.client.findById<Raw>("product", productId, {
+      includes: { product: ["id", "coverId"] },
+    });
+    const added: { productMediaId: string; mediaId: string }[] = [];
+    try {
+      for (const image of [
+        { imageBase64: png, mimeType: "image/png" as const, fileName: "e2e-bytes" },
+        {
+          imageUrl:
+            process.env.SHOPWARE_E2E_IMAGE_URL ??
+            "https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/screenshots/shop-audit.png",
+          fileName: "e2e-url",
+        },
+      ]) {
+        const dry = await productCoverSet.handler({ productId, ...image, dryRun: true }, ctx);
+        expect(dry).toMatchObject({ dryRun: true });
+        const applied = await productCoverSet.handler({ productId, ...image, dryRun: false }, ctx);
+        if (applied.dryRun) throw new Error("expected a write");
+        const cover = applied.result.media.at(-1);
+        expect(cover?.mediaId).toMatch(HEX);
+        expect(applied.result.coverUrl).toContain(image.fileName);
+        added.push({ productMediaId: cover?.id ?? "", mediaId: cover?.mediaId ?? "" });
+      }
+    } finally {
+      await ctx.client.request(`/api/product/${productId}`, {
+        method: "PATCH",
+        body: { coverId: before.coverId ?? null },
+      });
+      for (const entry of added) {
+        await ctx.client.request(`/api/product-media/${entry.productMediaId}`, {
+          method: "DELETE",
+        });
+        await ctx.client.request(`/api/media/${entry.mediaId}`, { method: "DELETE" });
+      }
+    }
+  });
+
+  it("shop_settings reads trading settings without credentials", async () => {
+    const settings = await shopSettings.handler(
+      {
+        domains: ["core.basicInformation", "core.loginRegistration", "core.tax"],
+        salesChannelId: storefrontId,
+      },
+      ctx,
+    );
+    expect(settings.inherited).toBe(true);
+    expect(typeof settings.settings["core.basicInformation"]?.shopName).toBe("string");
+    expect(JSON.stringify(settings)).not.toMatch(/apiToken|smtpPassword|licen[cs]eKey/i);
+  });
+
+  it("FroshTools tools answer when the plugin is installed", async () => {
+    const detected = await detectExtensionTools(ctx);
+    const health = detected.find((entry) => entry.tool.name === "frosh_health");
+    if (!health) return;
+    const result = (await health.tool.handler({ includePerformance: true }, ctx)) as {
+      summary: { ok: number; info: number; warning: number; error: number };
+      checks: { id: string | null; state: string }[];
+    };
+    const { ok, info, warning, error } = result.summary;
+    expect(result.checks.length).toBe(ok + info + warning + error);
+    const queue = detected.find((entry) => entry.tool.name === "frosh_queue");
+    const queued = (await queue?.tool.handler({}, ctx)) as {
+      transports: { name: string | null }[];
+    };
+    expect(queued.transports.map((t) => t.name)).toContain("async");
   });
 
   it("stock_set applies a delta on top of the current stock", async () => {

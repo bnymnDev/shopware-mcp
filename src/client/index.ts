@@ -27,6 +27,8 @@ export interface RequestOptions {
   idempotent?: boolean;
   /** Return the raw bytes instead of parsing JSON, for PDFs and other files. */
   binary?: boolean;
+  /** Send these bytes as the body (with `headers["content-type"]`) instead of JSON. */
+  rawBody?: Uint8Array;
 }
 
 export interface BinaryResponse {
@@ -117,6 +119,7 @@ export class ShopwareClient {
       authorization: `Bearer ${token}`,
       ...(this.languageId ? { "sw-language-id": this.languageId } : {}),
       ...(options.body !== undefined ? { "content-type": "application/json" } : {}),
+      ...(options.rawBody ? { "content-type": "application/octet-stream" } : {}),
       ...options.headers,
     };
     const startedAt = Date.now();
@@ -125,7 +128,9 @@ export class ShopwareClient {
       response = await this.fetchImpl(this.url(path), {
         method,
         headers,
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        body:
+          options.rawBody ??
+          (options.body !== undefined ? JSON.stringify(options.body) : undefined),
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (cause) {

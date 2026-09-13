@@ -70,6 +70,7 @@ export const searchFixtures: Record<string, string> = {
   "shipping-method": "shipping-methods",
   tax: "taxes",
   "order-line-item": "line-item-sales",
+  "media-folder": "media-folders",
 };
 
 export function tokenHandler(): HttpHandler {
@@ -133,6 +134,27 @@ export function defaultHandlers(): HttpHandler[] {
     http.post(`${SHOP_URL}/api/:entity`, async ({ request }) => {
       await capture(request);
       return new HttpResponse(null, { status: 204 });
+    }),
+    http.post(`${SHOP_URL}/api/_action/media/:id/upload`, async ({ request }) => {
+      await capture(request);
+      return new HttpResponse(null, { status: 204 });
+    }),
+    http.get(`${SHOP_URL}/api/_action/frosh-tools/:group/:route`, async ({ request, params }) => {
+      await capture(request);
+      const names: Record<string, string> = {
+        "health/status": "frosh-health",
+        "performance/status": "frosh-performance",
+        "queue/transports": "frosh-queue-transports",
+        "queue/list": "frosh-queue-list",
+      };
+      const name = names[`${params.group}/${params.route}`];
+      return name
+        ? HttpResponse.json(fixture<JsonBodyType>(name))
+        : new HttpResponse(null, { status: 404 });
+    }),
+    http.get(`${SHOP_URL}/api/_action/frosh-tools/composer-audit`, async ({ request }) => {
+      await capture(request);
+      return HttpResponse.json(fixture("frosh-composer-audit"));
     }),
     http.post(`${SHOP_URL}/api/_action/:entity/:id/state/:transition`, async ({ request }) => {
       await capture(request);

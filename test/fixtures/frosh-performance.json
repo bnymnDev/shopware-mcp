@@ -1,0 +1,114 @@
+[
+  {
+    "extensions": [],
+    "current": "enabled",
+    "recommended": "disabled",
+    "state": "STATE_WARNING",
+    "id": "admin-watcher",
+    "snippet": "Admin-Worker"
+  },
+  {
+    "extensions": [],
+    "current": "enabled",
+    "recommended": "disabled",
+    "state": "STATE_WARNING",
+    "id": "app-url-check-disabled",
+    "snippet": "App URL external check"
+  },
+  {
+    "extensions": [],
+    "current": "enabled",
+    "recommended": "disabled",
+    "state": "STATE_WARNING",
+    "id": "mail_variables",
+    "snippet": "MailVariables updates"
+  },
+  {
+    "extensions": [],
+    "current": "mysql",
+    "recommended": "array or redis",
+    "state": "STATE_WARNING",
+    "id": "increment-storage",
+    "snippet": "Increment storage"
+  },
+  {
+    "extensions": [],
+    "current": "DEBUG",
+    "recommended": "min WARNING",
+    "state": "STATE_WARNING",
+    "id": "business_logger",
+    "snippet": "BusinessEventHandler logging"
+  },
+  {
+    "extensions": [],
+    "current": "disabled",
+    "recommended": "enabled",
+    "state": "STATE_WARNING",
+    "id": "mail",
+    "snippet": "Sending mails over queue"
+  },
+  {
+    "extensions": [],
+    "current": "0",
+    "recommended": "1",
+    "state": "STATE_WARNING",
+    "id": "php.opcache.enable_file_override",
+    "snippet": "PHP value opcache.enable_file_override"
+  },
+  {
+    "extensions": [],
+    "current": "8",
+    "recommended": "min 20",
+    "state": "STATE_WARNING",
+    "id": "php.opcache.interned_strings_buffer",
+    "snippet": "PHP value opcache.interned_strings_buffer"
+  },
+  {
+    "extensions": [],
+    "current": "1",
+    "recommended": "0",
+    "state": "STATE_WARNING",
+    "id": "php.zend.detect_unicode",
+    "snippet": "PHP value zend.detect_unicode"
+  },
+  {
+    "extensions": [],
+    "current": "120",
+    "recommended": "min 3600",
+    "state": "STATE_WARNING",
+    "id": "php.zend.realpath_cache_ttl",
+    "snippet": "PHP value realpath_cache_ttl"
+  },
+  {
+    "extensions": [],
+    "current": "doctrine",
+    "recommended": "redis or rabbitmq",
+    "state": "STATE_WARNING",
+    "id": "queue.adapter",
+    "snippet": "The queue storage in database does not scale well with multiple workers"
+  },
+  {
+    "extensions": [],
+    "current": "enabled",
+    "recommended": "disabled",
+    "state": "STATE_INFO",
+    "id": "symfony-secrets",
+    "snippet": "Disable Symfony Secrets"
+  },
+  {
+    "extensions": [],
+    "current": "disabled",
+    "recommended": "enabled",
+    "state": "STATE_INFO",
+    "id": "elasticsearch",
+    "snippet": "Elasticsearch"
+  },
+  {
+    "extensions": [],
+    "current": "enabled",
+    "recommended": "disabled",
+    "state": "STATE_INFO",
+    "id": "product-stream-indexing",
+    "snippet": "Product Stream Indexing"
+  }
+]

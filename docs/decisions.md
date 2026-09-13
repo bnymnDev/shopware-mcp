@@ -200,3 +200,15 @@ There is no delete tool, and there will not be one. Every write in this server c
 
 `init --write` for Codex CLI replaces exactly the `[mcp_servers.shopware]` table (up to the next top-level header) or appends one, and leaves every other byte alone. A TOML round trip through a parser would normalise a user's whole file; a targeted edit cannot.
 
+## The shop downloads the picture, not the server
+
+`product_cover_set` hands Shopware a URL and lets the shop fetch it, exactly as the admin's "upload from URL" does, so the file passes Shopware's own validation and lands in the product media folder. Bytes are accepted too, for hosts that can hand over a file. SVG is not, because an SVG is a document with scripts, not a picture. The four requests are shown as one dry run and applied in order; a failure leaves the earlier steps in place and says so, because a half-attached picture is visible and undoable in the admin, while a silent rollback could delete something a person added meanwhile.
+
+## Settings are an allowlist, not a blocklist
+
+Shopware keeps every setting in one table: shop name and mail passwords side by side. `shop_settings` reads only named core domains that describe trading, and drops keys that end like a credential; `entity_search` keeps refusing `system_config` altogether. A blocklist would have to know every plugin's secret in advance; an allowlist only has to know what a shop manager asks about.
+
+## Extension packs read what the plugin already exposes
+
+The FroshTools pack calls the plugin's own read routes and maps their answers; it never clears a cache, purges a queue or runs a task, although the plugin can. A pack is tested against the installed plugin before it ships, and its tools exist only in shops where the plugin is active.
+

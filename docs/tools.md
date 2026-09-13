@@ -7,6 +7,7 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | Tool | Access | Purpose |
 |---|---|---|
 | [`shop_info`](#shop_info) | read | Shop info |
+| [`shop_settings`](#shop_settings) | read | Shop settings |
 | [`sales_channels_list`](#sales_channels_list) | read | List sales channels |
 | [`products_search`](#products_search) | read | Search products |
 | [`products_get`](#products_get) | read | Get product |
@@ -33,6 +34,7 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`stock_set`](#stock_set) | write (guarded) | Set stock (guarded) |
 | [`product_update`](#product_update) | write (guarded) | Update product (guarded) |
 | [`product_create`](#product_create) | write (guarded) | Create product (guarded) |
+| [`product_cover_set`](#product_cover_set) | write (guarded) | Set product cover image (guarded) |
 | [`order_state_transition`](#order_state_transition) | write (guarded) | Transition order state (guarded) |
 | [`order_delivery_transition`](#order_delivery_transition) | write (guarded) | Transition delivery state (guarded) |
 | [`order_transaction_transition`](#order_transaction_transition) | write (guarded) | Transition payment state (guarded) |
@@ -55,6 +57,21 @@ Get basic facts about the connected Shopware shop: version, edition (Community/C
 
 _No parameters._
 
+
+## shop_settings
+
+_Shop settings_
+
+**Read tool** — always registered.
+
+Read the shop's trading settings from Shopware's system configuration, for the whole shop or one sales channel with inheritance: basic information (shop name, contact, legal pages), login and registration (guest checkout, double opt-in, password rules), cart, listing (products per page, sorting, reviews), tax, newsletter, addresses and documents. Only these domains are readable; mail servers, licences and plugin secrets are not, and credential-like keys are dropped. Use it for 'is guest checkout on?' or 'what is the default tax?'. Returns { salesChannelId, inherited, settings: { <domain>: { key: value } } }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `domains` | `("core.basicInformation" \| "core.loginRegistration" \| "core.cart" \| "core.listing" \| "core.tax" \| "core.newsletter" \| "core.address" \| "core.saveDocuments")[]` | no | core.basicInformation: shop name, contact, legal pages, currency and language defaults; core.loginRegistration: guest checkout, double opt-in, password rules, required fields; core.cart: quantities, wishlist, subtotal and delivery time display, cart redirects; core.listing: products per page, default sorting, reviews, buy-in-listing, new badge; core.tax: default tax rate; core.newsletter: double opt-in for the newsletter; core.address: address form rules; core.saveDocuments: document storage. default `["core.basicInformation","core.loginRegistration","core.cart","core.listing"]` |
+| `salesChannelId` | `string` | no | Sales channel UUID for its effective (inherited) values; omit for shop-wide |
 
 ## sales_channels_list
 
@@ -523,6 +540,26 @@ Create a simple (non-variant) product: name, product number, gross price in the 
 | `salesChannelIds` | `string[]` | no | Sales channels the product is visible in (use sales_channels_list) |
 | `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
 
+## product_cover_set
+
+_Set product cover image (guarded)_
+
+**Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
+
+Give a product a cover image from a public image URL (the shop downloads it) or from base64-encoded image bytes: the media record is created in the product media folder, the file uploaded, attached to the product and set as its cover. Existing pictures stay. Closes the 'products without cover image' audit finding. dryRun=true (default) returns the four requests without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend[] } or { dryRun: false, result: <updated product> }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `productId` | `string` | yes | Product UUID |
+| `imageUrl` | `string` | no | Public image URL ending in .jpg, .png, .webp, .gif or .avif |
+| `imageBase64` | `string` | no | Image bytes as base64 (max 8 MB); needs mimeType |
+| `mimeType` | `"image/jpeg" \| "image/png" \| "image/webp" \| "image/gif" \| "image/avif"` | no | Type of the base64 image |
+| `fileName` | `string` | no | File name without extension; defaults to the product number |
+| `alt` | `string` | no | Alt text of the image |
+| `dryRun` | `boolean` | no | true (default): return the request that would be sent without writing anything. default `true` |
+
 ## order_state_transition
 
 _Transition order state (guarded)_
@@ -684,6 +721,45 @@ Approve or hide one product review (sets its status; approved reviews are shown 
 ## Plugin-aware tools
 
 These tools are not part of the core set. The server looks up which extensions are installed and active, and registers the matching tools on top. A shop without the extension never sees them, and detection can be switched off with `--no-extensions`. Support for another vendor's extensions is a pull request against `src/extensions/`.
+
+### FroshTools
+
+Source: https://github.com/FriendsOfShopware/FroshTools
+
+| Tool | Requires | Purpose |
+|---|---|---|
+| `frosh_health` | FroshTools | FroshTools health and performance checks |
+| `frosh_queue` | FroshTools | FroshTools message queue status |
+| `frosh_composer_audit` | FroshTools | FroshTools dependency advisories |
+
+#### frosh_health
+
+Registered when installed and active: FroshTools.
+
+Read FroshTools' server health checks (PHP memory and settings, MySQL configuration, open queue age, overdue scheduled tasks, Composer security advisories, file permissions) and its performance recommendations (worker, caches, logging levels). Each check has a state of ok, info, warning or error with the current and the recommended value. Use it when the question is about the platform rather than the shop's data. Read-only. Returns one object.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `state` | `("ok" \| "info" \| "warning" \| "error")[]` | no | Only checks in these states, e.g. ['warning', 'error'] |
+| `includePerformance` | `boolean` | no | default `true` |
+
+#### frosh_queue
+
+Registered when installed and active: FroshTools.
+
+Read the state of Shopware's message queue through FroshTools: every transport with its size, the age of its oldest message and when a worker was last seen, plus the waiting messages per message class. A growing async queue or a worker last seen hours ago explains stale search indexes, missing thumbnails and unsent mails. Read-only. Returns { transports[], messages[] }.
+
+_No parameters._
+
+
+#### frosh_composer_audit
+
+Registered when installed and active: FroshTools.
+
+Known security advisories for the shop's PHP dependencies, as FroshTools reads them from Composer (cached by the plugin). Use it for 'does the shop run vulnerable packages?'. Read-only. Returns { packages, vulnerable, advisories[], cachedAt }.
+
+_No parameters._
+
 
 ### Merqo
 

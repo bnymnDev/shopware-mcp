@@ -55,6 +55,7 @@ describe("MCP server", () => {
       "stock_set",
       "product_update",
       "product_create",
+      "product_cover_set",
       "order_state_transition",
       "order_delivery_transition",
       "order_transaction_transition",

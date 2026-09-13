@@ -1,0 +1,62 @@
+[
+  {
+    "name": "async",
+    "type": "Doctrine",
+    "size": 122,
+    "oldestMessageAgeSeconds": 838644,
+    "workerLastSeenSeconds": null,
+    "browsable": true,
+    "requeuesOnBrowse": false,
+    "removable": true,
+    "retryable": true,
+    "purgeable": true
+  },
+  {
+    "name": "failed",
+    "type": "Doctrine",
+    "size": 0,
+    "oldestMessageAgeSeconds": null,
+    "workerLastSeenSeconds": null,
+    "browsable": true,
+    "requeuesOnBrowse": false,
+    "removable": true,
+    "retryable": true,
+    "purgeable": true
+  },
+  {
+    "name": "low_priority",
+    "type": "Doctrine",
+    "size": 0,
+    "oldestMessageAgeSeconds": null,
+    "workerLastSeenSeconds": null,
+    "browsable": true,
+    "requeuesOnBrowse": false,
+    "removable": true,
+    "retryable": true,
+    "purgeable": true
+  },
+  {
+    "name": "scheduler_shopware",
+    "type": "Scheduler",
+    "size": null,
+    "oldestMessageAgeSeconds": null,
+    "workerLastSeenSeconds": null,
+    "browsable": false,
+    "requeuesOnBrowse": false,
+    "removable": false,
+    "retryable": false,
+    "purgeable": false
+  },
+  {
+    "name": "webhook",
+    "type": "Webhook",
+    "size": null,
+    "oldestMessageAgeSeconds": null,
+    "workerLastSeenSeconds": null,
+    "browsable": false,
+    "requeuesOnBrowse": false,
+    "removable": false,
+    "retryable": false,
+    "purgeable": false
+  }
+]

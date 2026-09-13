@@ -1,0 +1,160 @@
+{
+  "title": "shopware-mcp · plugin-aware tools for FroshTools",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp"
+    },
+    {
+      "kind": "note",
+      "text": "tools/list → 36 core tools; the extension lookup finds FroshTools and adds frosh_health,"
+    },
+    {
+      "kind": "note",
+      "text": "frosh_queue and frosh_composer_audit"
+    },
+    {
+      "kind": "prompt",
+      "text": "Thumbnails are missing and search results are stale. Is the platform itself okay?"
+    },
+    {
+      "kind": "call",
+      "tool": "frosh_health",
+      "args": "{ state: [\"warning\", \"error\"], includePerformance: false }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"summary\": { \"ok\": 16, \"info\": 0, \"warning\": 3, \"error\": 1 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"checks\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"php-memory-limit\", \"category\": \"health\", \"label\": \"Memory-Limit\", \"state\": \"error\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"current\": \"0\", \"recommended\": \"min 512M\" },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"mysql-timezone\", \"category\": \"health\", \"label\": \"MySQL Time Zone Support\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"state\": \"warning\", \"current\": \"Time zone tables not available\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"recommended\": \"Time zone tables available\" },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"queue\", \"category\": \"health\", \"label\": \"Open Queues\", \"state\": \"warning\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"current\": \"13982 mins (default)\", \"recommended\": \"max 15 mins\" },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"scheduled_task\", \"category\": \"health\", \"label\": \"Scheduled tasks overdue\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"state\": \"warning\", \"current\": \"13981 mins\", \"recommended\": \"max 10 mins\" } ] }"
+    },
+    {
+      "kind": "call",
+      "tool": "frosh_queue",
+      "args": "{}"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"transports\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"async\", \"type\": \"Doctrine\", \"size\": 134, \"oldestMessageAgeSeconds\": 838944,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"workerLastSeenSeconds\": null, \"browsable\": true },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"failed\", \"type\": \"Doctrine\", \"size\": 0, \"oldestMessageAgeSeconds\": null, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"low_priority\", \"type\": \"Doctrine\", \"size\": 0, … }, … ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"messages\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"messenger.transport.async\", \"size\": 134 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"Shopware\\\\Core\\\\Content\\\\Media\\\\Message\\\\GenerateThumbnailsMessage\", \"size\": 75 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"Shopware\\\\Core\\\\Framework\\\\DataAbstractionLayer\\\\Indexing\\\\MessageQueue\\\\"
+    },
+    {
+      "kind": "result",
+      "text": "              IterateEntityIndexerMessage\", \"size\": 49 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"name\": \"Shopware\\\\Core\\\\Content\\\\Media\\\\Message\\\\DeleteFileMessage\", \"size\": 8 }, … ] }"
+    },
+    {
+      "kind": "call",
+      "tool": "frosh_composer_audit",
+      "args": "{}"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"packages\": 201, \"vulnerable\": 0, \"advisories\": [], \"cachedAt\": \"2026-09-13T13:30:28.000Z\" }"
+    },
+    {
+      "kind": "agent",
+      "text": "No, the platform is the problem, not the shop data. No worker has been seen on the async"
+    },
+    {
+      "kind": "agent",
+      "text": "queue: 134 messages are waiting, the oldest for almost ten days, among them 75 thumbnail"
+    },
+    {
+      "kind": "agent",
+      "text": "jobs and 49 index updates. That is exactly your missing thumbnails and stale search. The"
+    },
+    {
+      "kind": "agent",
+      "text": "scheduled tasks are overdue by the same margin, so nothing runs in the background at all."
+    },
+    {
+      "kind": "agent",
+      "text": "Also: PHP has no memory limit set (FroshTools wants 512M) and MySQL lacks time zone tables."
+    },
+    {
+      "kind": "agent",
+      "text": "Dependencies are clean: no known advisories in 201 packages."
+    },
+    {
+      "kind": "agent",
+      "text": "Start a message worker (or the cron for it) first; the queue will drain and both symptoms"
+    },
+    {
+      "kind": "agent",
+      "text": "disappear. The memory limit is a php.ini change. I cannot start workers from here."
+    }
+  ]
+}

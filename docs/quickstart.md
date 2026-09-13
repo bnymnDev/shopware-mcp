@@ -83,6 +83,8 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 - "Which payment methods does the storefront offer?" → `payment_methods_list` and `shipping_methods_list`.
 - "Create a 10 % code AUTUMN10 for October." → `promotion_create`, inactive until you activate it.
 - "What do I need to reorder?" → `stock_forecast` lists products whose stock runs out within the horizon, with a reorder quantity; the `reorder_list` prompt turns it into a purchase list.
+- "Is guest checkout on?" → `shop_settings` with `domains: ["core.loginRegistration"]`, per sales channel with `salesChannelId`.
+- "Give SW10084 a picture." → `product_cover_set` with `imageUrl`; the shop downloads the file into its product media folder, attaches it and sets it as the cover.
 - "Orders per payment method, with revenue?" → `entity_search` on `order` with `aggregations: [{ name: "byPayment", type: "terms", field: "transactions.paymentMethod.name", aggregation: { name: "revenue", type: "sum", field: "amountTotal" } }]` and `limit: 1`.
 
 ## 5. Enable writes (optional)
@@ -91,7 +93,7 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 npx shopware-mcp --allow-write
 ```
 
-Now the twelve write tools are registered: `stock_set`, `product_update`, `product_create`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create`, `promotion_toggle`, `promotion_create`, `customer_update` and `review_moderate`. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process:
+Now the thirteen write tools are registered: `stock_set`, `product_update`, `product_create`, `product_cover_set`, `order_state_transition`, `order_delivery_transition`, `order_transaction_transition`, `order_note`, `order_document_create`, `promotion_toggle`, `promotion_create`, `customer_update` and `review_moderate`. Each defaults to `dryRun: true`, and `SHOPWARE_MCP_MAX_WRITES` (or `--max-writes`) caps the real writes of a process:
 
 ```
 stock_set { productId: "…", stock: 3 }                  → { dryRun: true, wouldSend: { method: "PATCH", url: "…/api/product/…", body: { stock: 3 } } }

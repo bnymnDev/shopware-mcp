@@ -172,7 +172,7 @@
         </a>
       </div>
       <div class="facts">
-        <span>36 tools, 24 of them read-only</span>
+        <span>38 tools, 25 of them read-only</span>
         <span>Every write a dry run first</span>
         <span>Shopware 6.6 and 6.7</span>
         <span>No telemetry</span>
@@ -194,6 +194,7 @@
         <button type="button" role="tab" aria-selected="false" data-rec="moderate" data-caption="Moderation with a reply. Two reviews wait for approval. The spam stays hidden, the complaint is approved together with the shop's public answer.">reviews</button>
         <button type="button" role="tab" aria-selected="false" data-rec="customers" data-caption="People, not just revenue. New accounts by group, how many customers ordered and came back, the guest share, and the top customers with their share of the period.">customer_report</button>
         <button type="button" role="tab" aria-selected="false" data-rec="forecast" data-caption="Reorder before it hurts. Six months of line items through one aggregation, joined with the current stock: days of cover, the run-out date and how much to order, per product.">stock_forecast</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="ops" data-caption="A shop with an operations plugin gets an operations agent. With FroshTools installed, the platform's health checks, the message queue and the dependency advisories become tools; the agent tells stale search results apart from a dead worker.">FroshTools</button>
         <button type="button" role="tab" aria-selected="false" data-rec="cron" data-caption="The same audit without a host: shopware-mcp audit prints Markdown and exits non-zero when something is off, for cron and CI. shopware-mcp report does the same for the numbers.">CLI audit</button>
         <button type="button" role="tab" aria-selected="false" data-rec="anything" data-caption="No tool for that? There is a schema for that. The agent reads the entity's schema, spots mediaId, and filters on it. The same path reaches every entity, custom ones included.">any entity</button>
         <button type="button" role="tab" aria-selected="false" data-rec="doctor" data-caption="Know before the agent finds out. shopware-mcp doctor probes what the integration may read, reads its role for the write privileges, and names the missing one per tool.">doctor</button>
@@ -213,8 +214,8 @@
       <div class="grid">
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <h3>Eighteen curated reads</h3>
-          <p>Products, orders and their history, documents, customers, categories, promotions, reviews, payment and shipping methods, plugins, stock, sales channels. <code>{ term, filter, sort, page, limit }</code> in, <code>{ total, items }</code> out.</p>
+          <h3>Nineteen curated reads</h3>
+          <p>Products, orders and their history, documents, customers, categories, promotions, reviews, payment and shipping methods, plugins, stock, sales channels, trading settings. <code>{ term, filter, sort, page, limit }</code> in, <code>{ total, items }</code> out.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
@@ -228,8 +229,8 @@
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <h3>Twelve guarded writes</h3>
-          <p>Ship, mark paid, remind, refund, correct stock, note, generate a document, create a product or promotion, moderate a review, update a customer. Registered only with <code>--allow-write</code>, dry run by default, a write budget on top.</p>
+          <h3>Thirteen guarded writes</h3>
+          <p>Ship, mark paid, remind, refund, correct stock, note, generate a document, create a product or promotion, give a product a picture, moderate a review, update a customer. Registered only with <code>--allow-write</code>, dry run by default, a write budget on top.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
@@ -239,7 +240,7 @@
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4M15 3v4M5 7h14v4a7 7 0 0 1-14 0z"/><path d="M12 18v3"/></svg>
           <h3>Plugin-aware</h3>
-          <p>The server detects installed extensions and adds tools for the ones it knows, without touching the plugins. Your own pack is one file under <code>src/extensions/</code>.</p>
+          <p>The server detects installed extensions and adds tools for the ones it knows, without touching the plugins: FroshTools for platform health, queue and advisories, Merqo for compliance. Your own pack is one file under <code>src/extensions/</code>.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 9 18l-5-5"/></svg>
@@ -270,6 +271,8 @@
             <tr><td>"Order 10042 shipped with DHL, tracking 00340434."</td><td><code>order_delivery_transition { transition: "ship", trackingCodes }</code></td></tr>
             <tr><td>"Send me the invoice for 10042."</td><td><code>order_documents_list</code>, then <code>document_download</code> hands over the PDF</td></tr>
             <tr><td>"Which reviews are waiting for approval?"</td><td><code>reviews_search</code>, or the <code>review_moderation</code> prompt</td></tr>
+            <tr><td>"Is guest checkout on, and what is the default tax?"</td><td><code>shop_settings</code></td></tr>
+            <tr><td>"Thumbnails are missing, is the platform okay?"</td><td><code>frosh_health</code> and <code>frosh_queue</code>, with FroshTools installed</td></tr>
             <tr><td>"What do I need to reorder in the next two weeks?"</td><td><code>stock_forecast</code>, or the <code>reorder_list</code> prompt</td></tr>
             <tr><td>"Orders per payment method last month, with revenue?"</td><td><code>entity_search</code> with a <code>terms</code> aggregation and a nested <code>sum</code></td></tr>
             <tr><td>"Create a 10 % code AUTUMN10 for October."</td><td><code>promotion_create</code>, inactive until you say otherwise</td></tr>

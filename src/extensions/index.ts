@@ -2,6 +2,7 @@ import type { Raw, ShopwareClient } from "../client/index.js";
 import { MAX_LIMIT } from "../config.js";
 import { logger } from "../logger.js";
 import type { ToolContext, ToolDefinition } from "../tools/types.js";
+import { froshPack } from "./frosh.js";
 import { merqoPack } from "./merqo.js";
 import type { ExtensionPack, ExtensionTool } from "./types.js";
 
@@ -12,7 +13,7 @@ export type { ExtensionPack, ExtensionTool } from "./types.js";
  * matching extensions installed and active. Adding a pack for another vendor's extensions is a
  * pull request away and changes nothing for anyone else.
  */
-export const extensionPacks: ExtensionPack[] = [merqoPack];
+export const extensionPacks: ExtensionPack[] = [froshPack, merqoPack];
 
 const MAX_PLUGIN_PAGES = 10;
 

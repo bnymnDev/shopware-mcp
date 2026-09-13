@@ -21,6 +21,7 @@ const SYSTEM_CONFIG = "/api/_action/system-config?domain=core.basicInformation";
 
 const REQUIREMENTS: Record<string, Requirement> = {
   shop_info: { reads: ["currency", "language"], routes: ["/api/_info/version"] },
+  shop_settings: { reads: [], routes: ["/api/_action/system-config?domain=core.basicInformation"] },
   sales_channels_list: { reads: ["sales_channel"] },
   products_search: { reads: ["product", "currency"] },
   products_get: { reads: ["product", "currency"] },
@@ -61,6 +62,10 @@ const REQUIREMENTS: Record<string, Requirement> = {
     reads: ["product", "tax"],
     writes: ["product:create", "product_visibility:create"],
     optionalRoutes: ["/api/_action/system-config?domain=core.tax"],
+  },
+  product_cover_set: {
+    reads: ["product", "media_folder"],
+    writes: ["media:create", "product_media:create", "product:update"],
   },
   order_state_transition: { reads: ["order"], writes: ["order:update"] },
   order_delivery_transition: {

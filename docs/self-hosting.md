@@ -72,7 +72,7 @@ Build locally: `docker build -t shopware-mcp .`
 
 Create a dedicated Integration and role. Minimal read role: `product`, `product_manufacturer`, `category`, `order`, `order_line_item`, `order_transaction`, `order_delivery`, `customer`, `customer_address`, `promotion`, `promotion_discount`, `plugin`, `sales_channel`, `currency`, `language`, `payment_method`, `shipping_method`, `product_review`, `state_machine_history`, `tax` (viewer). For `plugins_list` upgrade information the integration additionally needs the `system:plugin:maintain` privilege; without it the tool still works and reports a warning.
 
-Write tools additionally need editor rights on `product` (stock, basic fields), `order`, `order_delivery` and `order_transaction` (state transitions, notes), `document` (creating documents), `promotion`, `customer` and `product_review`; `product_create` and `promotion_create` need creator rights on `product` and `promotion`. `shopware-mcp doctor` reports per tool what the integration's role allows.
+Write tools additionally need editor rights on `product` (stock, basic fields), `order`, `order_delivery` and `order_transaction` (state transitions, notes), `document` (creating documents), `promotion`, `customer` and `product_review`; `product_create` and `promotion_create` need creator rights on `product` and `promotion`; `product_cover_set` needs creator rights on `media` and `product_media`. `shop_settings` reads the system-config route (`system_config:read`). `shopware-mcp doctor` reports per tool what the integration's role allows.
 
 ## Local Shopware for testing
 

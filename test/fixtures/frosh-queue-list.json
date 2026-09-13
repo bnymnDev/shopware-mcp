@@ -1,0 +1,30 @@
+[
+  {
+    "name": "messenger.transport.async",
+    "size": 122
+  },
+  {
+    "name": "Shopware\\Core\\Content\\Media\\Message\\GenerateThumbnailsMessage",
+    "size": 69
+  },
+  {
+    "name": "Shopware\\Core\\Framework\\DataAbstractionLayer\\Indexing\\MessageQueue\\IterateEntityIndexerMessage",
+    "size": 49
+  },
+  {
+    "name": "Shopware\\Core\\Content\\Media\\Message\\DeleteFileMessage",
+    "size": 2
+  },
+  {
+    "name": "Shopware\\Core\\Content\\Product\\DataAbstractionLayer\\ProductIndexingMessage",
+    "size": 2
+  },
+  {
+    "name": "messenger.transport.failed",
+    "size": 0
+  },
+  {
+    "name": "messenger.transport.low_priority",
+    "size": 0
+  }
+]

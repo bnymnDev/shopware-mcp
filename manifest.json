@@ -88,6 +88,10 @@
       "description": "Shop info"
     },
     {
+      "name": "shop_settings",
+      "description": "Shop settings"
+    },
+    {
       "name": "sales_channels_list",
       "description": "List sales channels"
     },
@@ -190,6 +194,10 @@
     {
       "name": "product_create",
       "description": "Create product (guarded)"
+    },
+    {
+      "name": "product_cover_set",
+      "description": "Set product cover image (guarded)"
     },
     {
       "name": "order_state_transition",

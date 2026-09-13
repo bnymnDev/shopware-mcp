@@ -6,6 +6,7 @@ import { documentDownload, orderDocumentCreate, orderDocumentsList } from "./doc
 import { entitySchema, entitySearch } from "./entities.js";
 import { stockForecast } from "./forecast.js";
 import { orderHistory } from "./history.js";
+import { productCoverSet } from "./media.js";
 import { paymentMethodsList, shippingMethodsList } from "./methods.js";
 import {
   orderDeliveryTransition,
@@ -21,6 +22,7 @@ import { promotionCreate, promotionsList, promotionToggle } from "./promotions.j
 import { salesReport } from "./reports.js";
 import { reviewModerate, reviewsSearch } from "./reviews.js";
 import { salesChannelsList } from "./sales-channels.js";
+import { shopSettings } from "./settings.js";
 import { shopInfo } from "./shop.js";
 import { stockGet, stockSet } from "./stock.js";
 import type { ToolDefinition } from "./types.js";
@@ -28,6 +30,7 @@ import type { ToolDefinition } from "./types.js";
 /** Every tool, in the order they appear in generated docs. */
 export const tools: ToolDefinition[] = [
   shopInfo,
+  shopSettings,
   salesChannelsList,
   productsSearch,
   productsGet,
@@ -54,6 +57,7 @@ export const tools: ToolDefinition[] = [
   stockSet,
   productUpdate,
   productCreate,
+  productCoverSet,
   orderStateTransition,
   orderDeliveryTransition,
   orderTransactionTransition,

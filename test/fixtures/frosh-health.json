@@ -1,0 +1,162 @@
+[
+  {
+    "extensions": [],
+    "current": "0",
+    "recommended": "min 512M",
+    "state": "STATE_ERROR",
+    "id": "php-memory-limit",
+    "snippet": "Memory-Limit"
+  },
+  {
+    "extensions": [],
+    "current": "Time zone tables not available",
+    "recommended": "Time zone tables available",
+    "state": "STATE_WARNING",
+    "id": "mysql-timezone",
+    "snippet": "MySQL Time Zone Support"
+  },
+  {
+    "extensions": [],
+    "current": "13977 mins (default)",
+    "recommended": "max 15 mins",
+    "state": "STATE_WARNING",
+    "id": "queue",
+    "snippet": "Open Queues"
+  },
+  {
+    "extensions": [],
+    "current": "13976 mins",
+    "recommended": "max 10 mins",
+    "state": "STATE_WARNING",
+    "id": "scheduled_task",
+    "snippet": "Scheduled tasks overdue"
+  },
+  {
+    "extensions": [],
+    "current": "no advisories (201 packages)",
+    "recommended": "",
+    "state": "STATE_OK",
+    "id": "composer-audit",
+    "snippet": "Composer security advisories"
+  },
+  {
+    "extensions": [],
+    "current": "configured",
+    "recommended": "",
+    "state": "STATE_OK",
+    "id": "composer-conflicts-repository",
+    "snippet": "Composer conflicts repository"
+  },
+  {
+    "extensions": [],
+    "current": "not active",
+    "recommended": "not active",
+    "state": "STATE_OK",
+    "id": "webprofiler",
+    "snippet": "WebProfilerBundle is not active"
+  },
+  {
+    "extensions": [],
+    "current": "not active",
+    "recommended": "not active",
+    "state": "STATE_OK",
+    "id": "kerneldebug",
+    "snippet": "Kernel debug is not active"
+  },
+  {
+    "extensions": [],
+    "current": "single autoloader",
+    "recommended": "",
+    "state": "STATE_OK",
+    "id": "multiple-autoloaders",
+    "snippet": "Composer autoloaders"
+  },
+  {
+    "extensions": [],
+    "current": "10.11.14",
+    "recommended": "min 10.11",
+    "state": "STATE_OK",
+    "id": "mysql",
+    "snippet": "MariaDB Version"
+  },
+  {
+    "extensions": [],
+    "current": "8.4.19",
+    "recommended": "min 8.2.0",
+    "state": "STATE_OK",
+    "id": "php-version",
+    "snippet": "PHP Version"
+  },
+  {
+    "extensions": [],
+    "current": "30",
+    "recommended": "min 30",
+    "state": "STATE_OK",
+    "id": "php-max-execution",
+    "snippet": "Max-Execution-Time"
+  },
+  {
+    "extensions": [],
+    "current": "active",
+    "recommended": "active",
+    "state": "STATE_OK",
+    "id": "zend-opcache",
+    "snippet": "Zend Opcache"
+  },
+  {
+    "extensions": [],
+    "current": "active",
+    "recommended": "active",
+    "state": "STATE_OK",
+    "id": "pcre-jit",
+    "snippet": "PCRE-Jit"
+  },
+  {
+    "extensions": [],
+    "current": "prod",
+    "recommended": "prod",
+    "state": "STATE_OK",
+    "id": "app.env",
+    "snippet": "Shop mode"
+  },
+  {
+    "extensions": [],
+    "current": "not present",
+    "recommended": "not present",
+    "state": "STATE_OK",
+    "id": "shopware-installer",
+    "snippet": "Shopware installer"
+  },
+  {
+    "extensions": [],
+    "current": "until 2028-02-28",
+    "recommended": "",
+    "state": "STATE_OK",
+    "id": "security-eol-shopware",
+    "snippet": "Security updates"
+  },
+  {
+    "extensions": [],
+    "current": "/home/user/shop",
+    "recommended": "",
+    "state": "STATE_OK",
+    "id": "installation-path",
+    "snippet": "Installation Path"
+  },
+  {
+    "extensions": [],
+    "current": "shopware@127.0.0.1:3306/shopware",
+    "recommended": "",
+    "state": "STATE_OK",
+    "id": "database-info",
+    "snippet": "Database"
+  },
+  {
+    "extensions": [],
+    "current": "1 second(s)",
+    "recommended": "max 5 seconds",
+    "state": "STATE_OK",
+    "id": "system-time",
+    "snippet": "System time offset"
+  }
+]
