@@ -51,9 +51,9 @@ einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat:
 | | |
 |---|---|
 | **Kuratierte Werkzeuge** | Produkte, Bestellungen samt Verlauf, Belege, Kunden, Kategorien, Aktionen, Bewertungen, Zahlungs- und Versandarten, Plugins, Bestand, Verkaufskanäle: achtzehn Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Ein Audit** | `shop_audit` prüft dreizehn Dinge in einem Aufruf: bezahlte, nie versandte Bestellungen, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. |
-| **Zwei Reports** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
-| **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
+| **Ein Audit** | `shop_audit` prüft fünfzehn Dinge in einem Aufruf: bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
+| **Reports und eine Prognose** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. `stock_forecast` macht aus Absatzgeschwindigkeit und Bestand Reichweite in Tagen, Ausverkaufsdatum und Nachbestellmenge. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
+| **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab und lässt Shopware über die Treffermenge aggregieren: Bestellungen je Zahlungsart, Umsatz je Monat, alles, was terms, sum oder histogram hergeben. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
 | **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen, Produkt oder Aktion anlegen, Bewertung freigeben, Kunde ändern: zwölf schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
 
 <p align="center">
@@ -135,6 +135,22 @@ kommen dazu, der Host wird zum Aktualisieren aufgefordert, und eine
 Compliance-Frage hat eine Antwort.
 
 ![Plugin-Werkzeuge: tools/list wächst von 23 auf 27, dann beantwortet merqo_health eine Compliance-Frage](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/plugins.svg)
+
+**Nachbestellen, bevor es weh tut.** `stock_forecast` liest sechs Monate
+Bestellpositionen über eine Aggregation, verbindet sie mit dem aktuellen
+Bestand und sagt je Produkt, wie viele Tage bleiben, wann der Bestand auf null
+fällt und wie viel zu bestellen ist. Neun davon sind schon überverkauft, zwei
+sind heute noch in Ordnung und im Oktober nicht mehr.
+
+![stock_forecast: elf Produkte, die binnen 60 Tagen ausgehen, mit Absatz je Tag, Reichweite, Ausverkaufsdatum und Nachbestellmenge](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/forecast.svg)
+
+**Dasselbe Audit, ganz ohne Host.** `shopware-mcp audit` gibt die Befunde als
+Markdown aus und endet mit Exit-Code 1, wenn etwas kritisch ist (oder mit
+`--fail-on warning` schon bei einer Warnung). In Cron gehängt, kommt die Mail;
+in CI gehängt, bricht der Job ab. `shopware-mcp report` macht dasselbe für die
+Zahlen.
+
+![shopware-mcp audit und report auf der Kommandozeile: Befunde als Markdown mit Exit-Code 1, dann eine monatliche Umsatztabelle](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/cron.svg)
 
 **Vorher wissen, was geht.** `shopware-mcp doctor` prüft, was die Integration lesen darf, liest ihre Rolle für die Schreibrechte, wo das erlaubt ist, und nennt je Werkzeug das fehlende Recht. Ein Administrator bekommt lauter Haken, eine Support-Rolle erfährt genau, was zu vergeben ist.
 
@@ -259,7 +275,11 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 | „Lege einen 10-%-Code AUTUMN10 für Oktober an." | `promotion_create`, inaktiv, bis Sie es anders sagen |
 | „Lege das Produkt Bank, SW10200, 119 Euro, 3 auf Lager an." | `product_create`, Nettopreis aus dem Steuersatz abgeleitet |
 | „Zwei kamen vom Kunden zurück, buche sie auf SW10084." | `stock_set { delta: 2 }` |
+| „Was muss ich in den nächsten zwei Wochen nachbestellen?" | `stock_forecast`, oder der Prompt `reorder_list` |
+| „Bestellungen je Zahlungsart im letzten Monat, mit Umsatz?" | `entity_search` auf `order` mit einer `terms`-Aggregation und einer `sum` darin |
+| „Welche bezahlten Bestellungen haben noch keine Rechnung?" | `shop_audit`, dann `order_document_create` je Bestellung |
 | „Welche Werkzeuge scheitern mit dieser Integration?" | kein Werkzeug: `npx shopware-mcp doctor` |
+| „Schick mir jeden Montag das Audit." | auch kein Werkzeug: `shopware-mcp audit --fail-on warning` per Cron |
 
 Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`) auf Shopware-Feldpfaden, Assoziationen wie `manufacturer.name` eingeschlossen. Was sich in der Admin-API filtern lässt, lässt sich auch hier filtern. Der [Spickzettel](docs/quickstart.md#filters-cheat-sheet) zeigt die üblichen Fälle.
 
@@ -288,6 +308,7 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`shipping_methods_list`](docs/tools.md#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](docs/tools.md#plugins_list) | read | List plugins and apps |
 | [`stock_get`](docs/tools.md#stock_get) | read | Get stock |
+| [`stock_forecast`](docs/tools.md#stock_forecast) | read | Stock forecast |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
 | [`customer_report`](docs/tools.md#customer_report) | read | Customer report |
 | [`shop_audit`](docs/tools.md#shop_audit) | read | Shop health audit |

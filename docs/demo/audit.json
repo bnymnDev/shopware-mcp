@@ -16,7 +16,7 @@
     },
     {
       "kind": "result",
-      "text": "  \"summary\": { \"critical\": 2, \"warning\": 4, \"info\": 4, \"checksRun\": 13, \"healthy\": false },"
+      "text": "  \"summary\": { \"critical\": 2, \"warning\": 6, \"info\": 4, \"checksRun\": 15, \"healthy\": false },"
     },
     {
       "kind": "result",
@@ -48,11 +48,19 @@
     },
     {
       "kind": "result",
+      "text": "    { \"id\": \"orders_paid_without_invoice\", \"severity\": \"warning\", \"count\": 56, … },"
+    },
+    {
+      "kind": "result",
       "text": "    { \"id\": \"products_out_of_stock\", \"severity\": \"warning\", \"count\": 22, … },"
     },
     {
       "kind": "result",
       "text": "    { \"id\": \"products_low_stock\", \"severity\": \"warning\", \"count\": 10, … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"id\": \"products_running_out\", \"severity\": \"warning\", \"count\": 5, … },"
     },
     {
       "kind": "result",
@@ -88,7 +96,7 @@
     },
     {
       "kind": "agent",
-      "text": "Not quite. 2 critical, 4 warnings:"
+      "text": "Not quite. 2 critical, 6 warnings:"
     },
     {
       "kind": "agent",
@@ -104,7 +112,15 @@
     },
     {
       "kind": "agent",
-      "text": "{yellow:▲} 22 active products have zero or negative stock, 10 more are below 5 units."
+      "text": "{yellow:▲} 56 paid orders have no invoice document yet."
+    },
+    {
+      "kind": "agent",
+      "text": "{yellow:▲} 22 active products have zero or negative stock, 10 more are below 5 units,"
+    },
+    {
+      "kind": "agent",
+      "text": "  and 5 sell faster than their stock lasts for the next 14 days."
     },
     {
       "kind": "agent",

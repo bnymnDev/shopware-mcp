@@ -4,6 +4,7 @@ import { customerReport } from "./customer-report.js";
 import { customersGet, customersSearch, customerUpdate } from "./customers.js";
 import { documentDownload, orderDocumentCreate, orderDocumentsList } from "./documents.js";
 import { entitySchema, entitySearch } from "./entities.js";
+import { stockForecast } from "./forecast.js";
 import { orderHistory } from "./history.js";
 import { paymentMethodsList, shippingMethodsList } from "./methods.js";
 import {
@@ -44,6 +45,7 @@ export const tools: ToolDefinition[] = [
   shippingMethodsList,
   pluginsList,
   stockGet,
+  stockForecast,
   salesReport,
   customerReport,
   shopAudit,

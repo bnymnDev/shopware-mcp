@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultConfigPath, mergeHostConfig, snippetFor } from "../src/init.js";
+import { defaultConfigPath, mergeCodexConfig, mergeHostConfig, snippetFor } from "../src/init.js";
 
 const input = {
   url: "https://shop.test",
@@ -28,6 +28,49 @@ describe("init snippets", () => {
     expect(zed.context_servers.shopware.source).toBe("custom");
     const writable = JSON.parse(snippetFor("cursor", { ...input, allowWrite: true }).text);
     expect(writable.mcpServers.shopware.env.SHOPWARE_MCP_ALLOW_WRITE).toBe("true");
+  });
+
+  it("renders Windsurf and Gemini JSON and a Codex TOML table", () => {
+    expect(JSON.parse(snippetFor("windsurf", input).text).mcpServers.shopware.command).toBe("npx");
+    expect(JSON.parse(snippetFor("gemini", input).text).mcpServers.shopware.env.SHOPWARE_URL).toBe(
+      "https://shop.test",
+    );
+    const codex = snippetFor("codex", { ...input, clientSecret: 'se"c\\ret', allowWrite: true });
+    expect(codex.path).toMatch(/\.codex\/config\.toml$/);
+    expect(codex.text).toBe(
+      [
+        "[mcp_servers.shopware]",
+        'command = "npx"',
+        'args = ["-y", "shopware-mcp"]',
+        'env = { SHOPWARE_URL = "https://shop.test", SHOPWARE_CLIENT_ID = "SWIATEST", ' +
+          'SHOPWARE_CLIENT_SECRET = "se\\"c\\\\ret", SHOPWARE_MCP_ALLOW_WRITE = "true" }',
+        "",
+      ].join("\n"),
+    );
+  });
+
+  it("replaces the shopware table in a Codex config and keeps the rest", () => {
+    const existing = [
+      'model = "o3"',
+      "",
+      "[mcp_servers.shopware]",
+      'command = "old"',
+      "",
+      "[mcp_servers.shopware.env]",
+      'SHOPWARE_URL = "https://old.test"',
+      "",
+      "[mcp_servers.github]",
+      'command = "gh-mcp"',
+      "",
+    ].join("\n");
+    const merged = mergeCodexConfig(existing, input);
+    expect(merged).toContain('model = "o3"');
+    expect(merged).toContain('[mcp_servers.github]\ncommand = "gh-mcp"');
+    expect(merged).not.toContain("old");
+    expect(merged.match(/\[mcp_servers\.shopware\]/g)).toHaveLength(1);
+    expect(mergeCodexConfig(undefined, input)).toMatch(/^\[mcp_servers\.shopware\]/);
+    expect(mergeCodexConfig('model = "o3"\n', input)).toMatch(/^model = "o3"\n\n\[mcp_servers/);
+    expect(mergeHostConfig(existing, "codex", input)).toBe(merged);
   });
 
   it("merges into an existing config without touching other servers", () => {
@@ -62,5 +105,40 @@ describe("init snippets", () => {
     );
     expect(defaultConfigPath("claude-code", "linux", home, {})).toBeNull();
     expect(defaultConfigPath("zed", "linux", home, {})).toBeNull();
+  });
+});
+
+describe("Codex config edge cases", () => {
+  const input = {
+    url: "https://shop.test",
+    clientId: "SWIATEST",
+    clientSecret: "s",
+    allowWrite: false,
+  };
+
+  it("recognises spaced headers, trailing comments, sub-tables and CRLF files", () => {
+    const existing = [
+      'model = "o3"',
+      "[ mcp_servers.shopware ] # our shop",
+      'command = "old"',
+      "[ mcp_servers.shopware.env ]",
+      'SHOPWARE_CLIENT_SECRET = "leak"',
+      "[mcp_servers.github]",
+      'command = "gh-mcp"',
+    ].join("\r\n");
+    const merged = mergeCodexConfig(existing, input);
+    expect(merged).not.toContain("leak");
+    expect(merged).not.toContain("old");
+    expect(merged.match(/mcp_servers\.shopware/g)).toHaveLength(1);
+    expect(merged).toContain('[mcp_servers.github]\ncommand = "gh-mcp"');
+    expect(merged).not.toContain("\r");
+  });
+
+  it("replaces a table that is last in the file and escapes control characters", () => {
+    const merged = mergeCodexConfig('[mcp_servers.shopware]\ncommand = "old"\n', input);
+    expect(merged).toBe(mergeCodexConfig(undefined, input));
+    expect(mergeCodexConfig(undefined, { ...input, clientSecret: "a\nb" })).toContain(
+      'SHOPWARE_CLIENT_SECRET = "a\\u000ab"',
+    );
   });
 });

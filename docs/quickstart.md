@@ -82,6 +82,8 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 - "Which reviews are waiting for approval?" → `reviews_search` with a filter on `status`, or the `review_moderation` prompt; `review_moderate` approves or hides one.
 - "Which payment methods does the storefront offer?" → `payment_methods_list` and `shipping_methods_list`.
 - "Create a 10 % code AUTUMN10 for October." → `promotion_create`, inactive until you activate it.
+- "What do I need to reorder?" → `stock_forecast` lists products whose stock runs out within the horizon, with a reorder quantity; the `reorder_list` prompt turns it into a purchase list.
+- "Orders per payment method, with revenue?" → `entity_search` on `order` with `aggregations: [{ name: "byPayment", type: "terms", field: "transactions.paymentMethod.name", aggregation: { name: "revenue", type: "sum", field: "amountTotal" } }]` and `limit: 1`.
 
 ## 5. Enable writes (optional)
 
@@ -119,3 +121,21 @@ promotion_create { name: "Autumn 10", code: "AUTUMN10", discount: { type: "perce
 Reading a shop in another language? Set `SHOPWARE_LANGUAGE_ID` to the language UUID (find it with `entity_search { entity: "language" }`).
 
 Need a raw field that is not in the compact output (e.g. `customFields`, `ean`, `weight`)? Pass `fields: ["customFields", "ean"]` and it is added to every item.
+
+## Without an MCP host
+
+The audit and the sales report also run from the command line, for cron jobs, CI or a quick look:
+
+```bash
+npx shopware-mcp audit                       # Markdown, exit 1 when a critical finding exists
+npx shopware-mcp audit --fail-on warning     # exit 1 on warnings too; --days and --threshold tune the checks
+npx shopware-mcp audit --json | jq .summary  # the same report as JSON
+npx shopware-mcp report --from 2026-08-01 --to 2026-08-31 --interval week
+```
+
+A cron line that mails the audit every Monday morning and only bothers you when something is off:
+
+```
+0 7 * * 1  cd /srv/shop-tools && npx shopware-mcp audit --fail-on warning || mail -s "Shop audit" you@example.com < audit.md
+```
+

@@ -172,7 +172,7 @@
         </a>
       </div>
       <div class="facts">
-        <span>35 tools, 23 of them read-only</span>
+        <span>36 tools, 24 of them read-only</span>
         <span>Every write a dry run first</span>
         <span>Shopware 6.6 and 6.7</span>
         <span>No telemetry</span>
@@ -193,6 +193,8 @@
         <button type="button" role="tab" aria-selected="false" data-rec="launch" data-caption="A product and its launch code from one sentence. product_create picks the shop's default tax and derives the net price, and says so in the dry run. The promotion arrives inactive.">product + promotion</button>
         <button type="button" role="tab" aria-selected="false" data-rec="moderate" data-caption="Moderation with a reply. Two reviews wait for approval. The spam stays hidden, the complaint is approved together with the shop's public answer.">reviews</button>
         <button type="button" role="tab" aria-selected="false" data-rec="customers" data-caption="People, not just revenue. New accounts by group, how many customers ordered and came back, the guest share, and the top customers with their share of the period.">customer_report</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="forecast" data-caption="Reorder before it hurts. Six months of line items through one aggregation, joined with the current stock: days of cover, the run-out date and how much to order, per product.">stock_forecast</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="cron" data-caption="The same audit without a host: shopware-mcp audit prints Markdown and exits non-zero when something is off, for cron and CI. shopware-mcp report does the same for the numbers.">CLI audit</button>
         <button type="button" role="tab" aria-selected="false" data-rec="anything" data-caption="No tool for that? There is a schema for that. The agent reads the entity's schema, spots mediaId, and filters on it. The same path reaches every entity, custom ones included.">any entity</button>
         <button type="button" role="tab" aria-selected="false" data-rec="doctor" data-caption="Know before the agent finds out. shopware-mcp doctor probes what the integration may read, reads its role for the write privileges, and names the missing one per tool.">doctor</button>
       </div>
@@ -217,12 +219,12 @@
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           <h3>A health audit</h3>
-          <p><code>shop_audit</code> runs thirteen checks in one call, from paid-but-unshipped orders to storefronts missing a legal page, and reports which EU duties look covered by an installed extension.</p>
+          <p><code>shop_audit</code> runs fifteen checks in one call, from paid-but-unshipped orders and missing invoices to products running out and storefronts missing a legal page. The same audit runs as <code>shopware-mcp audit</code> from cron or CI.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
-          <h3>Two reports</h3>
-          <p><code>sales_report</code> and <code>customer_report</code> let Shopware aggregate: revenue by channel and state, timelines, top products, new and returning customers, and the change against the period before.</p>
+          <h3>Reports and a forecast</h3>
+          <p><code>sales_report</code> and <code>customer_report</code> let Shopware aggregate: revenue by channel and state, timelines, top products, new and returning customers, the change against the period before. <code>stock_forecast</code> turns sales velocity into days of cover and reorder quantities.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -232,7 +234,7 @@
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
           <h3>Any entity</h3>
-          <p><code>entity_schema</code> describes any of the 200+ entities, custom ones included, and <code>entity_search</code> queries them. Secrets scrubbed, credential entities refused, long text truncated.</p>
+          <p><code>entity_schema</code> describes any of the 200+ entities, custom ones included, and <code>entity_search</code> queries them, with Shopware aggregations over the match on request. Secrets scrubbed, credential entities refused, long text truncated.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3v4M15 3v4M5 7h14v4a7 7 0 0 1-14 0z"/><path d="M12 18v3"/></svg>
@@ -242,7 +244,7 @@
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 9 18l-5-5"/></svg>
           <h3>Doctor and init</h3>
-          <p><code>shopware-mcp doctor</code> says per tool whether this integration can use it and which privilege is missing. <code>init</code> tests the credentials and writes the host config for you.</p>
+          <p><code>shopware-mcp doctor</code> says per tool whether this integration can use it and which privilege is missing. <code>init</code> writes the host config for eight hosts. <code>audit</code> and <code>report</code> print Markdown with exit codes for cron and CI.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
@@ -268,9 +270,12 @@
             <tr><td>"Order 10042 shipped with DHL, tracking 00340434."</td><td><code>order_delivery_transition { transition: "ship", trackingCodes }</code></td></tr>
             <tr><td>"Send me the invoice for 10042."</td><td><code>order_documents_list</code>, then <code>document_download</code> hands over the PDF</td></tr>
             <tr><td>"Which reviews are waiting for approval?"</td><td><code>reviews_search</code>, or the <code>review_moderation</code> prompt</td></tr>
+            <tr><td>"What do I need to reorder in the next two weeks?"</td><td><code>stock_forecast</code>, or the <code>reorder_list</code> prompt</td></tr>
+            <tr><td>"Orders per payment method last month, with revenue?"</td><td><code>entity_search</code> with a <code>terms</code> aggregation and a nested <code>sum</code></td></tr>
             <tr><td>"Create a 10 % code AUTUMN10 for October."</td><td><code>promotion_create</code>, inactive until you say otherwise</td></tr>
             <tr><td>"Which manufacturers have no logo?"</td><td><code>entity_schema</code>, then <code>entity_search</code> on <code>product_manufacturer</code></td></tr>
             <tr><td>"Which of my tools will fail with this integration?"</td><td>not a tool: <code>npx shopware-mcp doctor</code></td></tr>
+            <tr><td>"Mail me the audit every Monday."</td><td>not a tool either: <code>shopware-mcp audit --fail-on warning</code> in cron</td></tr>
           </tbody>
         </table>
       </div>
@@ -307,7 +312,7 @@
         <div class="list" role="tablist" aria-label="Hosts">
           <button type="button" role="tab" aria-selected="true" data-host="claude-desktop">Claude Desktop</button>
           <button type="button" role="tab" aria-selected="false" data-host="claude-code">Claude Code</button>
-          <button type="button" role="tab" aria-selected="false" data-host="cursor">Cursor, VS Code, Zed</button>
+          <button type="button" role="tab" aria-selected="false" data-host="cursor">Cursor, VS Code, Windsurf, Gemini, Codex, Zed</button>
           <button type="button" role="tab" aria-selected="false" data-host="docker">Docker</button>
           <button type="button" role="tab" aria-selected="false" data-host="manual">By hand</button>
         </div>
@@ -337,7 +342,7 @@
   -- npx -y shopware-mcp</code></pre>
           </div>
           <div data-panel="cursor" role="tabpanel" hidden>
-            <p>They all take the same three fields. Cursor reads <code>.cursor/mcp.json</code>, VS Code <code>.vscode/mcp.json</code> (under <code>servers</code>), Zed its <code>context_servers</code> block. <code>init --for cursor|vscode|zed</code> prints the right shape.</p>
+            <p>They all take the same three fields. Cursor reads <code>.cursor/mcp.json</code>, VS Code <code>.vscode/mcp.json</code> (under <code>servers</code>), Windsurf and Gemini CLI their own <code>mcpServers</code> files, Codex CLI a table in <code>config.toml</code>, Zed its <code>context_servers</code> block. <code>init --for &lt;host&gt; --write</code> writes each of them.</p>
 <pre><code>{
   "mcpServers": {
     "shopware": {

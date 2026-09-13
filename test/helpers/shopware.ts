@@ -69,6 +69,7 @@ export const searchFixtures: Record<string, string> = {
   "state-machine-history": "state-machine-history",
   "shipping-method": "shipping-methods",
   tax: "taxes",
+  "order-line-item": "line-item-sales",
 };
 
 export function tokenHandler(): HttpHandler {

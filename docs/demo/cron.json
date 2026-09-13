@@ -1,0 +1,241 @@
+{
+  "title": "shopware-mcp audit · the same audit as a cron job, without an MCP host",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp audit --days 7 --fail-on warning"
+    },
+    {
+      "kind": "result",
+      "text": "# Shop audit · http://127.0.0.1:8000 (Shopware 6.7.13.1 Community)"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "2026-09-13 · 15 checks · 2 critical, 6 warning, 4 info"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "## Critical"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "### Paid orders not shipped for more than 7 days (3)"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "- #10056 · 2026-07-06 · 42,685.02 EUR · paid / open"
+    },
+    {
+      "kind": "result",
+      "text": "- #10038 · 2026-08-23 · 1,625.29 EUR · paid / open"
+    },
+    {
+      "kind": "result",
+      "text": "- #10053 · 2026-08-25 · 1,078.44 EUR · paid / open"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "> Ship or communicate a delay; these customers have already paid. Matched on any paid"
+    },
+    {
+      "kind": "result",
+      "text": "> transaction, so an order refunded later can appear here too."
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "### Sales channels in maintenance mode (1)"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "- Storefront"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "> Customers see a maintenance page; disable it once work is done."
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "## Warning"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "### Paid orders older than 7 days without an invoice document (56)"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "- #10028 · 2024-09-18 · 62,064.02 EUR · paid / shipped"
+    },
+    {
+      "kind": "result",
+      "text": "- #10035 · 2024-09-20 · 67,605.70 EUR · paid / shipped"
+    },
+    {
+      "kind": "note",
+      "text": "8 sample lines omitted"
+    },
+    {
+      "kind": "result",
+      "text": "- … 46 more"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "> Every paid order needs an invoice for the books; order_document_create with type"
+    },
+    {
+      "kind": "result",
+      "text": "> invoice generates it from Shopware's own template."
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "### Products that run out within 14 days at the current sales pace (5)"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "- SW10011 · Aerodynamic Linen Screen Seder · stock -29 · 0 days of cover"
+    },
+    {
+      "kind": "result",
+      "text": "- SW10027 · Gorgeous Marble Twinkle Tows · stock -14 · 0 days of cover"
+    },
+    {
+      "kind": "note",
+      "text": "3 sample lines omitted"
+    },
+    {
+      "kind": "result",
+      "text": "…"
+    },
+    {
+      "kind": "note",
+      "text": "exit code 1: a warning exists and --fail-on warning was set. Cron mails the output, CI fails the job."
+    },
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp report --from 2026-06-01 --to 2026-08-31 --interval month"
+    },
+    {
+      "kind": "result",
+      "text": "# Sales report · 2026-06-01 to 2026-08-31"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "| | This period | Before |"
+    },
+    {
+      "kind": "result",
+      "text": "|---|---:|---:|"
+    },
+    {
+      "kind": "result",
+      "text": "| Orders | 8 (+14.29 %) | 7 |"
+    },
+    {
+      "kind": "result",
+      "text": "| Revenue (gross) | 474,360.49 (+81.68 %) | 261,100.60 |"
+    },
+    {
+      "kind": "result",
+      "text": "| Revenue (net) | 425,108.86 | – |"
+    },
+    {
+      "kind": "result",
+      "text": "| Average order | 59,295.06 (+58.97 %) | 37,300.09 |"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "## Timeline (month)"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "| Bucket | Orders | Revenue |"
+    },
+    {
+      "kind": "result",
+      "text": "|---|---:|---:|"
+    },
+    {
+      "kind": "result",
+      "text": "| 2026-06-01 | 4 | 428,068.87 |"
+    },
+    {
+      "kind": "result",
+      "text": "| 2026-07-01 | 1 | 42,685.02 |"
+    },
+    {
+      "kind": "result",
+      "text": "| 2026-08-01 | 3 | 3,606.60 |"
+    },
+    {
+      "kind": "result",
+      "text": "…"
+    }
+  ]
+}

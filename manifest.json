@@ -156,6 +156,10 @@
       "description": "Get stock"
     },
     {
+      "name": "stock_forecast",
+      "description": "Stock forecast"
+    },
+    {
       "name": "sales_report",
       "description": "Sales report"
     },

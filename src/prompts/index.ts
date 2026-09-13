@@ -143,4 +143,32 @@ export function registerPrompts(server: McpServer): void {
       ],
     }),
   );
+
+  server.registerPrompt(
+    "reorder_list",
+    {
+      title: "Reorder list",
+      description: "What to reorder this week, from real sales velocity and current stock.",
+      argsSchema: {
+        horizon: z.string().min(1).describe("Days ahead to cover, e.g. 14"),
+      },
+    },
+    ({ horizon }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Run stock_forecast with days 30, horizon ${Number(horizon) || 14}, restockDays 30 ` +
+              "and limit 50. Then write a purchase list: product number, name, current available " +
+              "stock, units sold in the last 30 days, the day the stock runs out and the " +
+              "suggested reorder quantity, soonest first. Group by manufacturer if products_get " +
+              "on the first few items shows one. End with the total number of products affected " +
+              "and the three most urgent ones. Use only figures from the tool results.",
+          },
+        },
+      ],
+    }),
+  );
 }

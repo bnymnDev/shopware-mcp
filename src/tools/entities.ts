@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { associations, buildCriteria, searchInputShape } from "../client/criteria.js";
-import type { Raw } from "../client/index.js";
+import type { Raw, ShopwareClient } from "../client/index.js";
 import { badRequest, notFound } from "../errors.js";
+import { logger } from "../logger.js";
 import { boundText, isRaw, raw, str, strList } from "./shared.js";
 import { defineTool } from "./types.js";
 
@@ -66,6 +67,71 @@ export function normalizeEntity(input: string): { snake: string; kebab: string }
   return { snake, kebab: snake.replace(/_/g, "-") };
 }
 
+const aggregationLeaf = z.object({
+  name: z
+    .string()
+    .regex(/^[a-zA-Z][a-zA-Z0-9_]{0,63}$/, "letters, digits and _ only")
+    .describe("Key of the result"),
+  type: z.enum(["terms", "sum", "avg", "min", "max", "count", "stats", "histogram"]),
+  field: z.string().min(1).max(200).describe("Entity field; dot-paths for associations"),
+  limit: z.number().int().min(1).max(500).optional().describe("terms: max buckets"),
+  sort: z
+    .object({ field: z.string().min(1), order: z.enum(["ASC", "DESC"]).default("DESC") })
+    .optional()
+    .describe("terms: bucket order, e.g. { field: '_count', order: 'DESC' }"),
+  interval: z
+    .enum(["minute", "hour", "day", "week", "month", "quarter", "year"])
+    .optional()
+    .describe("histogram: bucket size"),
+});
+
+const aggregationSchema = aggregationLeaf
+  .extend({
+    aggregation: aggregationLeaf
+      .optional()
+      .describe("One nested metric per bucket, e.g. a sum inside a terms aggregation"),
+  })
+  .refine((aggregation) => aggregation.type !== "histogram" || aggregation.interval, {
+    message: "A histogram needs an interval",
+  });
+
+/**
+ * A dot-path may hop through associations into an entity that is blocked (`order.createdBy`
+ * reaches `user`), and a filter, sort or aggregation on it would read what entity_search
+ * refuses to return. Every hop is resolved against the shop's schema; a credential-like
+ * segment is refused regardless. Without a schema only the name check applies.
+ */
+async function assertPathAllowed(
+  client: ShopwareClient,
+  entity: string,
+  path: string,
+): Promise<void> {
+  const segments = path.split(".");
+  for (const segment of segments) {
+    if (SENSITIVE_KEY.test(segment)) throw badRequest(`Field "${path}" is not exposed`);
+  }
+  let schema: Record<string, Raw>;
+  try {
+    schema = await client.entitySchema();
+  } catch (error) {
+    logger.warn("entity schema unavailable, association paths are not checked", {
+      detail: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+  let current = entity;
+  for (const segment of segments) {
+    const property = raw(raw(raw(schema[current])?.properties)?.[segment]);
+    if (property?.type !== "association") return;
+    const target = str(property.entity);
+    if (!target) return;
+    if (BLOCKED_ENTITIES.has(target)) {
+      throw badRequest(`Field "${path}" reaches "${target}", which is not exposed`);
+    }
+    current = target;
+  }
+}
+
 export const entitySearch = defineTool({
   name: "entity_search",
   title: "Search any entity",
@@ -76,8 +142,11 @@ export const entitySearch = defineTool({
     "Use entity_schema first to see the available fields and associations. Credentials and " +
     "internal fields are always stripped, long values such as stored files are truncated, and " +
     "entities holding secrets (users, integrations, system config) are blocked. Prefer the " +
-    "dedicated tools when one exists. " +
-    "Returns { entity, total, page, limit, items[] } with raw (scrubbed) entity data.",
+    "dedicated tools when one exists. `aggregations` asks Shopware to count, sum or average " +
+    "over the whole match (terms, sum, avg, min, max, count, stats, histogram, one nested " +
+    "metric per bucket), e.g. orders per payment method or revenue per month for any entity; " +
+    "set limit: 1 when only the aggregations matter. " +
+    "Returns { entity, total, page, limit, items[], aggregations? } with raw (scrubbed) data.",
   inputSchema: {
     entity: z
       .string()
@@ -98,9 +167,24 @@ export const entitySearch = defineTool({
       .max(10)
       .optional()
       .describe("Association names to load, e.g. ['country', 'salesChannels']"),
+    aggregations: z
+      .array(aggregationSchema)
+      .max(10)
+      .optional()
+      .describe("Shopware aggregations computed over the whole match"),
   },
   handler: async (input, ctx) => {
     const { snake, kebab } = normalizeEntity(input.entity);
+    const paths = [
+      ...(input.filter ?? []).map((filter) => filter.field),
+      ...(input.sort ?? []).map((sort) => sort.field),
+      ...(input.associations ?? []),
+      ...(input.aggregations ?? []).flatMap((aggregation) => [
+        aggregation.field,
+        ...(aggregation.aggregation ? [aggregation.aggregation.field] : []),
+      ]),
+    ];
+    for (const path of paths) await assertPathAllowed(ctx.client, snake, path);
     const criteria = buildCriteria(
       {
         term: input.term,
@@ -117,6 +201,9 @@ export const entitySearch = defineTool({
     if (input.associations && input.associations.length > 0) {
       criteria.associations = associations(input.associations);
     }
+    if (input.aggregations && input.aggregations.length > 0) {
+      criteria.aggregations = input.aggregations;
+    }
     const result = await ctx.client.search<Raw>(kebab, criteria);
     return {
       entity: snake,
@@ -124,6 +211,7 @@ export const entitySearch = defineTool({
       page: criteria.page ?? 1,
       limit: criteria.limit ?? result.items.length,
       items: result.items.map((item) => scrub(item)),
+      ...(criteria.aggregations ? { aggregations: scrub(result.aggregations) } : {}),
     };
   },
 });

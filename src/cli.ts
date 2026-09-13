@@ -5,9 +5,12 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { ShopwareClient } from "./client/index.js";
 import { type Config, ConfigError, loadConfig } from "./config.js";
 import { formatDoctorReport, runDoctor } from "./doctor.js";
+import { formatAuditMarkdown, formatSalesReportMarkdown } from "./format.js";
 import { defaultConfigPath, HOSTS, type Host, mergeHostConfig, snippetFor } from "./init.js";
 import { type LogLevel, logger, setLogLevel } from "./logger.js";
 import { createServer } from "./server.js";
+import { runAudit } from "./tools/audit.js";
+import { buildSalesReport } from "./tools/reports.js";
 import { fetchShopInfo } from "./tools/shop.js";
 import { startHttp } from "./transport/http.js";
 import { NAME, VERSION } from "./version.js";
@@ -19,6 +22,10 @@ Usage:
   shopware-mcp doctor [--json]      Check the connection and which tools this integration can use
   shopware-mcp init [--for <host>] [--write]
                                     Test the credentials and print (or write) the host config
+  shopware-mcp audit [--json] [--days <n>] [--threshold <n>] [--fail-on <severity>]
+                                    Run the shop audit and print it as Markdown (or JSON)
+  shopware-mcp report [--json] [--from <date>] [--to <date>] [--interval <unit>]
+                                    Print the sales report of a period as Markdown (or JSON)
 
 Options:
   --allow-write        Register write tools (stock_set, product_update, ...). Default: read-only.
@@ -28,9 +35,15 @@ Options:
   --port <n>           HTTP port (default 3333).
   --host <host>        HTTP bind address (default 127.0.0.1).
   --log-level <level>  error | warn | info | debug (stderr only).
-  --for <host>         init: claude-desktop | claude-code | cursor | vscode | zed
+  --for <host>         init: claude-desktop | claude-code | cursor | vscode | windsurf | gemini | codex | zed
   --write              init: merge the entry into the host's config file (backup kept)
-  --json               doctor: print the report as JSON
+  --json               doctor, audit, report: print JSON instead of text
+  --days <n>           audit: days after which an unshipped or unpaid order counts as stuck (7)
+  --threshold <n>      audit: low-stock threshold (5)
+  --fail-on <sev>      audit: exit 1 when a finding of this severity exists: critical (default) | warning | none
+                       (exit 2 when a check could not run)
+  --from, --to <date>  report: period, ISO dates (default: the last 30 days)
+  --interval <unit>    report: day (default) | week | month
   -h, --help           Show this help.
   -v, --version        Print the version.
 
@@ -41,7 +54,9 @@ Environment:
   SHOPWARE_MCP_HTTP_TOKEN   bearer token required on /mcp when serving --http
 `;
 
-const COMMANDS = ["serve", "doctor", "init"] as const;
+const COMMANDS = ["serve", "doctor", "init", "audit", "report"] as const;
+const SEVERITIES = ["critical", "warning", "none"] as const;
+const INTERVALS = ["day", "week", "month"] as const;
 export type Command = (typeof COMMANDS)[number];
 
 export interface CliOptions {
@@ -56,8 +71,37 @@ export interface CliOptions {
   for: Host | undefined;
   write: boolean;
   json: boolean;
+  days: number;
+  threshold: number;
+  failOn: (typeof SEVERITIES)[number];
+  from: string | undefined;
+  to: string | undefined;
+  interval: (typeof INTERVALS)[number];
   help: boolean;
   version: boolean;
+}
+
+function positiveInt(
+  name: string,
+  value: string | undefined,
+  fallback: number,
+  max: number,
+): number {
+  if (value === undefined) return fallback;
+  const parsed = /^\d+$/.test(value) ? Number(value) : Number.NaN;
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > max) {
+    throw new Error(`Invalid --${name}: ${value} (1 to ${max})`);
+  }
+  return parsed;
+}
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:?\d{2})?)?$/;
+
+function isoDateOption(name: string, value: string | undefined): string | undefined {
+  if (value !== undefined && !ISO_DATE.test(value)) {
+    throw new Error(`Invalid --${name}: ${value} (use an ISO date like 2026-08-01)`);
+  }
+  return value;
 }
 
 export function parseCli(argv: string[]): CliOptions {
@@ -74,6 +118,12 @@ export function parseCli(argv: string[]): CliOptions {
       for: { type: "string" },
       write: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
+      days: { type: "string" },
+      threshold: { type: "string" },
+      "fail-on": { type: "string" },
+      from: { type: "string" },
+      to: { type: "string" },
+      interval: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
     },
@@ -102,6 +152,14 @@ export function parseCli(argv: string[]): CliOptions {
   if (target !== undefined && !HOSTS.includes(target as Host)) {
     throw new Error(`Invalid --for: ${target} (use ${HOSTS.join(", ")})`);
   }
+  const failOn = values["fail-on"] ?? "critical";
+  if (!SEVERITIES.includes(failOn as (typeof SEVERITIES)[number])) {
+    throw new Error(`Invalid --fail-on: ${failOn} (use ${SEVERITIES.join(", ")})`);
+  }
+  const interval = values.interval ?? "day";
+  if (!INTERVALS.includes(interval as (typeof INTERVALS)[number])) {
+    throw new Error(`Invalid --interval: ${interval} (use ${INTERVALS.join(", ")})`);
+  }
   return {
     command,
     allowWrite: values["allow-write"],
@@ -114,6 +172,12 @@ export function parseCli(argv: string[]): CliOptions {
     for: target as Host | undefined,
     write: values.write ?? false,
     json: values.json ?? false,
+    days: positiveInt("days", values.days, 7, 365),
+    threshold: positiveInt("threshold", values.threshold, 5, 10_000),
+    failOn: failOn as (typeof SEVERITIES)[number],
+    from: isoDateOption("from", values.from),
+    to: isoDateOption("to", values.to),
+    interval: interval as (typeof INTERVALS)[number],
     help: values.help ?? false,
     version: values.version ?? false,
   };
@@ -246,6 +310,43 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
       cli.json ? `${JSON.stringify(report, null, 2)}\n` : formatDoctorReport(report, config.url),
     );
     process.exitCode = report.ok ? 0 : 1;
+    return;
+  }
+
+  if (cli.command === "audit") {
+    const report = await runAudit(ctx.client, {
+      stuckOrderDays: cli.days,
+      lowStockThreshold: cli.threshold,
+      forecastDays: 14,
+      maxItems: 10,
+      complianceChecks: true,
+    });
+    process.stdout.write(
+      cli.json ? `${JSON.stringify(report, null, 2)}\n` : formatAuditMarkdown(report),
+    );
+    const failing =
+      cli.failOn === "critical"
+        ? report.summary.critical > 0
+        : cli.failOn === "warning"
+          ? report.summary.critical + report.summary.warning > 0
+          : false;
+    // 2 when a check could not run: the report is incomplete, which a cron job should not read as fine.
+    process.exitCode = failing ? 1 : report.warnings && report.warnings.length > 0 ? 2 : 0;
+    return;
+  }
+
+  if (cli.command === "report") {
+    const report = await buildSalesReport(ctx.client, {
+      from: cli.from,
+      to: cli.to,
+      interval: cli.interval,
+      excludeCancelled: true,
+      topProducts: 10,
+      compareWithPrevious: true,
+    });
+    process.stdout.write(
+      cli.json ? `${JSON.stringify(report, null, 2)}\n` : formatSalesReportMarkdown(report),
+    );
     return;
   }
 

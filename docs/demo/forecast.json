@@ -1,0 +1,190 @@
+{
+  "title": "shopware-mcp · stock_forecast",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp"
+    },
+    {
+      "kind": "prompt",
+      "text": "What do I need to reorder for the next two months? Base it on the last six months."
+    },
+    {
+      "kind": "call",
+      "tool": "stock_forecast",
+      "args": "{ days: 180, horizon: 60, limit: 11 }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"window\": { \"from\": \"2026-03-17T13:06:00.601Z\", \"to\": \"2026-09-13T13:06:00.601Z\", \"days\": 180 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"horizon\": 60, \"restockDays\": 30, \"total\": 11,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"items\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10023.2\", \"name\": \"Ergonomic Paper Lab Along\", \"stock\": -19,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -19, \"soldInWindow\": 10, \"perDay\": 0.06, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 24 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10027\", \"name\": \"Gorgeous Marble Twinkle Tows\", \"stock\": -14,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -14, \"soldInWindow\": 10, \"perDay\": 0.06, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 19 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10074\", \"name\": \"Sleek Bronze Fear Cut\", \"stock\": -4, \"availableStock\": -4,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"soldInWindow\": 10, \"perDay\": 0.06, \"daysOfCover\": 0, \"runsOutOn\": \"2026-09-13\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"suggestedReorder\": 9 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10077\", \"name\": \"Small Concrete TakeCare\", \"stock\": -3,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -3, \"soldInWindow\": 9, \"perDay\": 0.05, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 8 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10054\", \"name\": \"Lightweight Leather GeneSink\", \"stock\": -19,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -19, \"soldInWindow\": 8, \"perDay\": 0.04, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 23 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10037\", \"name\": \"Sleek Linen Trojan 60 Grit\", \"stock\": -15,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -15, \"soldInWindow\": 7, \"perDay\": 0.04, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 19 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10003\", \"name\": \"Ergonomic Steel Dream Fire\", \"stock\": -7,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -7, \"soldInWindow\": 8, \"perDay\": 0.04, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 11 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10017\", \"name\": \"Awesome Granite Crab-ola\", \"stock\": -17,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -17, \"soldInWindow\": 6, \"perDay\": 0.03, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 20 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10063.1\", \"name\": \"Synergistic Bronze Spontaneous Combustion\", \"stock\": -4,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": -4, \"soldInWindow\": 3, \"perDay\": 0.02, \"daysOfCover\": 0,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-09-13\", \"suggestedReorder\": 6 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10011\", \"name\": \"Aerodynamic Linen Screen Seder\", \"stock\": 5,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": 5, \"soldInWindow\": 20, \"perDay\": 0.11, \"daysOfCover\": 45,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-10-28\", \"suggestedReorder\": 5 },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"productNumber\": \"SW10095\", \"name\": \"Synergistic Bronze Hank’s Gadget\", \"stock\": 3,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"availableStock\": 3, \"soldInWindow\": 10, \"perDay\": 0.06, \"daysOfCover\": 54,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"runsOutOn\": \"2026-11-06\", \"suggestedReorder\": 2 } ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "11 products run out within 60 days at the pace of the last six months."
+    },
+    {
+      "kind": "agent",
+      "text": "Nine are already oversold, so they are the priority; the reorder quantity covers the backlog"
+    },
+    {
+      "kind": "agent",
+      "text": "and 90 days of sales: SW10023.2 (24), SW10054 (23), SW10017 (20), SW10027 (19), SW10037 (19),"
+    },
+    {
+      "kind": "agent",
+      "text": "SW10003 (11), SW10074 (9), SW10077 (8), SW10063.1 (6)."
+    },
+    {
+      "kind": "agent",
+      "text": "Two are still in stock but will not last: SW10011 Aerodynamic Linen Screen Seder sells 0.11 a day"
+    },
+    {
+      "kind": "agent",
+      "text": "and runs out on 28 October (order 5), SW10095 Hank’s Gadget on 6 November (order 2)."
+    },
+    {
+      "kind": "agent",
+      "text": "Products without sales in the window are not listed; nothing here is a guess."
+    }
+  ]
+}

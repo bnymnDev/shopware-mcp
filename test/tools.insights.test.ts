@@ -223,7 +223,7 @@ describe("sales_report", () => {
 describe("shop_audit", () => {
   it("runs every check and prioritises findings", async () => {
     const audit = await invoke(shopAudit, { stuckOrderDays: 14, lowStockThreshold: 3 }, ctx);
-    expect(audit.summary).toMatchObject({ checksRun: 13, healthy: false });
+    expect(audit.summary).toMatchObject({ checksRun: 15, healthy: false });
     expect(audit.shop).toMatchObject({ version: "6.6.10.3", edition: "Community" });
     const ids = audit.findings.map((finding) => finding.id);
     expect(ids[0]).toBe("orders_paid_not_shipped");
@@ -239,7 +239,7 @@ describe("shop_audit", () => {
     expect(stuck?.items[0]).toMatchObject({ orderNumber: "10042", paymentState: "paid" });
 
     const orderSearches = searchRequests("order");
-    expect(orderSearches).toHaveLength(3);
+    expect(orderSearches).toHaveLength(4);
     const housekeeping = audit.findings.find(
       (finding) => finding.id === "orders_shipped_not_completed",
     );
@@ -256,6 +256,19 @@ describe("shop_audit", () => {
     });
     const productSearches = searchRequests("product").map((r) => JSON.stringify(r.body));
     expect(productSearches.some((body) => body.includes('"visibilities.id"'))).toBe(true);
+    const unbilled = audit.findings.find((finding) => finding.id === "orders_paid_without_invoice");
+    expect(unbilled).toMatchObject({
+      severity: "warning",
+      hint: expect.stringContaining("invoice"),
+    });
+    expect(
+      orderSearches
+        .map((r) => JSON.stringify(r.body))
+        .some((b) => b.includes('"not"') && b.includes('"invoice"')),
+    ).toBe(true);
+    const runningOut = audit.findings.find((finding) => finding.id === "products_running_out");
+    expect(runningOut).toMatchObject({ severity: "warning", count: 2 });
+    expect(runningOut?.items[0]).toMatchObject({ productNumber: "SW10002", daysOfCover: 0 });
     const pending = audit.findings.find((finding) => finding.id === "reviews_pending");
     expect(pending).toMatchObject({ severity: "info", count: 5 });
     expect(pending?.items[0]).toMatchObject({
@@ -282,6 +295,7 @@ describe("shop_audit", () => {
         "sales-channel": () => ({ total: 0, data: [] }),
         plugin: () => ({ total: 0, data: [] }),
         "product-review": () => ({ total: 0, data: [] }),
+        "order-line-item": () => ({ total: 0, data: [], aggregations: {} }),
       }),
       http.get(`${SHOP_URL}/api/_action/extension/installed`, () => HttpResponse.json([])),
     );
@@ -299,7 +313,7 @@ describe("shop_audit", () => {
     );
     const degraded = await invoke(shopAudit, {}, ctx);
     expect(degraded.warnings?.[0]).toContain("promotions_expired_active skipped");
-    expect(degraded.summary.checksRun).toBe(12);
+    expect(degraded.summary.checksRun).toBe(14);
   });
 });
 
@@ -496,6 +510,8 @@ describe("entity_search", () => {
 
 describe("entity_schema", () => {
   it("lists entities without blocked ones and describes fields and associations", async () => {
+    // A fresh client: the schema is fetched once and cached for everything that needs it.
+    const ctx = createContext();
     const list = await invoke(entitySchema, {}, ctx);
     expect(list).toEqual({ total: 3, entities: ["customer", "product", "product_manufacturer"] });
 

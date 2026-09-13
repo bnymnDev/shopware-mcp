@@ -24,6 +24,7 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`shipping_methods_list`](#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](#plugins_list) | read | List plugins and apps |
 | [`stock_get`](#stock_get) | read | Get stock |
+| [`stock_forecast`](#stock_forecast) | read | Stock forecast |
 | [`sales_report`](#sales_report) | read | Sales report |
 | [`customer_report`](#customer_report) | read | Customer report |
 | [`shop_audit`](#shop_audit) | read | Shop health audit |
@@ -350,6 +351,24 @@ Get stock and available stock for one product by ID or product number, including
 | `productId` | `string` | no | Product UUID |
 | `productNumber` | `string` | no | Product number, e.g. SW10001 |
 
+## stock_forecast
+
+_Stock forecast_
+
+**Read tool** — always registered.
+
+Which products run out soon, from real sales: units sold per product in the last `days` (cancelled orders excluded), the current available stock, the days of cover at that pace, the date the stock reaches zero and a reorder quantity that keeps it in stock through the horizon plus `restockDays` more days (a negative stock is a backlog and is covered too). Lists the active products whose cover is below `horizon` days, soonest first. Products without sales in the window are never listed. Use it for 'what do I need to reorder?'. Returns { window, horizon, restockDays, total, items[], notes? }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `days` | `integer` | no | Sales window in days. default `30`, min 1, max 365 |
+| `horizon` | `integer` | no | List products that run out within this many days. default `14`, min 1, max 365 |
+| `restockDays` | `integer` | no | Days beyond the horizon the suggested reorder quantity should cover. default `30`, min 1, max 365 |
+| `salesChannelId` | `string` | no | Count sales of one sales channel only |
+| `limit` | `integer` | no | default `20`, min 1, max 50 |
+
 ## sales_report
 
 _Sales report_
@@ -403,6 +422,7 @@ Run a one-shot health check across the shop and return prioritised findings: pai
 |---|---|---|---|
 | `stuckOrderDays` | `integer` | no | default `7`, min 1, max 365 |
 | `lowStockThreshold` | `integer` | no | default `5`, min 1, max 10000 |
+| `forecastDays` | `integer` | no | Flag products whose stock lasts fewer days than this at the recent sales pace. default `14`, min 1, max 365 |
 | `maxItems` | `integer` | no | Sample items per finding. default `10`, min 1, max 50 |
 | `complianceChecks` | `boolean` | no | Include the EU duty coverage map. Set false outside the EU. default `true` |
 
@@ -426,7 +446,7 @@ _Search any entity_
 
 **Read tool** — always registered.
 
-Escape hatch for everything without a dedicated tool: search ANY Shopware entity (e.g. product_manufacturer, property_group, shipping_method, tax, country, newsletter_recipient, product_review, seo_url, cms_page, media) with the same Criteria filters, sort and paging. Use entity_schema first to see the available fields and associations. Credentials and internal fields are always stripped, long values such as stored files are truncated, and entities holding secrets (users, integrations, system config) are blocked. Prefer the dedicated tools when one exists. Returns { entity, total, page, limit, items[] } with raw (scrubbed) entity data.
+Escape hatch for everything without a dedicated tool: search ANY Shopware entity (e.g. product_manufacturer, property_group, shipping_method, tax, country, newsletter_recipient, product_review, seo_url, cms_page, media) with the same Criteria filters, sort and paging. Use entity_schema first to see the available fields and associations. Credentials and internal fields are always stripped, long values such as stored files are truncated, and entities holding secrets (users, integrations, system config) are blocked. Prefer the dedicated tools when one exists. `aggregations` asks Shopware to count, sum or average over the whole match (terms, sum, avg, min, max, count, stats, histogram, one nested metric per bucket), e.g. orders per payment method or revenue per month for any entity; set limit: 1 when only the aggregations matter. Returns { entity, total, page, limit, items[], aggregations? } with raw (scrubbed) data.
 
 ### Input
 
@@ -440,6 +460,7 @@ Escape hatch for everything without a dedicated tool: search ANY Shopware entity
 | `limit` | `integer` | no | Items per page, max 50 (default from SHOPWARE_MCP_DEFAULT_LIMIT). min 1, max 50 |
 | `fields` | `string[]` | no | Only return these fields of the entity (Shopware `includes`) |
 | `associations` | `string[]` | no | Association names to load, e.g. ['country', 'salesChannels'] |
+| `aggregations` | `({ name: string, type: "terms" \| "sum" \| "avg" \| "min" \| "max" \| "count" \| "stats" \| "histogram", field: string, limit?: integer, sort?: { field: string, order?: "ASC" \| "DESC" }, interval?: "minute" \| "hour" \| "day" \| "week" \| "month" \| "quarter" \| "year", aggregation?: { name: string, type: "terms" \| "sum" \| "avg" \| "min" \| "max" \| "count" \| "stats" \| "histogram", field: string, limit?: integer, sort?: { field: string, order?: "ASC" \| "DESC" }, interval?: "minute" \| "hour" \| "day" \| "week" \| "month" \| "quarter" \| "year" } })[]` | no | Shopware aggregations computed over the whole match |
 
 ## stock_set
 

@@ -83,3 +83,14 @@ Write tools additionally need editor rights on `product` (stock, basic fields), 
 - Logs: stderr only, prefixed `[shopware-mcp]`. `SHOPWARE_MCP_LOG_LEVEL=debug` logs every request as method, path, status and duration. Bodies and tokens are never logged.
 - Tokens: OAuth2 client-credentials, cached in memory and refreshed 60 s before expiry; a 401 triggers exactly one refresh and retry.
 - Limits: `limit` is capped at 50 per page; use `page` to paginate.
+
+## Scheduled audits
+
+`shopware-mcp audit` and `shopware-mcp report` need only the three environment variables and print Markdown (or JSON with `--json`). The audit exits with 1 when a critical finding exists, or with `--fail-on warning` when any warning exists, so a cron job or a CI step can alert on it:
+
+```bash
+SHOPWARE_URL=… SHOPWARE_CLIENT_ID=… SHOPWARE_CLIENT_SECRET=… npx shopware-mcp audit --fail-on warning > audit.md || send-alert audit.md
+```
+
+The Docker image runs it too: `docker run --rm -e SHOPWARE_URL=… -e SHOPWARE_CLIENT_ID=… -e SHOPWARE_CLIENT_SECRET=… ghcr.io/bnymndev/shopware-mcp audit`.
+

@@ -3,8 +3,9 @@ import { STOREFRONT_TYPE_ID } from "../client/constants.js";
 import { associations, equals, equalsAny, type ShopwareFilter } from "../client/criteria.js";
 import { INHERITANCE_HEADERS, type Raw, type ShopwareClient } from "../client/index.js";
 import { ShopwareMcpError } from "../errors.js";
+import { buildStockForecast } from "./forecast.js";
 import { mapOrderSummary } from "./orders.js";
-import { DAY_MS } from "./periods.js";
+import { DAY_MS, notCancelled } from "./periods.js";
 import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
@@ -114,6 +115,7 @@ interface Check {
 export interface AuditInput {
   stuckOrderDays: number;
   lowStockThreshold: number;
+  forecastDays: number;
   maxItems: number;
   complianceChecks: boolean;
 }
@@ -213,6 +215,41 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
         equals("deliveries.stateMachineState.technicalName", "shipped"),
         { type: "range", field: "orderDateTime", parameters: { lt: cutoff } },
       ]),
+    },
+    {
+      id: "orders_paid_without_invoice",
+      severity: "warning",
+      title: `Paid orders older than ${input.stuckOrderDays} days without an invoice document`,
+      hint:
+        "Every paid order needs an invoice for the books; order_document_create with type " +
+        "invoice generates it from Shopware's own template. Cancelled orders are not counted.",
+      run: orderCheck([
+        equals("transactions.stateMachineState.technicalName", "paid"),
+        notCancelled(),
+        {
+          type: "not",
+          operator: "and",
+          queries: [equals("documents.documentType.technicalName", "invoice")],
+        },
+        { type: "range", field: "orderDateTime", parameters: { lt: cutoff } },
+      ]),
+    },
+    {
+      id: "products_running_out",
+      severity: "warning",
+      title: `Products that run out within ${input.forecastDays} days at the current sales pace`,
+      hint:
+        "Reorder them; suggestedReorder keeps each product in stock for the horizon plus 30 " +
+        "days at the pace of the last 30 days. stock_forecast has the full list and other horizons.",
+      run: async () => {
+        const forecast = await buildStockForecast(client, {
+          days: 30,
+          horizon: input.forecastDays,
+          restockDays: 30,
+          limit,
+        });
+        return { count: forecast.total, items: forecast.items };
+      },
     },
     {
       id: "products_out_of_stock",
@@ -447,6 +484,13 @@ export const shopAudit = defineTool({
   inputSchema: {
     stuckOrderDays: z.number().int().min(1).max(365).default(7),
     lowStockThreshold: z.number().int().min(1).max(10_000).default(5),
+    forecastDays: z
+      .number()
+      .int()
+      .min(1)
+      .max(365)
+      .default(14)
+      .describe("Flag products whose stock lasts fewer days than this at the recent sales pace"),
     maxItems: z.number().int().min(1).max(50).default(10).describe("Sample items per finding"),
     complianceChecks: z
       .boolean()

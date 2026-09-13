@@ -125,6 +125,7 @@ describe("MCP server", () => {
       "customer_profile",
       "low_stock_report",
       "order_summary",
+      "reorder_list",
       "review_moderation",
       "weekly_review",
     ]);

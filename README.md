@@ -48,9 +48,9 @@ call what used to take an afternoon in the admin:
 | | |
 |---|---|
 | **Curated tools** | Products, orders and their history, documents, customers, categories, promotions, reviews, payment and shipping methods, plugins, stock, sales channels: eighteen tools that return compact JSON with exact totals, descriptions written for a model, and Shopware's own Criteria filters. No invented query language. |
-| **An audit** | `shop_audit` runs thirteen checks in one call: paid orders that never shipped, unpaid orders going stale, shipped orders never completed, products out of stock, without a cover, without a delivery time or invisible in every sales channel, promotions past their end date, channels in maintenance, storefronts missing a legal page, reviews waiting for moderation, extensions with updates waiting, and which EU duties look covered by an installed extension. Prioritised, with samples and a hint per finding. |
-| **Two reports** | `sales_report` asks Shopware to aggregate: gross, net, average order, revenue per currency and channel, orders per state, a day/week/month timeline, the top products and, on request, the change against the period before. `customer_report` does the same for people: new accounts, guest share, repeat share, top customers by revenue. The figures were checked against SQL on the same database. |
-| **An escape hatch** | `entity_schema` describes any of the 200+ entities, a plugin's custom entities included, and `entity_search` queries them with the same filters. Entities that hold credentials are refused, secrets in the rest are scrubbed. |
+| **An audit** | `shop_audit` runs fifteen checks in one call: paid orders that never shipped or never got an invoice, unpaid orders going stale, shipped orders never completed, products out of stock, running out at the current sales pace, without a cover, without a delivery time or invisible in every sales channel, promotions past their end date, channels in maintenance, storefronts missing a legal page, reviews waiting for moderation, extensions with updates waiting, and which EU duties look covered by an installed extension. Prioritised, with samples and a hint per finding. The same audit runs as `shopware-mcp audit` from cron or CI, no MCP host needed. |
+| **Reports and a forecast** | `sales_report` asks Shopware to aggregate: gross, net, average order, revenue per currency and channel, orders per state, a day/week/month timeline, the top products and, on request, the change against the period before. `customer_report` does the same for people: new accounts, guest share, repeat share, top customers by revenue. `stock_forecast` turns sales velocity and stock into days of cover, run-out dates and reorder quantities. The figures were checked against SQL on the same database. |
+| **An escape hatch** | `entity_schema` describes any of the 200+ entities, a plugin's custom entities included, and `entity_search` queries them with the same filters and lets Shopware aggregate over the match: orders per payment method, revenue per month, anything a terms, sum or histogram can say. Entities that hold credentials are refused, secrets in the rest are scrubbed. |
 | **A brake** | Read-only unless you start it with `--allow-write`. Even then every write is a dry run that shows the exact request first, and a write budget can cap how many real writes a process may make. Ship, mark paid, remind, refund, correct stock, note, generate a document, create a product or a promotion, moderate a review, update a customer: twelve narrow writes, nothing else. Secrets never appear in output, logs or errors. |
 
 <p align="center">
@@ -128,6 +128,22 @@ the host is told to refresh its list, and a compliance question has an answer.
 
 ![Plugin-aware tools: tools/list grows from 23 to 27 after the extension lookup, then merqo_health answers a compliance question](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/plugins.svg)
 
+**Reorder before it hurts.** `stock_forecast` reads six months of line items
+through one aggregation, joins them with the current stock, and says per
+product how many days are left, when it hits zero, and how much to order. Nine
+of these are already oversold; two are still fine today and will not be in
+October.
+
+![stock_forecast: eleven products that run out within 60 days, with sales per day, days of cover, run-out date and a suggested reorder quantity](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/forecast.svg)
+
+**The same audit, no host in sight.** `shopware-mcp audit` prints the findings
+as Markdown and exits non-zero when something is critical (or, with
+`--fail-on warning`, when anything is off). Put it in cron and read the mail;
+put it in CI and let the job fail. `shopware-mcp report` does the same for the
+numbers.
+
+![shopware-mcp audit and report on the command line: Markdown findings with exit code 1, then a monthly sales report table](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/cron.svg)
+
 **Know before the agent finds out.** `shopware-mcp doctor` probes what the integration may read, reads its role for the write privileges where it can, and names the missing one per tool. An administrator gets a wall of ticks; a support-desk role gets told exactly what to grant.
 
 ![shopware-mcp doctor: every tool ready for an administrator integration, then a support-desk integration with customers blocked and the privilege to grant](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/doctor.svg)
@@ -152,15 +168,16 @@ the host is told to refresh its list, and a compliance question has an answer.
 |---|---|
 | **Eighteen curated tools** | `products_search`, `orders_get`, `customers_search`, `stock_get`, `promotions_list`, `reviews_search`, `payment_methods_list`, `shipping_methods_list`, `plugins_list` and friends. Each search takes `{ term?, filter?, sort?, page?, limit?, fields? }` and returns `{ total, page, limit, items }`. |
 | **Order history** | `order_history` lists every order, payment and delivery transition of one order in sequence: previous state, new state, action, and whether an admin user, an API integration or Shopware itself triggered it. |
-| **Health audit** | `shop_audit` with tunable thresholds (`stuckOrderDays`, `lowStockThreshold`, `maxItems`). Thirteen checks including legal pages per storefront, delivery times, sales channel visibility and pending reviews, prioritised findings, a hint per finding, and an EU duty overview that names duties and deadlines, never products. |
+| **Health audit** | `shop_audit` with tunable thresholds (`stuckOrderDays`, `lowStockThreshold`, `forecastDays`, `maxItems`). Fifteen checks including paid orders without an invoice, products running out at the current pace, legal pages per storefront, delivery times, sales channel visibility and pending reviews, prioritised findings, a hint per finding, and an EU duty overview that names duties and deadlines, never products. |
 | **Sales report** | `sales_report` for any period, by day, week or month, optionally per sales channel, cancelled orders excluded. `compareWithPrevious` adds the preceding period and the change in orders, revenue and average order value. Top products resolved by exact product id so ties cannot skew revenue. |
 | **Customer report** | `customer_report` for the same periods: new accounts split into registered and guest and by group, distinct ordering customers, repeat share, guest order share, and the top customers by revenue with their share of the total. |
-| **Any entity** | `entity_schema` lists all entities or describes one: fields, types, flags, associations. `entity_search` queries it. Long text values are truncated, secrets scrubbed, credential entities refused. |
+| **Stock forecast** | `stock_forecast` for 'what do I need to reorder?': units sold per product in a window, current available stock, days of cover, the run-out date and a reorder quantity that covers the horizon plus a restock period. Nothing is estimated for products without sales. |
+| **Any entity** | `entity_schema` lists all entities or describes one: fields, types, flags, associations. `entity_search` queries it, with Shopware aggregations (terms, sum, avg, min, max, count, stats, histogram, one nested metric) over the whole match on request. Long text values are truncated, secrets scrubbed, credential entities and credential fields refused. |
 | **Plugin-aware tools** | The server detects installed, active extensions and adds tools for the ones it knows. First pack: [Merqo](https://github.com/bnymnDev/merqo). Off with `--no-extensions`. |
 | **Documents** | `order_documents_list`, `order_document_create` (invoice, delivery note, credit note, cancellation, by Shopware's own generator) and `document_download`, which hands the PDF to the host as an embedded resource while the model sees only the metadata. |
 | **Guarded writes** | `stock_set` (absolute or `delta`), `product_update`, `product_create`, `order_state_transition`, `order_delivery_transition` (ship, with tracking codes), `order_transaction_transition` (mark paid, remind, refund), `order_note` (internal comment), `order_document_create`, `promotion_toggle`, `promotion_create`, `customer_update`, `review_moderate`. Registered only with `--allow-write`, `dryRun: true` by default, the re-fetched entity on a real write. `SHOPWARE_MCP_MAX_WRITES` caps real writes per process. |
-| **Doctor and init** | `shopware-mcp doctor` says per tool whether this integration can use it and which privilege is missing. `shopware-mcp init` tests the credentials and prints or writes the config for Claude Desktop, Claude Code, Cursor, VS Code or Zed. |
-| **Resources and prompts** | `shopware://shop`, `shopware://sales-channels`, the templates `shopware://order/{orderNumber}`, `shopware://product/{productNumber}` and `shopware://customer/{customerNumber}` so a host can attach a record as context, and five prompts: `order_summary`, `customer_profile`, `low_stock_report`, `review_moderation` and `weekly_review`. |
+| **A command line too** | `shopware-mcp doctor` says per tool whether this integration can use it and which privilege is missing. `shopware-mcp init` tests the credentials and prints or writes the config for Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, Gemini CLI, Codex CLI or Zed. `shopware-mcp audit` and `shopware-mcp report` print the audit and the sales report as Markdown or JSON, with exit codes for cron and CI. |
+| **Resources and prompts** | `shopware://shop`, `shopware://sales-channels`, the templates `shopware://order/{orderNumber}`, `shopware://product/{productNumber}` and `shopware://customer/{customerNumber}` so a host can attach a record as context, and six prompts: `order_summary`, `customer_profile`, `low_stock_report`, `reorder_list`, `review_moderation` and `weekly_review`. |
 | **Shopware's vocabulary** | Filters are Shopware Criteria filters (`equals`, `contains`, `range`, `equalsAny`) on Shopware field paths, including associations like `manufacturer.name`. State names are the technical names you already know. |
 | **Portable schemas** | Every tool schema is checked to avoid constructs that some MCP clients misread, so the same server works in every host. |
 | **A solid client** | OAuth client credentials with early token refresh, one retry on 401 and on 429/5xx with `Retry-After`, a per-request timeout, exact totals, inheritance and language headers, a cached entity schema. |
@@ -188,6 +205,8 @@ the host is told to refresh its list, and a compliance question has an answer.
 npx shopware-mcp init                  # asks for URL, key and secret, tests them, prints the config
 npx shopware-mcp init --for claude-desktop --write   # or merges it into the host's config file
 npx shopware-mcp doctor                # which tools can this integration use, and what is missing
+npx shopware-mcp audit --fail-on warning   # the shop audit as Markdown, exit 1 when something is off
+npx shopware-mcp report --interval week    # the sales report of the last 30 days as Markdown
 ```
 
 Or run the server by hand:
@@ -243,10 +262,10 @@ claude mcp add shopware \
 </details>
 
 <details>
-<summary><b>Cursor, VS Code, Zed, Windsurf and other stdio hosts</b></summary>
+<summary><b>Cursor, VS Code, Windsurf, Gemini CLI, Codex CLI, Zed and other stdio hosts</b></summary>
 <br>
 
-They all take the same three fields. Cursor reads `.cursor/mcp.json`, VS Code `.vscode/mcp.json` (under `servers` instead of `mcpServers`), Zed its `context_servers` block:
+They all take the same three fields. Cursor reads `.cursor/mcp.json`, VS Code `.vscode/mcp.json` (under `servers` instead of `mcpServers`), Windsurf `~/.codeium/windsurf/mcp_config.json`, Gemini CLI `~/.gemini/settings.json`, Codex CLI a `[mcp_servers.shopware]` table in `~/.codex/config.toml`, Zed its `context_servers` block. `init --for <host> --write` writes each of them:
 
 ```json
 {
@@ -313,7 +332,11 @@ The image serves Streamable HTTP on `http://127.0.0.1:3333/mcp`. Point any HTTP-
 | "Create a 10 % code AUTUMN10 for October." | `promotion_create`, created inactive until you say otherwise |
 | "Add the product Bench, SW10200, 119 euro, 3 in stock." | `product_create`, net price derived from the tax rate |
 | "Two came back from the customer, add them to SW10084." | `stock_set { delta: 2 }` |
+| "What do I need to reorder in the next two weeks?" | `stock_forecast`, or the `reorder_list` prompt |
+| "Orders per payment method last month, with revenue?" | `entity_search` on `order` with a `terms` aggregation and a nested `sum` |
+| "Which paid orders have no invoice yet?" | `shop_audit`, then `order_document_create` per order |
 | "Which of my tools will fail with this integration?" | not a tool: `npx shopware-mcp doctor` |
+| "Mail me the audit every Monday." | not a tool either: `shopware-mcp audit --fail-on warning` in cron |
 
 ---
 
@@ -362,6 +385,7 @@ The full [cheat sheet](docs/quickstart.md#filters-cheat-sheet) has more.
 | [`shipping_methods_list`](docs/tools.md#shipping_methods_list) | read | List shipping methods |
 | [`plugins_list`](docs/tools.md#plugins_list) | read | List plugins and apps |
 | [`stock_get`](docs/tools.md#stock_get) | read | Get stock |
+| [`stock_forecast`](docs/tools.md#stock_forecast) | read | Stock forecast |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
 | [`customer_report`](docs/tools.md#customer_report) | read | Customer report |
 | [`shop_audit`](docs/tools.md#shop_audit) | read | Shop health audit |

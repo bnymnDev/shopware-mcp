@@ -1,0 +1,42 @@
+{
+  "total": 7,
+  "data": [],
+  "aggregations": {
+    "byProduct": {
+      "name": "byProduct",
+      "buckets": [
+        {
+          "key": "a1b2c3d4e5f60718293a4b5c6d7e8f01",
+          "count": 5,
+          "quantity": {
+            "name": "quantity",
+            "sum": 60,
+            "apiAlias": "quantity_aggregation"
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "b2c3d4e5f60718293a4b5c6d7e8f0102",
+          "count": 2,
+          "quantity": {
+            "name": "quantity",
+            "sum": 3,
+            "apiAlias": "quantity_aggregation"
+          },
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "c3d4e5f60718293a4b5c6d7e8f010203",
+          "count": 1,
+          "quantity": {
+            "name": "quantity",
+            "sum": 1,
+            "apiAlias": "quantity_aggregation"
+          },
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "byProduct_aggregation"
+    }
+  }
+}

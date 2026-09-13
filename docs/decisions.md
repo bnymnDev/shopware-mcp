@@ -184,3 +184,19 @@ A promotion that is live the moment it exists cannot be reviewed. `promotion_cre
 
 There is no delete tool, and there will not be one. Every write in this server changes a record that stays visible, and the dry run shows what changes. A deleted product, promotion or review leaves nothing to show. Deactivating is the supported way to make something disappear from the storefront.
 
+## The forecast is arithmetic on Shopware's own numbers
+
+`stock_forecast` divides the units sold in the window (one terms aggregation over order line items, cancelled orders excluded) by the days of the window, and divides the available stock by that rate. No seasonality, no smoothing, no model: the number a merchant can check by hand, and the reason a product without sales is never listed. The reorder quantity covers the horizon plus a restock period, backlog included, because a negative stock is an order already owed.
+
+## Aggregations go through the same guard as fields
+
+`entity_search` accepts Shopware aggregations, and a terms aggregation prints its bucket keys. A key that is a password hash is a leak, so every aggregated field path, nested ones included, is checked against the same sensitive-name pattern that scrubs entity payloads, and the result passes through the scrubber. Credential entities stay refused altogether.
+
+## The CLI exits like a check
+
+`shopware-mcp audit` exits with 1 when a critical finding exists, with `--fail-on warning` when any warning exists, and with `--fail-on none` never. That is what cron, CI and monitoring expect from a check, and the Markdown on stdout is what a human expects from a mail. JSON is a flag away for anything that parses.
+
+## Codex config is edited without a TOML parser
+
+`init --write` for Codex CLI replaces exactly the `[mcp_servers.shopware]` table (up to the next top-level header) or appends one, and leaves every other byte alone. A TOML round trip through a parser would normalise a user's whole file; a targeted edit cannot.
+

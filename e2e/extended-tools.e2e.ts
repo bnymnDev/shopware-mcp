@@ -2,8 +2,11 @@ import { randomBytes } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DEFAULT_LANGUAGE_ID, STOREFRONT_TYPE_ID } from "../src/client/constants.js";
 import type { Raw } from "../src/client/index.js";
+import { shopAudit } from "../src/tools/audit.js";
 import { customerReport } from "../src/tools/customer-report.js";
 import { customersSearch, customerUpdate } from "../src/tools/customers.js";
+import { entitySearch } from "../src/tools/entities.js";
+import { stockForecast } from "../src/tools/forecast.js";
 import { orderHistory } from "../src/tools/history.js";
 import { paymentMethodsList, shippingMethodsList } from "../src/tools/methods.js";
 import { orderDeliveryTransition, ordersSearch } from "../src/tools/orders.js";
@@ -226,6 +229,59 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
       ctx,
     );
     expect(restored).toMatchObject({ dryRun: false, result: { active } });
+  });
+
+  it("stock_forecast joins sales with stock and entity_search aggregates", async () => {
+    const forecast = await stockForecast.handler(
+      { days: 365, horizon: 3650, restockDays: 30, limit: 5 },
+      ctx,
+    );
+    expect(forecast.window.days).toBe(365);
+    for (const item of forecast.items) {
+      expect(item.productId).toMatch(HEX);
+      expect(item.soldInWindow).toBeGreaterThan(0);
+      expect(item.daysOfCover).toBeLessThan(3650);
+      expect(item.runsOutOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    }
+    const aggregated = await entitySearch.handler(
+      {
+        entity: "product",
+        page: 1,
+        limit: 1,
+        aggregations: [
+          {
+            name: "byActive",
+            type: "terms",
+            field: "active",
+            sort: { field: "_count", order: "DESC" },
+          },
+          { name: "stock", type: "sum", field: "stock" },
+        ],
+      },
+      ctx,
+    );
+    const aggregations = aggregated.aggregations as Record<
+      string,
+      { buckets?: unknown[]; sum?: number }
+    >;
+    expect(aggregations.byActive?.buckets?.length).toBeGreaterThan(0);
+    expect(typeof aggregations.stock?.sum).toBe("number");
+    expect(JSON.stringify(aggregations)).not.toContain("apiAlias");
+  });
+
+  it("shop_audit runs every check against a real shop", async () => {
+    const audit = await shopAudit.handler(
+      {
+        stuckOrderDays: 7,
+        lowStockThreshold: 5,
+        forecastDays: 14,
+        maxItems: 3,
+        complianceChecks: false,
+      },
+      ctx,
+    );
+    expect(audit.warnings).toBeUndefined();
+    expect(audit.summary.checksRun).toBe(15);
   });
 
   it("stock_set applies a delta on top of the current stock", async () => {
