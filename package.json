@@ -63,14 +63,14 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.11",
+    "@biomejs/biome": "^2.5.13",
     "@changesets/cli": "^3.0.1",
-    "@types/node": "^22.20.1",
+    "@types/node": "^22.20.2",
     "msw": "^2.15.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.13",
-    "typescript": "^5.9.3",
-    "vitest": "^4.1.11"
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
