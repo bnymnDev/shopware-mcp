@@ -4,16 +4,15 @@ import { associations, equals, equalsAny, type ShopwareFilter } from "../client/
 import { INHERITANCE_HEADERS, type Raw, type ShopwareClient } from "../client/index.js";
 import { ShopwareMcpError } from "../errors.js";
 import { mapOrderSummary } from "./orders.js";
+import { DAY_MS } from "./periods.js";
 import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
-import { mapReview } from "./reviews.js";
+import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
 import { mapSalesChannel } from "./sales-channels.js";
 import { translated } from "./shared.js";
 import { fetchShopInfo } from "./shop.js";
 import { defineTool } from "./types.js";
-
-const DAY_MS = 86_400_000;
 
 type Severity = "critical" | "warning" | "info";
 
@@ -355,7 +354,7 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
           limit,
           filter: [equals("status", false)],
           sort: [{ field: "createdAt", order: "ASC" }],
-          associations: associations(["product", "customer"]),
+          associations: REVIEW_ASSOCIATIONS,
         });
         return { count: result.total, items: result.items.map(mapReview) };
       },

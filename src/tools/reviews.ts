@@ -16,7 +16,7 @@ import {
 } from "./shared.js";
 import { type DryRunResult, defineTool } from "./types.js";
 
-const REVIEW_ASSOCIATIONS = associations(["product", "customer", "salesChannel"]);
+export const REVIEW_ASSOCIATIONS = associations(["product", "customer", "salesChannel"]);
 
 export function mapReview(review: Raw) {
   const product = raw(review.product);

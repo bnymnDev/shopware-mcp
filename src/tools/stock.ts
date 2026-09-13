@@ -80,10 +80,12 @@ export const stockSet = defineTool({
   description:
     "Set the stock of one product or variant: either an absolute `stock` or a `delta` " +
     "(e.g. -3 after a manual sale, +50 after a delivery) applied to the current stock, which is " +
-    "read first. dryRun=true (default) returns the exact PATCH request without changing " +
-    "anything; call again with dryRun=false to apply. " +
+    "read again at apply time. dryRun=true (default) returns the exact PATCH request without " +
+    "changing anything; call again with dryRun=false to apply. Do not retry a delta call that " +
+    "timed out without reading the stock first. " +
     "Returns { dryRun, wouldSend } or { dryRun: false, result: <product stock> }.",
   write: true,
+  annotations: { idempotentHint: false },
   inputSchema: {
     productId: idSchema.describe("Product or variant UUID"),
     stock: z.number().int().min(0).optional().describe("New absolute stock quantity"),

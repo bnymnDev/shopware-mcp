@@ -5,7 +5,8 @@ import { defineTool } from "./types.js";
 
 /** Payment and shipping methods: what a shop offers at checkout and where. */
 
-const METHOD_ASSOCIATIONS = associations(["availabilityRule", "salesChannels"]);
+const PAYMENT_ASSOCIATIONS = associations(["availabilityRule", "salesChannels"]);
+const SHIPPING_ASSOCIATIONS = associations(["availabilityRule", "salesChannels", "deliveryTime"]);
 
 function mapMethodBase(method: Raw) {
   return {
@@ -54,7 +55,7 @@ export const paymentMethodsList = defineTool({
     const criteria = buildCriteria(input, {
       defaultLimit: ctx.config.defaultLimit,
       defaultSort: [{ field: "position", order: "ASC" }],
-      associations: METHOD_ASSOCIATIONS,
+      associations: PAYMENT_ASSOCIATIONS,
     });
     const result = await ctx.client.search<Raw>("payment-method", criteria);
     return toPage(result, criteria, (method) =>
@@ -75,7 +76,7 @@ export const shippingMethodsList = defineTool({
     const criteria = buildCriteria(input, {
       defaultLimit: ctx.config.defaultLimit,
       defaultSort: [{ field: "position", order: "ASC" }],
-      associations: associations(["availabilityRule", "salesChannels", "deliveryTime"]),
+      associations: SHIPPING_ASSOCIATIONS,
     });
     const result = await ctx.client.search<Raw>("shipping-method", criteria);
     return toPage(result, criteria, (method) =>

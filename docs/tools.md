@@ -150,7 +150,7 @@ _Order history_
 
 **Read tool** — always registered.
 
-The state history of one order: every order, payment and delivery transition in chronological order with the previous and new state, the action name and who triggered it (admin user, API integration or the system). Use it for 'what happened to this order and when?'. Orders imported without transitions have an empty history. Returns { orderId, orderNumber, orderDate, total, entries[] }.
+The state history of one order: every order, payment and delivery transition in chronological order with the previous and new state, the action name and who triggered it (admin user, API integration or the system). Use it for 'what happened to this order and when?'. Orders imported without transitions have an empty history. When there are more transitions than `limit`, the newest ones are kept. Returns { orderId, orderNumber, orderDate, total, entries[], note? }.
 
 ### Input
 
@@ -447,7 +447,7 @@ _Set stock (guarded)_
 
 **Write tool** — registered only with `--allow-write` / `SHOPWARE_MCP_ALLOW_WRITE=true`. `dryRun` defaults to `true`.
 
-Set the stock of one product or variant: either an absolute `stock` or a `delta` (e.g. -3 after a manual sale, +50 after a delivery) applied to the current stock, which is read first. dryRun=true (default) returns the exact PATCH request without changing anything; call again with dryRun=false to apply. Returns { dryRun, wouldSend } or { dryRun: false, result: <product stock> }.
+Set the stock of one product or variant: either an absolute `stock` or a `delta` (e.g. -3 after a manual sale, +50 after a delivery) applied to the current stock, which is read again at apply time. dryRun=true (default) returns the exact PATCH request without changing anything; call again with dryRun=false to apply. Do not retry a delta call that timed out without reading the stock first. Returns { dryRun, wouldSend } or { dryRun: false, result: <product stock> }.
 
 ### Input
 
@@ -492,7 +492,6 @@ Create a simple (non-variant) product: name, product number, gross price in the 
 | `name` | `string` | yes |  |
 | `productNumber` | `string` | yes | Unique product number, e.g. SW10200 |
 | `priceGross` | `number` | yes | Gross price in the shop's default currency. min 0 |
-| `currencyId` | `string` | no | Currency UUID; defaults to the default currency |
 | `taxId` | `string` | no | Tax UUID |
 | `taxRate` | `number` | no | Tax rate to look up, e.g. 19. min 0, max 100 |
 | `stock` | `integer` | no | default `0`, min 0 |

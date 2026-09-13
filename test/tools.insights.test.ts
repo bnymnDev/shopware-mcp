@@ -248,6 +248,23 @@ describe("shop_audit", () => {
     const filters = orderSearches[0]?.body as Body;
     expect(JSON.stringify(filters.filter)).toContain('"paid"');
     expect(JSON.stringify(filters.filter)).toContain('"lt"');
+
+    const invisible = audit.findings.find((finding) => finding.id === "products_not_visible");
+    expect(invisible).toMatchObject({
+      severity: "info",
+      hint: expect.stringContaining("sales channel"),
+    });
+    const productSearches = searchRequests("product").map((r) => JSON.stringify(r.body));
+    expect(productSearches.some((body) => body.includes('"visibilities.id"'))).toBe(true);
+    const pending = audit.findings.find((finding) => finding.id === "reviews_pending");
+    expect(pending).toMatchObject({ severity: "info", count: 5 });
+    expect(pending?.items[0]).toMatchObject({
+      approved: expect.any(Boolean),
+      points: expect.any(Number),
+    });
+    expect(lastSearch("product-review").body).toMatchObject({
+      filter: [{ type: "equals", field: "status", value: false }],
+    });
     const lowStock = searchRequests("product").find((request) =>
       JSON.stringify(request.body).includes('"lt":3'),
     );

@@ -128,6 +128,16 @@ describe("MCP server", () => {
       "review_moderation",
       "weekly_review",
     ]);
+    mock.use(searchHandler({ customer: "customer-detail" }));
+    const customer = await client.readResource({ uri: "shopware://customer/10000" });
+    const customerText = (customer.contents[0] as { text?: string } | undefined)?.text;
+    expect(JSON.parse(String(customerText))).toMatchObject({ email: expect.any(String) });
+    const profile = await client.getPrompt({
+      name: "customer_profile",
+      arguments: { customer: "10000" },
+    });
+    expect(JSON.stringify(profile.messages[0]?.content)).toContain("order_history");
+
     const weekly = await client.getPrompt({ name: "weekly_review" });
     expect(JSON.stringify(weekly.messages[0]?.content)).toContain("compareWithPrevious");
     const prompt = await client.getPrompt({

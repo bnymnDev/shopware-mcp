@@ -50,7 +50,7 @@ const REQUIREMENTS: Record<string, Requirement> = {
   product_update: { reads: ["product"], writes: ["product:update"] },
   product_create: {
     reads: ["product", "tax"],
-    writes: ["product:create"],
+    writes: ["product:create", "product_visibility:create"],
     optionalRoutes: ["/api/_action/system-config?domain=core.tax"],
   },
   order_state_transition: { reads: ["order"], writes: ["order:update"] },
@@ -65,7 +65,10 @@ const REQUIREMENTS: Record<string, Requirement> = {
   order_note: { reads: ["order"], writes: ["order:update"] },
   order_document_create: { reads: ["order", "document"], writes: ["document:create"] },
   promotion_toggle: { reads: ["promotion"], writes: ["promotion:update"] },
-  promotion_create: { reads: ["promotion"], writes: ["promotion:create"] },
+  promotion_create: {
+    reads: ["promotion"],
+    writes: ["promotion:create", "promotion_discount:create", "promotion_sales_channel:create"],
+  },
   customer_update: { reads: ["customer"], writes: ["customer:update"] },
   review_moderate: { reads: ["product_review"], writes: ["product_review:update"] },
 };

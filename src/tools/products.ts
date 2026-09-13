@@ -275,11 +275,14 @@ async function resolveTax(
   if (input.taxRate !== undefined) {
     const taxes = await client.search<Raw>("tax", {
       page: 1,
-      limit: 1,
+      limit: 2,
       filter: [equals("taxRate", input.taxRate)],
     });
     const tax = taxes.items[0];
     if (!tax) throw badRequest(`No tax with a rate of ${input.taxRate} %; pass taxId instead`);
+    if (taxes.items.length > 1) {
+      throw badRequest(`Several taxes have a rate of ${input.taxRate} %; pass taxId instead`);
+    }
     return { id: String(tax.id), rate: input.taxRate, name: str(tax.name) };
   }
   const config = await client
@@ -319,7 +322,6 @@ export const productCreate = defineTool({
     name: z.string().min(1).max(255),
     productNumber: z.string().min(1).max(64).describe("Unique product number, e.g. SW10200"),
     priceGross: z.number().min(0).describe("Gross price in the shop's default currency"),
-    currencyId: idSchema.optional().describe("Currency UUID; defaults to the default currency"),
     taxId: idSchema.optional().describe("Tax UUID"),
     taxRate: z.number().min(0).max(100).optional().describe("Tax rate to look up, e.g. 19"),
     stock: z.number().int().min(0).default(0),
@@ -345,7 +347,7 @@ export const productCreate = defineTool({
       taxId: tax.id,
       price: [
         {
-          currencyId: input.currencyId ?? DEFAULT_CURRENCY_ID,
+          currencyId: DEFAULT_CURRENCY_ID,
           gross: input.priceGross,
           net: round2(input.priceGross / (1 + tax.rate / 100)),
           linked: true,

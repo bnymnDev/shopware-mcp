@@ -61,20 +61,25 @@ export async function fetchOrderHistory(
     ...rawList(order.deliveries).map((delivery) => String(delivery.id)),
     ...rawList(order.transactions).map((transaction) => String(transaction.id)),
   ];
+  // Newest first from Shopware so a cap keeps the recent transitions; oldest first in the output.
   const history = await client.search<Raw>("state-machine-history", {
     page: 1,
     limit,
     "total-count-mode": 1,
     filter: [equalsAny("referencedId", ids)],
-    sort: [{ field: "createdAt", order: "ASC" }],
+    sort: [{ field: "createdAt", order: "DESC" }],
     associations: HISTORY_ASSOCIATIONS,
   });
+  const entries = history.items.map(mapHistoryEntry).reverse();
   return {
     orderId,
     orderNumber: str(order.orderNumber),
     orderDate: str(order.orderDateTime),
     total: history.total,
-    entries: history.items.map(mapHistoryEntry),
+    entries,
+    ...(history.total > entries.length
+      ? { note: `Showing the newest ${entries.length} of ${history.total} transitions` }
+      : {}),
   };
 }
 
@@ -85,8 +90,9 @@ export const orderHistory = defineTool({
     "The state history of one order: every order, payment and delivery transition in " +
     "chronological order with the previous and new state, the action name and who triggered " +
     "it (admin user, API integration or the system). Use it for 'what happened to this order " +
-    "and when?'. Orders imported without transitions have an empty history. " +
-    "Returns { orderId, orderNumber, orderDate, total, entries[] }.",
+    "and when?'. Orders imported without transitions have an empty history. When there are " +
+    "more transitions than `limit`, the newest ones are kept. " +
+    "Returns { orderId, orderNumber, orderDate, total, entries[], note? }.",
   inputSchema: {
     orderId: idSchema.optional().describe("Order UUID"),
     orderNumber: z.string().min(1).optional().describe("Order number as shown to the customer"),

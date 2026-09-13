@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { associations, buildCriteria, searchInputShape } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
+import { badRequest } from "../errors.js";
+import { isoDate } from "./periods.js";
 import {
   bool,
   dryRunField,
@@ -111,6 +113,9 @@ const discountInput = z
       .optional()
       .describe("Cap for percentage discounts, in shop currency"),
   })
+  .refine((discount) => discount.type !== "percentage" || discount.value <= 100, {
+    message: "A percentage discount cannot exceed 100",
+  })
   .describe("One discount on the whole cart");
 
 export const promotionCreate = defineTool({
@@ -136,14 +141,17 @@ export const promotionCreate = defineTool({
       .describe("Voucher code customers enter; omit for an automatic promotion"),
     discount: discountInput,
     salesChannelIds: z.array(idSchema).min(1).max(50).describe("Sales channels it runs in"),
-    validFrom: z.string().optional().describe("ISO date-time; omit for 'now'"),
-    validUntil: z.string().optional().describe("ISO date-time; omit for 'no end'"),
+    validFrom: isoDate.optional().describe("ISO date-time; omit for 'now'"),
+    validUntil: isoDate.optional().describe("ISO date-time; omit for 'no end'"),
     maxRedemptionsGlobal: z.number().int().min(1).optional(),
     maxRedemptionsPerCustomer: z.number().int().min(1).optional(),
     active: z.boolean().default(false),
     dryRun: dryRunField,
   },
   handler: async (input, ctx) => {
+    if (input.validFrom && input.validUntil && input.validFrom > input.validUntil) {
+      throw badRequest("`validFrom` must be before `validUntil`");
+    }
     const id = newId();
     const body: Raw = {
       id,

@@ -14,7 +14,7 @@ import {
 import { bool, fullName, idSchema, str } from "./shared.js";
 import { defineTool } from "./types.js";
 
-/** Terms buckets are capped; beyond this many distinct customers the ranking is a sample. */
+/** Terms buckets are capped; beyond this many distinct customers the ranking is approximate. */
 const CUSTOMER_BUCKETS = 1000;
 
 export interface CustomerReportInput {
@@ -73,6 +73,7 @@ async function periodFigures(client: ShopwareClient, period: Period, input: Cust
           type: "terms",
           field: "orderCustomer.customerId",
           limit: CUSTOMER_BUCKETS,
+          sort: { field: "_count", order: "DESC" },
           aggregation: { name: "revenue", type: "sum", field: "amountTotal" },
         },
       ],
@@ -177,7 +178,11 @@ export async function buildCustomerReport(client: ShopwareClient, input: Custome
       guestOrders: current.guestOrders,
       guestOrderShare: percent(current.guestOrders, current.orders.total),
       ...(current.perCustomer.length >= CUSTOMER_BUCKETS
-        ? { note: `repeat and top customers are based on the first ${CUSTOMER_BUCKETS} customers` }
+        ? {
+            note:
+              `More than ${CUSTOMER_BUCKETS} customers ordered; repeat, repeatShare and ` +
+              `topCustomers are based on the ${CUSTOMER_BUCKETS} with the most orders`,
+          }
         : {}),
     },
     orders: current.orders,

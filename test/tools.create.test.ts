@@ -1,3 +1,4 @@
+import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { buildCustomerReport, customerReport } from "../src/tools/customer-report.js";
 import { customerUpdate } from "../src/tools/customers.js";
@@ -10,6 +11,8 @@ import {
   invoke,
   lastSearch,
   mock,
+  requests,
+  SHOP_URL,
   searchHandler,
   searchRequests,
   wouldSendOf,
@@ -177,6 +180,29 @@ describe("promotion_create", () => {
     expect(applied).toMatchObject({ dryRun: false, result: { id: expect.any(String) } });
   });
 
+  it("rejects a percentage above 100 and an inverted validity window", async () => {
+    await expect(
+      invoke(
+        promotionCreate,
+        { name: "x", discount: { type: "percentage", value: 250 }, salesChannelIds: [CHANNEL] },
+        ctx,
+      ),
+    ).rejects.toThrow(/cannot exceed 100/);
+    await expect(
+      invoke(
+        promotionCreate,
+        {
+          name: "x",
+          discount: { type: "absolute", value: 5 },
+          salesChannelIds: [CHANNEL],
+          validFrom: "2026-11-01",
+          validUntil: "2026-10-01",
+        },
+        ctx,
+      ),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
   it("rejects codes with spaces or symbols", async () => {
     await expect(
       invoke(
@@ -195,6 +221,7 @@ describe("promotion_create", () => {
 
 describe("product_create", () => {
   it("derives the net price from the tax rate and explains the tax choice", async () => {
+    mock.use(searchHandler({ tax: () => ({ total: 1, data: [fixture<Rows>("taxes").data[0]] }) }));
     const dry = await invoke(
       productCreate,
       {
@@ -235,6 +262,9 @@ describe("product_create", () => {
       ctx,
     );
     // No taxId/taxRate: the default-tax setting is consulted, then the highest rate wins.
+    expect(requests.some((r) => r.path === "/api/_action/system-config?domain=core.tax")).toBe(
+      true,
+    );
     expect(lastSearch("tax").body).toMatchObject({ sort: [{ field: "taxRate", order: "DESC" }] });
     const sent = writeRequests();
     expect(sent).toHaveLength(1);
@@ -243,6 +273,46 @@ describe("product_create", () => {
     expect(sentBody).toMatchObject({ stock: 5, price: [{ gross: 10, net: 8.4 }] });
     expect(sentBody).not.toHaveProperty("visibilities");
     expect(applied).toMatchObject({ dryRun: false, result: { productNumber: expect.any(String) } });
+  });
+
+  it("uses the configured default tax and accepts an explicit taxId", async () => {
+    const taxes = fixture<Rows>("taxes").data as Array<{ id: string; taxRate: number }>;
+    const reduced = taxes.find((tax) => tax.taxRate === 7);
+    if (!reduced) throw new Error("fixture has no 7 % tax");
+    mock.use(
+      http.get(`${SHOP_URL}/api/_action/system-config`, () =>
+        HttpResponse.json({ "core.tax.defaultTaxRate": reduced.id }),
+      ),
+      http.post(`${SHOP_URL}/api/search/tax`, async ({ request }) => {
+        const body = (await request.json()) as { filter?: Array<{ field: string; value: string }> };
+        const wanted = body.filter?.find((f) => f.field === "id")?.value;
+        return HttpResponse.json({ total: 1, data: taxes.filter((tax) => tax.id === wanted) });
+      }),
+    );
+    const byDefault = await invoke(
+      productCreate,
+      { name: "Mug", productNumber: "SW10902", priceGross: 10.7 },
+      ctx,
+    );
+    expect(byDefault).toMatchObject({ dryRun: true, tax: { id: reduced.id, rate: 7 } });
+    expect(wouldSendOf(byDefault).body).toMatchObject({ taxId: reduced.id, price: [{ net: 10 }] });
+
+    const standard = taxes.find((tax) => tax.taxRate === 19);
+    if (!standard) throw new Error("fixture has no 19 % tax");
+    const byId = await invoke(
+      productCreate,
+      { name: "Mug", productNumber: "SW10902", priceGross: 11.9, taxId: standard.id },
+      ctx,
+    );
+    expect(byId).toMatchObject({ dryRun: true, tax: { id: standard.id, rate: 19 } });
+    expect(wouldSendOf(byId).body).toMatchObject({ price: [{ gross: 11.9, net: 10 }] });
+  });
+
+  it("refuses an ambiguous tax rate", async () => {
+    // The default fixture answers every tax search with all three rates.
+    await expect(
+      invoke(productCreate, { name: "x", productNumber: "y", priceGross: 1, taxRate: 19 }, ctx),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", detail: expect.stringContaining("Several") });
   });
 
   it("refuses both taxId and taxRate", async () => {
@@ -297,6 +367,18 @@ describe("stock_set delta", () => {
       wouldSend: { body: { stock: product.stock - 2 } },
     });
     expect(writeRequests()).toHaveLength(0);
+  });
+
+  it("writes the computed stock and reads the product back", async () => {
+    const applied = await invoke(stockSet, { productId: product.id, delta: 5, dryRun: false }, ctx);
+    expect(writeRequests()).toEqual([
+      expect.objectContaining({
+        method: "PATCH",
+        path: `/api/product/${product.id}`,
+        body: { stock: product.stock + 5 },
+      }),
+    ]);
+    expect(applied).toMatchObject({ dryRun: false, result: { id: product.id } });
   });
 
   it("refuses to go below zero and needs exactly one of stock or delta", async () => {

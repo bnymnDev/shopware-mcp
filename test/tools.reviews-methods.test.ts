@@ -128,7 +128,7 @@ describe("order_history", () => {
     expect(historyBody.filter).toEqual([
       { type: "equalsAny", field: "referencedId", value: expectedIds },
     ]);
-    expect(historyBody.sort).toEqual([{ field: "createdAt", order: "ASC" }]);
+    expect(historyBody.sort).toEqual([{ field: "createdAt", order: "DESC" }]);
     expect(result).toMatchObject({ orderId: order.id, orderNumber: "10042", total: 4 });
     expect(
       result.entries.map((entry) => `${entry.entity}:${entry.action}:${entry.from}>${entry.to}`),
