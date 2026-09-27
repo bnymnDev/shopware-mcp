@@ -149,7 +149,7 @@ describe("order_documents_bulk_create", () => {
     mock.use(searchHandler({ order: () => ({ total: 0, data: [] }) }));
     await expect(invoke(orderDocumentsBulkCreate, { type: "invoice" }, ctx)).rejects.toMatchObject({
       status: 400,
-      message: expect.stringContaining("No orders"),
+      detail: "Nothing to do: every paid, not cancelled order already has an invoice",
     });
   });
 

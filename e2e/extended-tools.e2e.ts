@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import { DEFAULT_LANGUAGE_ID, STOREFRONT_TYPE_ID } from "../src/client/constants.js";
 import type { Raw } from "../src/client/index.js";
+import { ShopwareMcpError } from "../src/errors.js";
 import { detectExtensionTools } from "../src/extensions/index.js";
 import { shopAudit } from "../src/tools/audit.js";
 import { customerReport } from "../src/tools/customer-report.js";
@@ -381,10 +382,16 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
   });
 
   it("order_documents_bulk_create invoices two paid orders and the invoices are removed again", async () => {
-    const dry = await orderDocumentsBulkCreate.handler(
-      { type: "invoice", maxOrders: 2, dryRun: true },
-      ctx,
-    );
+    const dry = await orderDocumentsBulkCreate
+      .handler({ type: "invoice", maxOrders: 2, dryRun: true }, ctx)
+      .catch((error: unknown) => {
+        // A fresh shop has no paid order without an invoice; there is nothing to create.
+        if (error instanceof ShopwareMcpError && error.detail.startsWith("Nothing to do")) {
+          return null;
+        }
+        throw error;
+      });
+    if (dry === null) return;
     if (dry.dryRun !== true) throw new Error("expected a dry run");
     expect(dry.matching).toBeGreaterThanOrEqual(dry.orders.length);
     if (dry.orders.length === 0) return;

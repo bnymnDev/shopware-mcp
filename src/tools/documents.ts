@@ -349,7 +349,15 @@ export const orderDocumentsBulkCreate = defineTool({
     const orders = found.items
       .map(mapOrderSummary)
       .filter((order): order is OrderSummary & { id: string } => order.id !== null);
-    if (orders.length === 0) throw badRequest(`No orders to create a ${input.type} for`);
+    if (orders.length === 0) {
+      const label = input.type.replace(/_/g, " ");
+      const article = /^[aeiou]/.test(label) ? "an" : "a";
+      throw badRequest(
+        input.orderIds
+          ? "None of the given orders exist"
+          : `Nothing to do: every paid, not cancelled order already has ${article} ${label}`,
+      );
+    }
     const missing = (input.orderIds ?? []).filter((id) => !orders.some((order) => order.id === id));
     const path = `/api/_action/order/document/${input.type}/create`;
     const body = orders.map((order) => ({
