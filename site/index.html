@@ -90,6 +90,11 @@
 
   /* grid */
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 24px; }
+  .grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .grid.two pre { margin: 8px 0 0; }
+  .shot { display: block; margin-top: 20px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot:hover { border-color: var(--muted); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; transition: border-color 150ms ease; }
   .card:hover { border-color: var(--muted); }
   .card svg { width: 22px; height: 22px; color: var(--blue); margin-bottom: 10px; }
@@ -142,6 +147,7 @@
     </a>
     <div class="links">
       <a href="#video">Video</a>
+      <a href="#brief">Brief</a>
       <a href="#recordings">Recordings</a>
       <a href="#box" class="optional">Tools</a>
       <a href="#safety" class="optional">Safety</a>
@@ -157,10 +163,10 @@
     <div class="wrap">
       <div class="kicker">MCP server for the Shopware 6 Admin API</div>
       <h1>Talk to your <em>Shopware</em> shop. Read-only until you say otherwise.</h1>
-      <p class="lead">One small server that speaks MCP to Claude, Cursor, VS Code or any other host, and the Admin API to your shop. Stuck orders, last month's numbers, low stock, a launch code, a shipped parcel: one sentence each, with Shopware doing the counting.</p>
+      <p class="lead">One small server that speaks MCP to Claude, Cursor, VS Code or any other host, and the Admin API to your shop. Stuck orders, last month's numbers, low stock, a launch code, a shipped parcel: one sentence each, with Shopware doing the counting. It also notices when orders stop coming, and tries the checkout the way a customer would to find out why.</p>
       <div class="install">
-        <pre><code><span class="dollar">$</span> npx shopware-mcp init</code></pre>
-        <button type="button" data-copy="npx shopware-mcp init" aria-label="Copy install command">copy</button>
+        <pre><code><span class="dollar">$</span> npx shopware-mcp setup</code></pre>
+        <button type="button" data-copy="npx shopware-mcp setup" aria-label="Copy install command">copy</button>
       </div>
       <div class="cta">
         <a class="btn primary" href="#install">
@@ -173,7 +179,7 @@
         </a>
       </div>
       <div class="facts">
-        <span>41 tools, 26 of them read-only</span>
+        <span>44 tools, 29 of them read-only</span>
         <span>Every write a dry run first</span>
         <span>Shopware 6.6 and 6.7</span>
         <span>No telemetry</span>
@@ -196,13 +202,42 @@
     </div>
   </section>
 
+  <section id="brief">
+    <div class="wrap">
+      <div class="kicker">Every morning, one page</div>
+      <h2>The shop right now, the audit, the last seven days.</h2>
+      <p class="muted"><code>shopware-mcp brief --html brief.html</code> writes a self-contained page: today against the same hours of recent weeks, how unusual the current quiet spell is, the audit's findings with samples and hints, and the week's revenue. It loads nothing from anywhere, reads fine in a mail client and follows the reader's dark mode. <a href="brief/">Open a real one</a>, generated from the test shop.</p>
+      <a class="shot" href="brief/"><img src="brief/brief.png" width="1590" height="1230" alt="Shop brief: an unusual silence banner, orders and revenue today against a typical Sunday, and two column charts comparing today with the last eight Sundays" loading="lazy"></a>
+      <div class="grid two">
+        <div class="card">
+          <h3>From cron, with a Slack line</h3>
+<pre><code>0 7 * * * npx shopware-mcp brief --tz Europe/Berlin \
+  --html /var/www/brief.html \
+  --slack https://hooks.slack.com/services/…</code></pre>
+        </div>
+        <div class="card">
+          <h3>In GitHub Actions</h3>
+<pre><code>- uses: bnymnDev/shopware-mcp@v0.8.0
+  with:
+    url: https://shop.example.com
+    client-id: ${{ secrets.SHOPWARE_CLIENT_ID }}
+    client-secret: ${{ secrets.SHOPWARE_CLIENT_SECRET }}
+    fail-on: critical</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section id="recordings">
     <div class="wrap">
       <div class="kicker">See it work</div>
       <h2>Real output, replayed.</h2>
       <p class="muted">Every recording is the server's own output against a Shopware 6.7 test shop with generated demo data. Tool calls and results are verbatim, shortened to fit the screen. The prose is what an MCP host says with them.</p>
       <div class="tabs" role="tablist" aria-label="Recordings">
-        <button type="button" role="tab" aria-selected="true" data-rec="audit" data-caption="One question, thirteen checks. Three paid orders wait for shipment, the storefront is in maintenance, a summer promotion outlived August. The answer names order numbers and amounts, and offers the safe next step.">shop_audit</button>
+        <button type="button" role="tab" aria-selected="true" data-rec="pulse" data-caption="Sunday evening, six hours without an order. The same hours of the last eight Sundays brought between three and seven each time; by chance this happens about once in 170. The agent tries to buy something the way a customer would, and finds the storefront in maintenance mode.">shop_pulse</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="storefront" data-caption="The checkout as a Swiss customer sees it: a throwaway cart through Shopware's own Store API explains a country the channel does not ship to, an expired code and a suspicious tier price. Then the search explains why a product never shows up. Nothing is ordered.">as a customer</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="setup" data-caption="One admin login, used once and never stored: setup creates a role with exactly the privileges the tools need, measured against a real shop, and an integration that is not an administrator, verifies it and prints the host config.">setup</button>
+        <button type="button" role="tab" aria-selected="false" data-rec="audit" data-caption="One question, one call. Three paid orders wait for shipment, the storefront is in maintenance, a summer promotion outlived August. The answer names order numbers and amounts, and offers the safe next step.">shop_audit</button>
         <button type="button" role="tab" aria-selected="false" data-rec="report" data-caption="Numbers the shop computed itself: totals, channels, states, a monthly timeline and the top product for eight months, from one call. No order was paged through.">sales_report</button>
         <button type="button" role="tab" aria-selected="false" data-rec="support" data-caption="Ship it, then prove it. A delivery transition is two requests, shown before they are sent. The order's history afterwards names the transition, the states and who made it.">ship + history</button>
         <button type="button" role="tab" aria-selected="false" data-rec="launch" data-caption="A product and its launch code from one sentence. product_create picks the shop's default tax and derives the net price, and says so in the dry run. The promotion arrives inactive.">product + promotion</button>
@@ -216,9 +251,9 @@
         <button type="button" role="tab" aria-selected="false" data-rec="doctor" data-caption="Know before the agent finds out. shopware-mcp doctor probes what the integration may read, reads its role for the write privileges, and names the missing one per tool.">doctor</button>
       </div>
       <div class="recording" role="tabpanel">
-        <img id="rec" src="demo/audit.svg" width="940" height="600" alt="Animated terminal recording of shopware-mcp answering a question">
+        <img id="rec" src="demo/pulse.svg" width="940" height="600" alt="Animated terminal recording of shopware-mcp answering a question">
       </div>
-      <p class="caption" id="rec-caption">One question, thirteen checks. Three paid orders wait for shipment, the storefront is in maintenance, a summer promotion outlived August. The answer names order numbers and amounts, and offers the safe next step.</p>
+      <p class="caption" id="rec-caption">Sunday evening, six hours without an order. The same hours of the last eight Sundays brought between three and seven each time; by chance this happens about once in 170. The agent tries to buy something the way a customer would, and finds the storefront in maintenance mode.</p>
     </div>
   </section>
 
@@ -234,9 +269,14 @@
           <p>Products, orders and their history, documents, customers, categories, promotions, reviews, payment and shipping methods, plugins, stock, sales channels, scheduled tasks, trading settings. <code>{ term, filter, sort, page, limit }</code> in, <code>{ total, items }</code> out.</p>
         </div>
         <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z"/><path d="M6 6 5 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>
+          <h3>The customer's view</h3>
+          <p><code>checkout_simulate</code> fills a throwaway cart through Shopware's own Store API, as a guest or as a given customer, and explains every cart error: country not shipped to, code expired, method hidden by a rule. <code>storefront_search</code> says why a product does not show up. Nothing is ordered.</p>
+        </div>
+        <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          <h3>A health audit</h3>
-          <p><code>shop_audit</code> runs sixteen checks in one call, from paid-but-unshipped orders and missing invoices to products running out, storefronts missing a legal page and a scheduler that stopped. The same audit runs as <code>shopware-mcp audit</code> from cron or CI.</p>
+          <h3>A pulse and an audit</h3>
+          <p><code>shop_pulse</code> weighs today against the same hours of recent weeks and says how unusual a quiet spell is. <code>shop_audit</code> runs seventeen checks in one call, from paid-but-unshipped orders and missing invoices to a checkout that went silent.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
@@ -260,8 +300,8 @@
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 9 18l-5-5"/></svg>
-          <h3>Doctor and init</h3>
-          <p><code>shopware-mcp doctor</code> says per tool whether this integration can use it and which privilege is missing. <code>init</code> writes the host config for eight hosts. <code>audit</code> and <code>report</code> print Markdown with exit codes for cron and CI.</p>
+          <h3>Setup, doctor, brief</h3>
+          <p><code>setup</code> creates an integration with exactly the privileges the tools need. <code>doctor</code> says per tool what this integration can use. <code>brief</code>, <code>audit</code> and <code>report</code> print Markdown or a self-contained HTML page, with exit codes and a Slack line for cron and CI.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
@@ -280,6 +320,10 @@
         <table>
           <thead><tr><th>You say</th><th>The agent calls</th></tr></thead>
           <tbody>
+            <tr><td>"Is today normal?"</td><td><code>shop_pulse</code></td></tr>
+            <tr><td>"Why can't customer 10009 check out?"</td><td><code>checkout_simulate { customerNumber: "10009", items }</code></td></tr>
+            <tr><td>"Why does the code SUMMER26 not work?"</td><td><code>checkout_simulate { promotionCodes: ["SUMMER26"], items }</code></td></tr>
+            <tr><td>"Why can nobody find the steel shirt?"</td><td><code>storefront_search { term: "steel shirt", explain: "SW10002" }</code></td></tr>
             <tr><td>"Is everything okay with the shop?"</td><td><code>shop_audit</code></td></tr>
             <tr><td>"How did we do in August?"</td><td><code>sales_report { from, to, interval: "week" }</code></td></tr>
             <tr><td>"Who were our best customers this quarter?"</td><td><code>customer_report { from, to, topCustomers: 20 }</code></td></tr>
@@ -296,8 +340,9 @@
             <tr><td>"Orders per payment method last month, with revenue?"</td><td><code>entity_search</code> with a <code>terms</code> aggregation and a nested <code>sum</code></td></tr>
             <tr><td>"Create a 10 % code AUTUMN10 for October."</td><td><code>promotion_create</code>, inactive until you say otherwise</td></tr>
             <tr><td>"Which manufacturers have no logo?"</td><td><code>entity_schema</code>, then <code>entity_search</code> on <code>product_manufacturer</code></td></tr>
-            <tr><td>"Which of my tools will fail with this integration?"</td><td>not a tool: <code>npx shopware-mcp doctor</code></td></tr>
-            <tr><td>"Mail me the audit every Monday."</td><td>not a tool either: <code>shopware-mcp audit --fail-on warning</code> in cron</td></tr>
+            <tr><td>"Set it up with the least rights it needs."</td><td>not a tool: <code>npx shopware-mcp setup</code></td></tr>
+            <tr><td>"Which of my tools will fail with this integration?"</td><td>not a tool either: <code>npx shopware-mcp doctor</code></td></tr>
+            <tr><td>"Send me one page every morning."</td><td><code>shopware-mcp brief --html brief.html --slack …</code> in cron</td></tr>
           </tbody>
         </table>
       </div>
@@ -313,6 +358,8 @@
           <li><strong>Read-only by default.</strong> Without <code>--allow-write</code> the write tools are not registered. An agent cannot discover what it cannot call.</li>
           <li><strong>Every write is a dry run first.</strong> The tools return the exact request they would send. Only an explicit <code>dryRun: false</code> touches the shop, and the result is re-read from Shopware.</li>
           <li><strong>A write budget.</strong> <code>SHOPWARE_MCP_MAX_WRITES=20</code> refuses the twenty-first real write of a process. No prompt can lift it.</li>
+          <li><strong>A simulated cart is not an order.</strong> <code>checkout_simulate</code> goes through Shopware's own admin proxy to the Store API, never calls the order route and deletes the cart afterwards.</li>
+          <li><strong>Least privilege in one command.</strong> <code>setup</code> grants each tool exactly what it was measured to need. Plugin installation rights are never included unless you ask.</li>
           <li><strong>Narrow writes, nothing deletes.</strong> The transition tools only move state machines; nothing moves money. Promotions are created inactive. There is no delete tool.</li>
           <li><strong>No secrets anywhere.</strong> Credentials never appear in output, logs or errors. <code>entity_search</code> scrubs passwords, keys and tokens and refuses entities that hold credentials.</li>
           <li><strong>No telemetry.</strong> The server talks to your shop and to your host. Nothing else.</li>
@@ -326,8 +373,8 @@
       <div class="kicker">60 seconds</div>
       <h2>Three steps, one of them optional.</h2>
       <div class="steps">
-        <div class="step"><strong>Create an Integration</strong> in your Shopware admin under Settings → System → Integrations. Copy the access key and the secret; for production give it a read role.</div>
-        <div class="step"><strong>Run the wizard.</strong> <code>npx shopware-mcp init</code> asks for URL, key and secret, tests them against the shop and prints or writes the host configuration.</div>
+        <div class="step"><strong>Run setup.</strong> <code>npx shopware-mcp setup</code> logs in as an admin once, creates a read-only role with exactly the privileges the tools need and an integration using it, and verifies both. The password is never stored.</div>
+        <div class="step"><strong>Hand it to your host.</strong> Setup prints the host configuration, or writes it with <code>--for &lt;host&gt; --write</code>. Already have an integration? <code>npx shopware-mcp init</code> takes its key and secret.</div>
         <div class="step"><strong>Ask a question.</strong> Or run <code>npx shopware-mcp doctor</code> first to see which tools this integration can use and what is missing.</div>
       </div>
       <div class="hosts">

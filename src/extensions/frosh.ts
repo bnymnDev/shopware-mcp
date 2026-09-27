@@ -147,8 +147,12 @@ export const froshPack: ExtensionPack = {
   label: "FroshTools",
   url: "https://github.com/FriendsOfShopware/FroshTools",
   tools: [
-    { requires: ["FroshTools"], tool: froshHealth },
-    { requires: ["FroshTools"], tool: froshQueue },
-    { requires: ["FroshTools"], tool: froshComposerAudit },
+    { requires: ["FroshTools"], tool: froshHealth, privileges: ["frosh_tools:read"] },
+    { requires: ["FroshTools"], tool: froshQueue, privileges: ["frosh_tools_queue:read"] },
+    {
+      requires: ["FroshTools"],
+      tool: froshComposerAudit,
+      privileges: ["frosh_tools_security:read"],
+    },
   ],
 };

@@ -9,6 +9,8 @@ export interface ExtensionTool {
   /** Technical plugin names that must all be installed and active. */
   requires: string[];
   tool: ToolDefinition;
+  /** ACL privileges the plugin's routes demand; `shopware-mcp setup` grants them when installed. */
+  privileges?: string[];
 }
 
 /** One vendor's set of plugin-aware tools. */

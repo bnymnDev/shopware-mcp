@@ -24,12 +24,14 @@ import {
 import { pluginsList } from "./plugins.js";
 import { productCreate, productsGet, productsSearch, productUpdate } from "./products.js";
 import { promotionCreate, promotionsList, promotionToggle } from "./promotions.js";
+import { shopPulse } from "./pulse.js";
 import { salesReport } from "./reports.js";
 import { reviewModerate, reviewsSearch } from "./reviews.js";
 import { salesChannelsList } from "./sales-channels.js";
 import { shopSettings } from "./settings.js";
 import { shopInfo } from "./shop.js";
 import { stockGet, stockSet } from "./stock.js";
+import { checkoutSimulate, storefrontSearch } from "./storefront.js";
 import { tagAssign } from "./tags.js";
 import { scheduledTasksList } from "./tasks.js";
 import type { ToolDefinition } from "./types.js";
@@ -57,8 +59,11 @@ export const tools: ToolDefinition[] = [
   scheduledTasksList,
   stockGet,
   stockForecast,
+  storefrontSearch,
+  checkoutSimulate,
   salesReport,
   customerReport,
+  shopPulse,
   shopAudit,
   entitySchema,
   entitySearch,

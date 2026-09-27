@@ -27,8 +27,11 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`scheduled_tasks_list`](#scheduled_tasks_list) | read | Scheduled tasks |
 | [`stock_get`](#stock_get) | read | Get stock |
 | [`stock_forecast`](#stock_forecast) | read | Stock forecast |
+| [`storefront_search`](#storefront_search) | read | Search like a customer |
+| [`checkout_simulate`](#checkout_simulate) | read | Simulate a checkout |
 | [`sales_report`](#sales_report) | read | Sales report |
 | [`customer_report`](#customer_report) | read | Customer report |
+| [`shop_pulse`](#shop_pulse) | read | Shop pulse |
 | [`shop_audit`](#shop_audit) | read | Shop health audit |
 | [`entity_schema`](#entity_schema) | read | Entity schema |
 | [`entity_search`](#entity_search) | read | Search any entity |
@@ -404,6 +407,43 @@ Which products run out soon, from real sales: units sold per product in the last
 | `salesChannelId` | `string` | no | Count sales of one sales channel only |
 | `limit` | `integer` | no | default `20`, min 1, max 50 |
 
+## storefront_search
+
+_Search like a customer_
+
+**Read tool** — always registered.
+
+Run a search in a sales channel exactly as a customer would, through Shopware's Store API: same visibility, stock and closeout rules, same ranking and prices. Optionally explain one product: its position in the results, or why it does not show up (inactive, not visible in the channel, link-only visibility, closeout without stock, not in the search index, no search keyword matching the term). Read-only. Returns { salesChannel, term, total, items[], explain? }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `term` | `string` | yes | What the customer types |
+| `salesChannel` | `string` | no | Sales channel id or name; default: the first active storefront |
+| `limit` | `integer` | no | Results to return. default `10`, min 1, max 24 |
+| `explain` | `string` | no | Product number to explain: where it ranks, or why it is missing |
+
+## checkout_simulate
+
+_Simulate a checkout_
+
+**Read tool** — always registered.
+
+See the checkout the way a customer does: puts products (and promotion codes) into a throwaway cart of a sales channel through Shopware's own Store API, as a guest shipping to a country or as a given customer with their group, prices and rules, and returns what Shopware calculates: prices per item next to the listing price, discounts, shipping, taxes, total, which payment and shipping methods the customer is offered, which are hidden and by which rule, and every cart error with a plain explanation (country not assigned, code expired, product not visible, stock). Nothing is ordered and the cart is deleted afterwards. Use it for 'why can't this customer order?', 'why does this code not work?' or 'what does shipping to Switzerland cost?'. Returns { salesChannel, as, canOrder, items[], promotions[], shipping, totals, problems[], paymentMethods, shippingMethods }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `items` | `{ productNumber?: string, productId?: string, quantity?: integer }[]` | yes | Products and quantities for the cart |
+| `promotionCodes` | `string[]` | no | Promotion codes to redeem |
+| `salesChannel` | `string` | no | Sales channel id or name; default: the first active storefront |
+| `country` | `string` | no | Shipping country of a guest, as ISO code |
+| `customerNumber` | `string` | no | Simulate as this customer: group, prices, rules and default addresses |
+| `paymentMethod` | `string` | no | Payment method name to select |
+| `shippingMethod` | `string` | no | Shipping method name to select |
+
 ## sales_report
 
 _Sales report_
@@ -442,6 +482,22 @@ Customer figures for a period straight from Shopware: new accounts (registered v
 | `excludeCancelled` | `boolean` | no | default `true` |
 | `topCustomers` | `integer` | no | default `10`, min 1, max 50 |
 | `compareWithPrevious` | `boolean` | no | Also report the preceding period of equal length and the change. default `false` |
+
+## shop_pulse
+
+_Shop pulse_
+
+**Read tool** — always registered.
+
+How is the shop doing right now? Orders and revenue since local midnight next to the same hours of the same weekday in previous weeks, the last order, and how unusual the current quiet spell is: the orders the same stretch brought in earlier weeks and the chance of seeing none by accident (a Poisson estimate). 'unusual' means the checkout, payment or storefront may be broken; follow up with checkout_simulate. Also compares today's failed or cancelled payments with their usual share. Read-only. Returns { today, typical, change, lastOrder, silence, payments, history[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `weeks` | `integer` | no | How many previous weeks make up 'typical'. default `8`, min 2, max 12 |
+| `timeZone` | `string` | no | IANA time zone of the shop, e.g. Europe/Berlin; default: the server's |
+| `salesChannelId` | `string` | no | Only this sales channel |
 
 ## shop_audit
 

@@ -1,0 +1,23 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "translated": {
+        "name": "Switzerland",
+        "customFields": {},
+        "addressFormat": [
+          ["address/company", "symbol/dash", "address/department"],
+          ["address/first_name", "address/last_name"],
+          ["address/street"],
+          ["address/zipcode", "address/city"],
+          ["address/country"]
+        ]
+      },
+      "name": "Switzerland",
+      "iso": "CH",
+      "id": "01a068fb69b47090835fd7e37e873421",
+      "apiAlias": "country"
+    }
+  ],
+  "aggregations": []
+}

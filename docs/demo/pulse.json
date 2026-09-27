@@ -1,0 +1,119 @@
+{
+  "title": "shopware-mcp · shop_pulse, then checkout_simulate: the silence and its cause",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp"
+    },
+    {
+      "kind": "prompt",
+      "text": "Sunday evening. Is the shop running normally?"
+    },
+    {
+      "kind": "call",
+      "tool": "shop_pulse",
+      "args": "{ timeZone: \"Europe/Berlin\" }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"now\": \"2026-09-27T18:25:51.100Z\", \"timeZone\": \"Europe/Berlin\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"today\": { \"since\": \"2026-09-26T22:00:00.000Z\", \"orders\": 6, \"revenue\": 142679.2 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"typical\": { \"weeks\": 8, \"orders\": 9.6, \"revenue\": 300798.16,"
+    },
+    {
+      "kind": "result",
+      "text": "               \"ordersRange\": { \"min\": 8, \"max\": 12 } },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"change\": { \"orders\": -37.7, \"revenue\": -52.6 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"lastOrder\": { \"orderNumber\": \"10759\", \"at\": \"2026-09-27T12:01:51.000+00:00\", \"minutesAgo\": 384 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"silence\": { \"minutes\": 384, \"expectedOrders\": 5.1,"
+    },
+    {
+      "kind": "result",
+      "text": "               \"sameGapInPreviousWeeks\": [7, 5, 4, 5, 3, 6, 5, 6],"
+    },
+    {
+      "kind": "result",
+      "text": "               \"chance\": 0.0059, \"verdict\": \"unusual\" },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"payments\": { \"today\": { \"failedOrCancelled\": 0, \"total\": 6 }, \"typicalFailedShare\": 0.06,"
+    },
+    {
+      "kind": "result",
+      "text": "                \"verdict\": \"normal\" }, \"history\": [ … ] }"
+    },
+    {
+      "kind": "agent",
+      "text": "No. The last order, #10759, came at 14:01, more than six hours ago. The same hours of the"
+    },
+    {
+      "kind": "agent",
+      "text": "last eight Sundays brought between 3 and 7 orders every time, 5.1 on average. A gap like this"
+    },
+    {
+      "kind": "agent",
+      "text": "happens by chance about once in 170. Payments look normal, so let me try to buy something."
+    },
+    {
+      "kind": "call",
+      "tool": "checkout_simulate",
+      "args": "{ items: [{ productNumber: \"SW10005\" }] }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"salesChannel\": { \"id\": \"01a068fb91ad7260939028219e459a91\", \"name\": \"Storefront\" },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"as\": null, \"canOrder\": false, \"items\": [], \"totals\": null,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"problems\": [ { \"key\": \"maintenance\", \"level\": \"error\", \"blocksOrder\": true,"
+    },
+    {
+      "kind": "result",
+      "text": "    \"message\": \"The sales channel is in maintenance mode.\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"explanation\": \"Customers see the maintenance page and cannot order at all. Switch maintenance"
+    },
+    {
+      "kind": "result",
+      "text": "                    off in the sales channel, or allowlist an IP for testing.\" } ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"paymentMethods\": null, \"shippingMethods\": null, \"cartDeleted\": false }"
+    },
+    {
+      "kind": "agent",
+      "text": "Found it. The Storefront is in maintenance mode: every customer gets the maintenance page, so"
+    },
+    {
+      "kind": "agent",
+      "text": "nobody can order. Switch maintenance off in the sales channel and orders should resume."
+    },
+    {
+      "kind": "agent",
+      "text": "I did not place an order to find this out; nothing in the shop was changed."
+    }
+  ]
+}

@@ -168,12 +168,24 @@
       "description": "Stock forecast"
     },
     {
+      "name": "storefront_search",
+      "description": "Search like a customer"
+    },
+    {
+      "name": "checkout_simulate",
+      "description": "Simulate a checkout"
+    },
+    {
       "name": "sales_report",
       "description": "Sales report"
     },
     {
       "name": "customer_report",
       "description": "Customer report"
+    },
+    {
+      "name": "shop_pulse",
+      "description": "Shop pulse"
     },
     {
       "name": "shop_audit",

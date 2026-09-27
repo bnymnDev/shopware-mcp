@@ -1,0 +1,234 @@
+{
+  "price": {
+    "rawTotal": 6997.61,
+    "netPrice": 6904.08,
+    "totalPrice": 6997.61,
+    "positionPrice": 6997.61,
+    "calculatedTaxes": [
+      {
+        "tax": 93.53,
+        "taxRate": 7,
+        "price": 1429.7,
+        "label": null,
+        "apiAlias": "cart_tax_calculated"
+      },
+      {
+        "tax": 0,
+        "taxRate": 0,
+        "price": 5567.91,
+        "label": null,
+        "apiAlias": "cart_tax_calculated"
+      }
+    ],
+    "taxRules": [
+      {
+        "taxRate": 7,
+        "percentage": 100,
+        "apiAlias": "cart_tax_rule"
+      },
+      {
+        "taxRate": 0,
+        "percentage": 100,
+        "apiAlias": "cart_tax_rule"
+      }
+    ],
+    "taxStatus": "gross",
+    "apiAlias": "cart_price"
+  },
+  "errors": {
+    "shipping-address-blocked-United States of America": {
+      "message": "Shippings to shipping address United States of America are not possible.",
+      "code": 0,
+      "translatedMessage": "Shipping to the selected shipping address is currently not possible.",
+      "name": "United States of America",
+      "addressId": "01a0690928f1703ebf786c33c4539863",
+      "key": "shipping-address-blocked-United States of America",
+      "level": 20,
+      "messageKey": "shipping-address-blocked",
+      "parameters": {
+        "name": "United States of America"
+      },
+      "block": true,
+      "blockResubmit": true
+    }
+  },
+  "token": "aaa5e24561ba5010071b474a0b8a7a28",
+  "apiAlias": "cart",
+  "lineItems": [
+    {
+      "id": "01a069093244728b952dad42d3e77e00",
+      "type": "product",
+      "referencedId": "01a069093244728b952dad42d3e77e00",
+      "label": "Awesome Steel Quick Turtle",
+      "quantity": 1,
+      "price": {
+        "unitPrice": 1429.7,
+        "totalPrice": 1429.7,
+        "calculatedTaxes": [
+          {
+            "tax": 93.53,
+            "taxRate": 7,
+            "price": 1429.7,
+            "label": null,
+            "apiAlias": "cart_tax_calculated"
+          }
+        ],
+        "taxRules": [
+          {
+            "taxRate": 7,
+            "percentage": 100,
+            "apiAlias": "cart_tax_rule"
+          }
+        ],
+        "quantity": 1,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      },
+      "good": true,
+      "apiAlias": "cart_line_item",
+      "payload": {
+        "productNumber": "SW10005"
+      }
+    },
+    {
+      "id": "01a0690932457189b6677d61557ad0f1",
+      "type": "product",
+      "referencedId": "01a0690932457189b6677d61557ad0f1",
+      "label": "Practical Steel Beadniks",
+      "quantity": 3,
+      "price": {
+        "unitPrice": 1855.97,
+        "totalPrice": 5567.91,
+        "calculatedTaxes": [
+          {
+            "tax": 0,
+            "taxRate": 0,
+            "price": 5567.91,
+            "label": null,
+            "apiAlias": "cart_tax_calculated"
+          }
+        ],
+        "taxRules": [
+          {
+            "taxRate": 0,
+            "percentage": 100,
+            "apiAlias": "cart_tax_rule"
+          }
+        ],
+        "quantity": 3,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      },
+      "good": true,
+      "apiAlias": "cart_line_item",
+      "payload": {
+        "productNumber": "SW10006"
+      }
+    }
+  ],
+  "deliveries": [
+    {
+      "shippingCosts": {
+        "unitPrice": 0,
+        "totalPrice": 0,
+        "calculatedTaxes": [
+          {
+            "tax": 0,
+            "taxRate": 7,
+            "price": 0,
+            "label": null,
+            "apiAlias": "cart_tax_calculated"
+          },
+          {
+            "tax": 0,
+            "taxRate": 0,
+            "price": 0,
+            "label": null,
+            "apiAlias": "cart_tax_calculated"
+          }
+        ],
+        "taxRules": [
+          {
+            "taxRate": 7,
+            "percentage": 20.431261530723,
+            "apiAlias": "cart_tax_rule"
+          },
+          {
+            "taxRate": 0,
+            "percentage": 79.568738469277,
+            "apiAlias": "cart_tax_rule"
+          }
+        ],
+        "quantity": 1,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      },
+      "shippingMethod": {
+        "id": "01a068fb6a0a71edbceea82451782170",
+        "name": "Standard",
+        "translated": {
+          "name": "Standard",
+          "customFields": {},
+          "description": null,
+          "trackingUrl": null
+        },
+        "technicalName": "shipping_standard"
+      },
+      "location": {
+        "country": {
+          "id": "01a068fb69b672329026c8af00b6f7f3",
+          "iso": "US",
+          "name": "United States of America"
+        }
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "paymentMethodId": "01a068fb69fe71e6948ffd608d7cb535",
+      "amount": {
+        "unitPrice": 6997.61,
+        "totalPrice": 6997.61,
+        "calculatedTaxes": [
+          {
+            "tax": 93.53,
+            "taxRate": 7,
+            "price": 1429.7,
+            "label": null,
+            "apiAlias": "cart_tax_calculated"
+          },
+          {
+            "tax": 0,
+            "taxRate": 0,
+            "price": 5567.91,
+            "label": null,
+            "apiAlias": "cart_tax_calculated"
+          }
+        ],
+        "taxRules": [
+          {
+            "taxRate": 7,
+            "percentage": 100,
+            "apiAlias": "cart_tax_rule"
+          },
+          {
+            "taxRate": 0,
+            "percentage": 100,
+            "apiAlias": "cart_tax_rule"
+          }
+        ],
+        "quantity": 1,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      }
+    }
+  ]
+}

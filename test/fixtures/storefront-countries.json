@@ -1,0 +1,40 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "translated": {
+        "name": "Germany",
+        "customFields": {},
+        "addressFormat": [
+          ["address/company", "symbol/dash", "address/department"],
+          ["address/first_name", "address/last_name"],
+          ["address/street"],
+          ["address/zipcode", "address/city"],
+          ["address/country"]
+        ]
+      },
+      "name": "Germany",
+      "iso": "DE",
+      "id": "01a068fb68d772cc8d003ab9b3245364",
+      "apiAlias": "country"
+    },
+    {
+      "translated": {
+        "name": "United Kingdom",
+        "customFields": {},
+        "addressFormat": [
+          ["address/company", "symbol/dash", "address/department"],
+          ["address/first_name", "address/last_name"],
+          ["address/street"],
+          ["address/zipcode", "address/city"],
+          ["address/country"]
+        ]
+      },
+      "name": "United Kingdom",
+      "iso": "GB",
+      "id": "01a068fb68f273dba885a882c690178a",
+      "apiAlias": "country"
+    }
+  ],
+  "aggregations": []
+}

@@ -1,0 +1,90 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "translated": {
+        "metaDescription": null,
+        "name": "Awesome Steel Quick Turtle",
+        "keywords": null,
+        "description": "Qui neque veniam harum iste. Aut rerum sunt voluptas vel quo earum. Illum blanditiis ipsum soluta deserunt sapiente qui.",
+        "descriptionTeaser": "Qui neque veniam harum iste. Aut rerum sunt voluptas vel quo earum. Illum blanditiis ipsum soluta deserunt sapiente qui.",
+        "metaTitle": null,
+        "packUnit": null,
+        "packUnitPlural": null,
+        "customFields": {
+          "shopwareDemoData": true
+        },
+        "slotConfig": null,
+        "customSearchKeywords": null,
+        "ogTitle": null,
+        "ogDescription": null
+      },
+      "active": true,
+      "productNumber": "SW10005",
+      "availableStock": 19,
+      "isCloseout": false,
+      "purchaseSteps": 1,
+      "maxPurchase": null,
+      "minPurchase": 1,
+      "releaseDate": null,
+      "name": "Awesome Steel Quick Turtle",
+      "visibilities": [
+        {
+          "visibility": 30,
+          "salesChannelId": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "product_visibility"
+        },
+        {
+          "visibility": 30,
+          "salesChannelId": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "product_visibility"
+        }
+      ],
+      "id": "01a069093244728b952dad42d3e77e00",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "metaDescription": null,
+        "name": "Practical Steel Beadniks",
+        "keywords": null,
+        "description": "Exercitationem dicta ad optio eius ratione. Et tempora maiores officia repellendus impedit omnis.",
+        "descriptionTeaser": "Exercitationem dicta ad optio eius ratione. Et tempora maiores officia repellendus impedit omnis.",
+        "metaTitle": null,
+        "packUnit": null,
+        "packUnitPlural": null,
+        "customFields": {
+          "shopwareDemoData": true
+        },
+        "slotConfig": null,
+        "customSearchKeywords": null,
+        "ogTitle": null,
+        "ogDescription": null
+      },
+      "active": true,
+      "productNumber": "SW10006",
+      "availableStock": 44,
+      "isCloseout": false,
+      "purchaseSteps": 1,
+      "maxPurchase": null,
+      "minPurchase": 1,
+      "releaseDate": null,
+      "name": "Practical Steel Beadniks",
+      "visibilities": [
+        {
+          "visibility": 30,
+          "salesChannelId": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "product_visibility"
+        },
+        {
+          "visibility": 30,
+          "salesChannelId": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "product_visibility"
+        }
+      ],
+      "id": "01a0690932457189b6677d61557ad0f1",
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": []
+}

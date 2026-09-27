@@ -1,0 +1,77 @@
+{
+  "title": "shopware-mcp setup · a least-privilege integration in one command",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp setup --url http://127.0.0.1:8000 --user admin --for claude-code"
+    },
+    {
+      "kind": "result",
+      "text": "Password for admin: "
+    },
+    {
+      "kind": "result",
+      "text": "Shop         http://127.0.0.1:8000 (Shopware 6.7.13.1)"
+    },
+    {
+      "kind": "result",
+      "text": "Role         Created \"shopware-mcp (read-only)\" with 46 privileges"
+    },
+    {
+      "kind": "result",
+      "text": "Integration  Created \"shopware-mcp\", not an administrator"
+    },
+    {
+      "kind": "result",
+      "text": "Verified     29 of 29 read tools ready"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "The secret is shown once. Keep it in the host config, not in a repository."
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "Claude Code"
+    },
+    {
+      "kind": "result",
+      "text": ""
+    },
+    {
+      "kind": "result",
+      "text": "claude mcp add shopware \\"
+    },
+    {
+      "kind": "result",
+      "text": "  -e SHOPWARE_URL=http://127.0.0.1:8000 \\"
+    },
+    {
+      "kind": "result",
+      "text": "  -e SHOPWARE_CLIENT_ID=SWIAU2C3MHRR… \\"
+    },
+    {
+      "kind": "result",
+      "text": "  -e SHOPWARE_CLIENT_SECRET=NzlKSGJHM3lX… \\"
+    },
+    {
+      "kind": "result",
+      "text": "  -- npx -y shopware-mcp"
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "note",
+      "text": "one admin login, used once and never stored; the role holds exactly what the tools need"
+    }
+  ]
+}

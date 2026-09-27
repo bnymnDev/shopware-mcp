@@ -1,0 +1,49 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "customerNumber": "10009",
+      "firstName": "Friedrich",
+      "lastName": "Homenick",
+      "active": true,
+      "guest": false,
+      "group": {
+        "translated": {
+          "name": "Standard customer group",
+          "customFields": [],
+          "registrationTitle": null,
+          "registrationIntroduction": null,
+          "registrationOnlyCompanyRegistration": null,
+          "registrationSeoMetaDescription": null
+        },
+        "name": "Standard customer group",
+        "displayGross": true,
+        "apiAlias": "customer_group"
+      },
+      "defaultShippingAddress": {
+        "country": {
+          "translated": {
+            "name": "United States of America",
+            "customFields": [],
+            "addressFormat": [
+              ["address/company", "symbol/dash", "address/department"],
+              ["address/first_name", "address/last_name"],
+              ["address/street"],
+              ["address/zipcode", "address/city"],
+              ["address/country"]
+            ]
+          },
+          "name": "United States of America",
+          "iso": "US",
+          "id": "01a068fb69b672329026c8af00b6f7f3",
+          "apiAlias": "country"
+        },
+        "apiAlias": "customer_address"
+      },
+      "boundSalesChannelId": null,
+      "id": "01a0690928f1703ebf786c33c326cba4",
+      "apiAlias": "customer"
+    }
+  ],
+  "aggregations": []
+}

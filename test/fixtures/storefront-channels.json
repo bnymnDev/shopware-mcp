@@ -1,0 +1,240 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "translated": {
+        "name": "Headless",
+        "customFields": {},
+        "homeSlotConfig": null,
+        "homeEnabled": true,
+        "homeName": null,
+        "homeMetaTitle": null,
+        "homeMetaDescription": null,
+        "homeKeywords": null
+      },
+      "typeId": "f183ee5650cf4bdb8a774337575067a6",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "name": "Headless",
+      "active": true,
+      "maintenance": false,
+      "currency": {
+        "isoCode": "EUR",
+        "apiAlias": "currency"
+      },
+      "paymentMethods": [
+        {
+          "translated": {
+            "name": "Direct Debit",
+            "distinguishableName": "Direct Debit",
+            "description": "Pre-authorized payment, funds are withdrawn directly from the debited account.",
+            "customFields": []
+          },
+          "name": "Direct Debit",
+          "active": false,
+          "availabilityRule": null,
+          "technicalName": "payment_debitpayment",
+          "id": "01a068fb69fc701bab6e8e100e5257a9",
+          "apiAlias": "payment_method"
+        },
+        {
+          "translated": {
+            "name": "Invoice",
+            "distinguishableName": "Invoice",
+            "description": "Payment by invoice. Shopware provides automatic invoicing for all customers on orders after the first. This is to avoid defaults on payment.",
+            "customFields": []
+          },
+          "name": "Invoice",
+          "active": true,
+          "availabilityRule": null,
+          "technicalName": "payment_invoicepayment",
+          "id": "01a068fb69fe71e6948ffd608d7cb535",
+          "apiAlias": "payment_method"
+        },
+        {
+          "translated": {
+            "name": "Cash on delivery",
+            "distinguishableName": "Cash on delivery",
+            "description": "Payment upon receipt of goods.",
+            "customFields": []
+          },
+          "name": "Cash on delivery",
+          "active": true,
+          "availabilityRule": null,
+          "technicalName": "payment_cashpayment",
+          "id": "01a068fb6a0070b29f0358826da66587",
+          "apiAlias": "payment_method"
+        },
+        {
+          "translated": {
+            "name": "Paid in advance",
+            "distinguishableName": "Paid in advance",
+            "description": "Pay in advance and get your order afterwards",
+            "customFields": []
+          },
+          "name": "Paid in advance",
+          "active": true,
+          "availabilityRule": null,
+          "technicalName": "payment_prepayment",
+          "id": "01a068fb6a02717ab706f09085a6ffa3",
+          "apiAlias": "payment_method"
+        }
+      ],
+      "shippingMethods": [
+        {
+          "translated": {
+            "name": "Standard",
+            "customFields": [],
+            "description": null,
+            "trackingUrl": null
+          },
+          "name": "Standard",
+          "active": true,
+          "availabilityRule": {
+            "name": "Cart >= 0",
+            "apiAlias": "rule"
+          },
+          "technicalName": "shipping_standard",
+          "id": "01a068fb6a0a71edbceea82451782170",
+          "apiAlias": "shipping_method"
+        },
+        {
+          "translated": {
+            "name": "Express",
+            "customFields": [],
+            "description": null,
+            "trackingUrl": null
+          },
+          "name": "Express",
+          "active": true,
+          "availabilityRule": {
+            "name": "Cart >= 0",
+            "apiAlias": "rule"
+          },
+          "technicalName": "shipping_express",
+          "id": "01a068fb6a0a71edbceea82452747e09",
+          "apiAlias": "shipping_method"
+        }
+      ],
+      "id": "98432def39fc4624b33213a56b8c944d",
+      "apiAlias": "sales_channel"
+    },
+    {
+      "translated": {
+        "name": "Storefront",
+        "customFields": {},
+        "homeSlotConfig": null,
+        "homeEnabled": true,
+        "homeName": null,
+        "homeMetaTitle": null,
+        "homeMetaDescription": null,
+        "homeKeywords": null
+      },
+      "typeId": "8a243080f92e4c719546314b577cf82b",
+      "languageId": "2fbb5fe2e29a4d70aa5854ce7ce3e20b",
+      "name": "Storefront",
+      "active": true,
+      "maintenance": true,
+      "currency": {
+        "isoCode": "EUR",
+        "apiAlias": "currency"
+      },
+      "paymentMethods": [
+        {
+          "translated": {
+            "name": "Direct Debit",
+            "distinguishableName": "Direct Debit",
+            "description": "Pre-authorized payment, funds are withdrawn directly from the debited account.",
+            "customFields": []
+          },
+          "name": "Direct Debit",
+          "active": false,
+          "availabilityRule": null,
+          "technicalName": "payment_debitpayment",
+          "id": "01a068fb69fc701bab6e8e100e5257a9",
+          "apiAlias": "payment_method"
+        },
+        {
+          "translated": {
+            "name": "Invoice",
+            "distinguishableName": "Invoice",
+            "description": "Payment by invoice. Shopware provides automatic invoicing for all customers on orders after the first. This is to avoid defaults on payment.",
+            "customFields": []
+          },
+          "name": "Invoice",
+          "active": true,
+          "availabilityRule": null,
+          "technicalName": "payment_invoicepayment",
+          "id": "01a068fb69fe71e6948ffd608d7cb535",
+          "apiAlias": "payment_method"
+        },
+        {
+          "translated": {
+            "name": "Cash on delivery",
+            "distinguishableName": "Cash on delivery",
+            "description": "Payment upon receipt of goods.",
+            "customFields": []
+          },
+          "name": "Cash on delivery",
+          "active": true,
+          "availabilityRule": null,
+          "technicalName": "payment_cashpayment",
+          "id": "01a068fb6a0070b29f0358826da66587",
+          "apiAlias": "payment_method"
+        },
+        {
+          "translated": {
+            "name": "Paid in advance",
+            "distinguishableName": "Paid in advance",
+            "description": "Pay in advance and get your order afterwards",
+            "customFields": []
+          },
+          "name": "Paid in advance",
+          "active": true,
+          "availabilityRule": null,
+          "technicalName": "payment_prepayment",
+          "id": "01a068fb6a02717ab706f09085a6ffa3",
+          "apiAlias": "payment_method"
+        }
+      ],
+      "shippingMethods": [
+        {
+          "translated": {
+            "name": "Standard",
+            "customFields": [],
+            "description": null,
+            "trackingUrl": null
+          },
+          "name": "Standard",
+          "active": true,
+          "availabilityRule": {
+            "name": "Cart >= 0",
+            "apiAlias": "rule"
+          },
+          "technicalName": "shipping_standard",
+          "id": "01a068fb6a0a71edbceea82451782170",
+          "apiAlias": "shipping_method"
+        },
+        {
+          "translated": {
+            "name": "Express",
+            "customFields": [],
+            "description": null,
+            "trackingUrl": null
+          },
+          "name": "Express",
+          "active": true,
+          "availabilityRule": {
+            "name": "Cart >= 0",
+            "apiAlias": "rule"
+          },
+          "technicalName": "shipping_express",
+          "id": "01a068fb6a0a71edbceea82452747e09",
+          "apiAlias": "shipping_method"
+        }
+      ],
+      "id": "01a068fb91ad7260939028219e459a91",
+      "apiAlias": "sales_channel"
+    }
+  ],
+  "aggregations": []
+}

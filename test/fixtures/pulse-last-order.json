@@ -1,0 +1,12 @@
+{
+  "total": 760,
+  "data": [
+    {
+      "orderNumber": "10759",
+      "orderDateTime": "2026-09-27T12:01:51.000+00:00",
+      "id": "01a0e404a5687041bfc1e937a8ecdd3f",
+      "apiAlias": "order"
+    }
+  ],
+  "aggregations": []
+}

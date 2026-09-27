@@ -12,10 +12,10 @@ A terminal. The user asks: Is everything okay with the shop? The agent calls sho
 The audit finds 2 critical and 4 warning items: paid orders not shipped, a storefront in maintenance mode, an expired promotion still active.
 
 00:14.800 --> 00:20.600
-One small server. Shopware does the counting. Tools with model-friendly descriptions, most read-only, audit checks in one call, guarded writes.
+One small server. Shopware does the counting. 44 tools with model-friendly descriptions, 29 of them read-only including a checkout simulation and a pulse, 17 audit checks in one call, 15 guarded writes.
 
 00:20.600 --> 00:25.600
 Read-only by default. Every write is a dry run first and shows the exact request. A write budget caps the rest. Nothing deletes.
 
 00:25.600 --> 00:30.000
-npx shopware-mcp init. Claude Desktop, Claude Code, Cursor, VS Code, Zed, Docker. github.com/bnymnDev/shopware-mcp. MIT, no telemetry, Shopware 6.6 and 6.7.
+npx shopware-mcp setup. Claude Desktop, Claude Code, Cursor, VS Code, Zed, Docker. github.com/bnymnDev/shopware-mcp. MIT, no telemetry, Shopware 6.6 and 6.7.

@@ -71,7 +71,7 @@ export function formatAuditMarkdown(report: AuditReport): string {
   lines.push(
     `${day(report.generatedAt)} · ${summary.checksRun} checks · ` +
       (summary.healthy
-        ? "healthy, nothing critical or warning"
+        ? `healthy, nothing critical or warning, ${summary.info} info`
         : `${summary.critical} critical, ${summary.warning} warning, ${summary.info} info`),
     "",
   );

@@ -1,0 +1,27 @@
+{
+  "elements": [
+    {
+      "translated": {
+        "name": "Standard"
+      },
+      "name": "Standard",
+      "id": "01a068fb6a0a71edbceea82451782170",
+      "apiAlias": "shipping_method"
+    },
+    {
+      "translated": {
+        "name": "Express"
+      },
+      "name": "Express",
+      "id": "01a068fb6a0a71edbceea82452747e09",
+      "apiAlias": "shipping_method"
+    }
+  ],
+  "aggregations": [],
+  "page": 1,
+  "limit": 100,
+  "entity": "shipping_method",
+  "total": 2,
+  "states": [],
+  "apiAlias": "dal_entity_search_result"
+}

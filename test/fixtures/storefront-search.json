@@ -1,0 +1,142 @@
+{
+  "elements": [
+    {
+      "translated": {
+        "name": "Ergonomic Steel Dream Fire"
+      },
+      "productNumber": "SW10003.1",
+      "availableStock": 29,
+      "available": true,
+      "name": null,
+      "id": "01a069093243712793c0b7ae9a1cca6a",
+      "calculatedPrice": {
+        "unitPrice": 918.39,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 4021.44,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Awesome Steel Quick Turtle"
+      },
+      "productNumber": "SW10005",
+      "availableStock": 19,
+      "available": true,
+      "name": "Awesome Steel Quick Turtle",
+      "id": "01a069093244728b952dad42d3e77e00",
+      "calculatedPrice": {
+        "unitPrice": 791.77,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 1043.68,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Practical Steel Beadniks"
+      },
+      "productNumber": "SW10006",
+      "availableStock": 44,
+      "available": true,
+      "name": "Practical Steel Beadniks",
+      "id": "01a0690932457189b6677d61557ad0f1",
+      "calculatedPrice": {
+        "unitPrice": 2.92,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 1373.42,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Synergistic Steel Coffee Panache"
+      },
+      "productNumber": "SW10055",
+      "availableStock": 32,
+      "available": true,
+      "name": "Synergistic Steel Coffee Panache",
+      "id": "01a0690a676c729996fbd2352d045b85",
+      "calculatedPrice": {
+        "unitPrice": 390.58,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 1637.92,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Aerodynamic Steel Dynamantra"
+      },
+      "productNumber": "SW10075",
+      "availableStock": 6,
+      "available": true,
+      "name": "Aerodynamic Steel Dynamantra",
+      "id": "01a0690af99671359d875e55fa2ea5b4",
+      "calculatedPrice": {
+        "unitPrice": 100.21,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 5509.26,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Fantastic Steel Lather Gather"
+      },
+      "productNumber": "SW10094",
+      "availableStock": 8,
+      "available": true,
+      "name": "Fantastic Steel Lather Gather",
+      "id": "01a0690afb4772f1a184be80b12d64e5",
+      "calculatedPrice": {
+        "unitPrice": 153.66,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 3251.26,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Aerodynamic Marble Sorely Mist"
+      },
+      "productNumber": "SW10029",
+      "availableStock": 23,
+      "available": true,
+      "name": "Aerodynamic Marble Sorely Mist",
+      "id": "01a069099ae2727ca3e9ac75429bc997",
+      "calculatedPrice": {
+        "unitPrice": 920.8,
+        "apiAlias": "calculated_price"
+      },
+      "calculatedCheapestPrice": {
+        "unitPrice": 2092.59,
+        "apiAlias": "calculated_cheapest_price"
+      },
+      "apiAlias": "product"
+    }
+  ],
+  "total": 7,
+  "page": 1,
+  "limit": 100,
+  "sorting": "score",
+  "apiAlias": "product_listing"
+}

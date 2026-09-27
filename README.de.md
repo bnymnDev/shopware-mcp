@@ -46,12 +46,16 @@ Bestandskorrektur erst gezeigt und dann gesendet gehört.
 
 **shopware-mcp ist diese Schicht.** Ein kleiner Server, der zum Host MCP
 spricht und zum Shop die Admin-API, und Shopware gut genug kennt, um mit
-einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat:
+einem Aufruf zu beantworten, was früher einen Nachmittag im Admin gekostet hat.
+Er merkt auch, wenn keine Bestellungen mehr kommen, und probiert den Checkout
+aus wie ein Kunde, um herauszufinden, warum:
 
 | | |
 |---|---|
 | **Kuratierte Werkzeuge** | Produkte, Bestellungen samt Verlauf, Belege, Kunden, Kategorien, Aktionen, Bewertungen, Zahlungs- und Versandarten, Plugins, Bestand, Verkaufskanäle, geplante Aufgaben, die Shop-Einstellungen: zwanzig Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Ein Audit** | `shop_audit` prüft sechzehn Dinge in einem Aufruf: bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, geplante Aufgaben, die nicht mehr laufen, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
+| **Die Sicht des Kunden** | `checkout_simulate` legt Produkte und Codes in einen Wegwerf-Warenkorb, über Shopwares eigene Store API, als Gast mit Lieferland oder als bestimmter Kunde mit Gruppe, Preisen und Regeln, und erklärt jeden Warenkorbfehler in Klartext: ein Land, in das der Kanal nicht liefert, ein abgelaufener Code, eine Zahlungsart, die eine Regel ausblendet, ein Preis, den die Listung nicht zeigt. `storefront_search` sucht wie ein Kunde und sagt, warum ein Produkt nicht auftaucht. Bestellt wird nichts; der Warenkorb wird gelöscht. |
+| **Ein Puls** | `shop_pulse` stellt heute neben dieselben Stunden desselben Wochentags der letzten Wochen und bewertet die aktuelle Stille: wie viele Bestellungen diese Stunden sonst bringen und wie wahrscheinlich es ist, zufällig keine zu sehen. „Seit sechs Stunden nichts, wo sonst immer drei bis sieben kamen" ist ein kaputter Checkout, kein ruhiger Sonntag. |
+| **Ein Audit** | `shop_audit` prüft siebzehn Dinge in einem Aufruf: einen Checkout, der ungewöhnlich still geworden ist, bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, geplante Aufgaben, die nicht mehr laufen, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
 | **Reports und eine Prognose** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. `stock_forecast` macht aus Absatzgeschwindigkeit und Bestand Reichweite in Tagen, Ausverkaufsdatum und Nachbestellmenge. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
 | **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab und lässt Shopware über die Treffermenge aggregieren: Bestellungen je Zahlungsart, Umsatz je Monat, alles, was terms, sum oder histogram hergeben. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
 | **Eine Bremse** | Nur lesend, solange der Server nicht mit `--allow-write` gestartet wird. Und selbst dann ist jeder Schreibzugriff zuerst ein Probelauf, der den genauen Request zeigt, und ein Schreib-Budget kann die echten Schreibzugriffe je Prozess begrenzen. Versenden, als bezahlt markieren, erinnern, erstatten, Bestand korrigieren, Notiz, Beleg erzeugen, Produkt oder Aktion anlegen, Produktbild setzen, Bewertung freigeben, Kunde ändern, fünfzig Rechnungen auf einmal, ein Tag setzen: fünfzehn schmale Schreibzugriffe, sonst nichts. Geheimnisse tauchen nie in Ausgaben, Logs oder Fehlern auf. |
@@ -86,7 +90,42 @@ mit generierten Demodaten, abgespielt aus den Transkripten in
 [`docs/demo/`](docs/demo). Die Aufnahmen sind auf Englisch; Werkzeugaufrufe und
 Ergebnisse sind wörtlich, zum Lesen gekürzt.
 
-**Eine Frage, dreizehn Prüfungen.** Drei bezahlte Bestellungen warten auf den
+**Sechs Stunden ohne Bestellung, und warum.** Sonntagabend. Der Puls vergleicht
+die Stille mit denselben Stunden der letzten acht Sonntage, die immer drei bis
+sieben Bestellungen brachten, und schätzt die Wahrscheinlichkeit für Zufall auf
+etwa eins zu 170. Dann versucht der Agent, wie ein Kunde etwas zu kaufen, und
+findet die Storefront im Wartungsmodus. Bestellt und geändert wurde nichts.
+
+![shop_pulse meldet sechs Stunden ungewöhnliche Stille, checkout_simulate findet die Storefront im Wartungsmodus](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/pulse.svg)
+
+**Der Checkout, wie ein Kunde ihn sieht.** Ein Kunde aus der Schweiz sagt, ein
+Code funktioniert nicht. Ein Wegwerf-Warenkorb über Shopwares eigene Store API
+erklärt drei Dinge auf einmal: Die Schweiz ist kein Land dieses Kanals, die
+Aktion hinter dem Code endete im August, und ein Staffelpreis sieht nach
+Tippfehler aus. Danach erklärt die Suche, warum ein Produkt nie auftaucht.
+
+![checkout_simulate erklärt ein gesperrtes Land, einen abgelaufenen Code und einen Preisunterschied; storefront_search erklärt ein unsichtbares Produkt](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/storefront.svg)
+
+**Jeden Morgen eine Seite.** `shopware-mcp brief --html brief.html` schreibt
+Puls, Audit und die letzten sieben Tage als eine eigenständige Seite, die
+nichts von irgendwo nachlädt und dem Dunkelmodus des Lesers folgt. Per Cron,
+mit `--slack` als kurze Zusammenfassung in einem Kanal.
+[Ein echtes Beispiel öffnen](https://bnymndev.github.io/shopware-mcp/brief/).
+
+<p align="center">
+  <a href="https://bnymndev.github.io/shopware-mcp/brief/">
+    <img src="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brief/brief.png" alt="Shop-Bericht: Banner zur ungewöhnlichen Stille, Bestellungen und Umsatz heute gegen einen typischen Sonntag, zwei Säulendiagramme im Vergleich mit den letzten acht Sonntagen" width="100%">
+  </a>
+</p>
+
+**Minimale Rechte in einem Befehl.** `shopware-mcp setup` meldet sich einmal
+als Admin an, legt eine Rolle mit genau den Rechten an, die die Werkzeuge
+brauchen, gemessen an einem echten Shop statt geraten, dazu eine Integration
+ohne Administratorrechte, prüft beides und zeigt die Host-Konfiguration.
+
+![shopware-mcp setup legt eine Leserolle mit 46 Rechten und eine Integration an, prüft 29 von 29 Lesewerkzeugen und zeigt den Befehl für Claude Code](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/setup.svg)
+
+**Eine Frage, ein Aufruf.** Drei bezahlte Bestellungen warten auf den
 Versand, die Storefront ist im Wartungsmodus, eine Sommeraktion hat den August
 überlebt. Die Antwort nennt Bestellnummern und Beträge und bietet den sicheren
 nächsten Schritt an.
@@ -185,14 +224,21 @@ entstand: 31 von 33 Aufgaben überfällig, keine je gelaufen, der Scheduler steh
 
 ## In 60 Sekunden
 
-**1.** Im Shopware-Admin eine Integration anlegen: *Einstellungen → System → Integrationen → Integration hinzufügen*. Zugangsschlüssel-ID und Geheimschlüssel kopieren; der Geheimschlüssel wird nur einmal angezeigt. Für einen Entwicklungsshop *Administrator* ankreuzen, in Produktion eine Leserolle vergeben ([welche Rechte](docs/self-hosting.md#shopware-permissions)).
+**1.** `setup` die Integration anlegen lassen. Es meldet sich einmal als Admin an (das Passwort wird nie gespeichert), legt eine Leserolle mit genau den Rechten an, die die Werkzeuge brauchen, und eine Integration dazu, prüft beides und zeigt oder schreibt die Host-Konfiguration:
 
-**2.** Den Assistenten die Zugangsdaten prüfen und die Host-Konfiguration schreiben lassen:
+```bash
+npx shopware-mcp setup --url https://shop.example.com --user admin --for claude-desktop --write
+```
+
+Mit `--allow-write` kommen die Schreibwerkzeuge dazu; `--dry-run` zeigt vorher die Rechte der Rolle. Lieber selbst klicken? Unter *Einstellungen → System → Integrationen* eine Integration mit Rolle anlegen ([welche Rechte](docs/self-hosting.md#shopware-permissions)) und mit Schritt 2 weitermachen.
+
+**2.** Oder den Assistenten vorhandene Zugangsdaten prüfen und die Host-Konfiguration schreiben lassen:
 
 ```bash
 npx shopware-mcp init                  # fragt URL, Schlüssel und Geheimnis ab, testet sie, zeigt die Konfiguration
 npx shopware-mcp init --for claude-desktop --write   # oder trägt sie direkt in die Datei des Hosts ein
 npx shopware-mcp doctor                # welche Werkzeuge diese Integration nutzen kann, und was fehlt
+npx shopware-mcp brief --html brief.html   # Puls, Audit und die letzten 7 Tage als eine HTML-Seite
 ```
 
 Oder den Server von Hand starten:
@@ -278,6 +324,11 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 
 | Sie sagen | Der Agent ruft auf |
 |---|---|
+| „Ist heute ein normaler Tag?" | `shop_pulse` |
+| „Warum kann Kunde 10009 nicht bestellen?" | `checkout_simulate { customerNumber: "10009", items }` |
+| „Warum funktioniert der Code SUMMER26 nicht?" | `checkout_simulate { promotionCodes: ["SUMMER26"], items }` |
+| „Was kostet der Versand in die Schweiz?" | `checkout_simulate { country: "CH", items }` |
+| „Warum findet niemand das Steel Shirt?" | `storefront_search { term: "steel shirt", explain: "SW10002" }` |
 | „Ist im Shop alles in Ordnung?" | `shop_audit` |
 | „Wie lief der August?" | `sales_report { from, to, interval: "week" }` |
 | „Welche Produkte haben weniger als 5 auf Lager?" | `products_search` mit einem `range`-Filter, oder der Prompt `low_stock_report` |
@@ -308,7 +359,9 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 | „Ist der Gastkauf an, und was ist der Standardsteuersatz?" | `shop_settings` |
 | „Gib SW10084 dieses Bild: https://…/bank.jpg" | `product_cover_set`, der Shop lädt es selbst |
 | „Thumbnails fehlen, ist die Plattform in Ordnung?" | `frosh_health` und `frosh_queue`, wenn FroshTools installiert ist |
+| „Richte es mit den kleinstmöglichen Rechten ein." | kein Werkzeug: `npx shopware-mcp setup` |
 | „Welche Werkzeuge scheitern mit dieser Integration?" | kein Werkzeug: `npx shopware-mcp doctor` |
+| „Schick mir jeden Morgen eine Seite." | `shopware-mcp brief --html brief.html --slack <webhook>` per Cron |
 | „Schick mir jeden Montag das Audit." | auch kein Werkzeug: `shopware-mcp audit --fail-on warning` per Cron |
 
 Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`) auf Shopware-Feldpfaden, Assoziationen wie `manufacturer.name` eingeschlossen. Was sich in der Admin-API filtern lässt, lässt sich auch hier filtern. Der [Spickzettel](docs/quickstart.md#filters-cheat-sheet) zeigt die üblichen Fälle.
@@ -341,8 +394,11 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`scheduled_tasks_list`](docs/tools.md#scheduled_tasks_list) | read | Scheduled tasks |
 | [`stock_get`](docs/tools.md#stock_get) | read | Get stock |
 | [`stock_forecast`](docs/tools.md#stock_forecast) | read | Stock forecast |
+| [`storefront_search`](docs/tools.md#storefront_search) | read | Search like a customer |
+| [`checkout_simulate`](docs/tools.md#checkout_simulate) | read | Simulate a checkout |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
 | [`customer_report`](docs/tools.md#customer_report) | read | Customer report |
+| [`shop_pulse`](docs/tools.md#shop_pulse) | read | Shop pulse |
 | [`shop_audit`](docs/tools.md#shop_audit) | read | Shop health audit |
 | [`entity_schema`](docs/tools.md#entity_schema) | read | Entity schema |
 | [`entity_search`](docs/tools.md#entity_search) | read | Search any entity |
@@ -394,6 +450,8 @@ unter `src/extensions/`; Pull Requests sind willkommen.
 - **Jeder Schreibzugriff ist zuerst ein Probelauf.** Alle fünfzehn Schreibwerkzeuge, von `stock_set` bis `tag_assign`, stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
 - **Ein Schreib-Budget.** `SHOPWARE_MCP_MAX_WRITES=20` weist den einundzwanzigsten echten Schreibzugriff eines Prozesses mit `WRITE_BUDGET_EXHAUSTED` ab; Probeläufe bleiben frei. Kein Prompt kann das aufheben.
 - **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung; `product_create` legt ein einfaches Produkt an, mehr nicht; `product_cover_set` fügt ein Bild hinzu (JPEG, PNG, WebP, GIF oder AVIF, nie SVG), das der Shop selbst lädt. `promotion_create` erzeugt einen Warenkorbrabatt, inaktiv, solange nichts anderes gesagt wird. `customer_update` ändert Aktiv-Status und Kundengruppe. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie; `order_documents_bulk_create` macht höchstens fünfzig je Aufruf und belastet das Schreib-Budget je Bestellung. `tag_assign` setzt oder entfernt Tags nach Namen und lässt den Rest des Datensatzes in Ruhe. Nichts löscht. Sonst nichts.
+- **Ein simulierter Warenkorb ist keine Bestellung.** `checkout_simulate` und `storefront_search` gehen über Shopwares eigenen Admin-Proxy zur Store API, mit einem zufälligen Kontext-Token, das kein Besucher hat. Die Bestellroute wird nie aufgerufen, der Warenkorb danach gelöscht; übrig bleibt eine Kontextzeile, die Shopware selbst verfallen lässt. Die Simulation als Kunde berührt weder dessen Sitzung noch seinen gespeicherten Warenkorb.
+- **Minimale Rechte als Standard.** `shopware-mcp setup` vergibt jedem Werkzeug genau die Rechte, die an einer sonst leeren Rolle gemessen wurden, nie Administratorrechte und nie das Recht zur Plugin-Installation, außer mit `--plugin-updates`. Das Admin-Passwort dient einer einzigen Anmeldung und wird nie gespeichert.
 - **Bereinigte Lesezugriffe.** `entity_search` entfernt Passwörter, Schlüssel, Tokens und Hashes aus jeder Antwort und verweigert Entitäten, die Zugangsdaten oder Systeminterna enthalten: Benutzer, Integrationen, ACL-Rollen, Apps, Systemkonfiguration.
 - **Nirgends Geheimnisse.** Zugangsdaten erscheinen nie in Ausgaben, Logs oder Fehlermeldungen. Logs gehen nur nach stderr.
 - **Keine Telemetrie.** Der Server spricht mit Ihrem Shop und mit Ihrem Host. Mit niemandem sonst.
@@ -419,8 +477,10 @@ Etwas gefunden? Siehe [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_TIMEOUT_MS` | nein | Timeout je Admin-API-Request in Millisekunden (Standard 30000, 1000 bis 600000) |
 | `SHOPWARE_MCP_HTTP_TOKEN` | nein | Bearer-Token, den der HTTP-Transport auf `/mcp` verlangt (mindestens 16 Zeichen). Standard: keiner |
 | `SHOPWARE_MCP_LOG_LEVEL` | nein | `error` (Standard), `warn`, `info`, `debug`. Logs gehen nur nach stderr |
+| `TZ` | nein | Zeitzone für „heute" in `shop_pulse` und `brief`, z. B. `Europe/Berlin`. Standard: die des Systems |
+| `SHOPWARE_ADMIN_USER`, `SHOPWARE_ADMIN_PASSWORD` | nur `setup` | Die Admin-Anmeldung, mit der `setup` einmal Rolle und Integration anlegt. Wird nie gespeichert; ohne sie fragt `setup` nach |
 
-CLI-Flags überschreiben die Umgebung: `--allow-write`, `--max-writes <n>`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`. Befehle: `doctor [--json]` und `init [--for <host>] [--write]`.
+CLI-Flags überschreiben die Umgebung: `--allow-write`, `--max-writes <n>`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`. Befehle: `setup`, `doctor`, `init`, `brief`, `audit` und `report`; `npx shopware-mcp --help` zeigt ihre Optionen.
 
 ---
 

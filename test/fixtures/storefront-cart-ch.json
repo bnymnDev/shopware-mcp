@@ -1,0 +1,119 @@
+{
+  "price": {
+    "rawTotal": 24.02,
+    "netPrice": 24.02,
+    "totalPrice": 24.02,
+    "positionPrice": 24.02,
+    "calculatedTaxes": [],
+    "taxRules": [],
+    "taxStatus": "tax-free",
+    "apiAlias": "cart_price"
+  },
+  "errors": {
+    "shipping-address-blocked-Switzerland": {
+      "message": "Shippings to shipping address Switzerland are not possible.",
+      "code": 0,
+      "translatedMessage": "Shipping to the selected shipping address is currently not possible.",
+      "name": "Switzerland",
+      "addressId": null,
+      "key": "shipping-address-blocked-Switzerland",
+      "level": 20,
+      "messageKey": "shipping-address-blocked",
+      "parameters": {
+        "name": "Switzerland"
+      },
+      "block": true,
+      "blockResubmit": true
+    },
+    "promotion-not-found": {
+      "message": "Promotion with code SUMMER26 not found!",
+      "code": 0,
+      "translatedMessage": "Promo code \"SUMMER26\" could not be found.",
+      "promotionCode": "SUMMER26",
+      "key": "promotion-not-found",
+      "level": 20,
+      "messageKey": "promotion-not-found",
+      "parameters": {
+        "code": "SUMMER26"
+      },
+      "block": false,
+      "blockResubmit": false
+    }
+  },
+  "token": "5681ef98450e9514e142f3ca35495505",
+  "apiAlias": "cart",
+  "lineItems": [
+    {
+      "id": "01a069093244728b952dad42d3e77e00",
+      "type": "product",
+      "referencedId": "01a069093244728b952dad42d3e77e00",
+      "label": "Awesome Steel Quick Turtle",
+      "quantity": 2,
+      "price": {
+        "unitPrice": 12.01,
+        "totalPrice": 24.02,
+        "calculatedTaxes": [],
+        "taxRules": [],
+        "quantity": 2,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      },
+      "good": true,
+      "apiAlias": "cart_line_item",
+      "payload": {
+        "productNumber": "SW10005"
+      }
+    }
+  ],
+  "deliveries": [
+    {
+      "shippingCosts": {
+        "unitPrice": 0,
+        "totalPrice": 0,
+        "calculatedTaxes": [],
+        "taxRules": [],
+        "quantity": 1,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      },
+      "shippingMethod": {
+        "id": "01a068fb6a0a71edbceea82451782170",
+        "name": "Standard",
+        "translated": {
+          "name": "Standard",
+          "customFields": {},
+          "description": null,
+          "trackingUrl": null
+        },
+        "technicalName": "shipping_standard"
+      },
+      "location": {
+        "country": {
+          "id": "01a068fb69b47090835fd7e37e873421",
+          "iso": "CH",
+          "name": "Switzerland"
+        }
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "paymentMethodId": "01a068fb6a0070b29f0358826da66587",
+      "amount": {
+        "unitPrice": 24.02,
+        "totalPrice": 24.02,
+        "calculatedTaxes": [],
+        "taxRules": [],
+        "quantity": 1,
+        "referencePrice": null,
+        "listPrice": null,
+        "regulationPrice": null,
+        "apiAlias": "calculated_price"
+      }
+    }
+  ]
+}

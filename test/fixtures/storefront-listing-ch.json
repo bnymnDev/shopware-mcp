@@ -1,0 +1,32 @@
+{
+  "elements": [
+    {
+      "id": "01a069093244728b952dad42d3e77e00",
+      "calculatedPrices": [
+        {
+          "unitPrice": 12.01,
+          "quantity": 10,
+          "apiAlias": "calculated_price"
+        },
+        {
+          "unitPrice": 8.77,
+          "quantity": 11,
+          "apiAlias": "calculated_price"
+        }
+      ],
+      "calculatedPrice": {
+        "unitPrice": 739.97,
+        "quantity": 1,
+        "apiAlias": "calculated_price"
+      },
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": [],
+  "page": 1,
+  "limit": 1,
+  "entity": "product",
+  "total": 1,
+  "states": [],
+  "apiAlias": "dal_entity_search_result"
+}

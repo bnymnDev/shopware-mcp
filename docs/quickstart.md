@@ -4,8 +4,18 @@ Five minutes from zero to "which products are low on stock?".
 
 ## 1. Create an Integration in Shopware
 
+The quick way is one command. It logs in as an admin once (the password is never stored), creates a read-only role with exactly the privileges the tools need and an integration using it, checks every tool against it and prints the host configuration:
+
+```bash
+npx shopware-mcp setup --url https://shop.example.com --user admin
+```
+
+Add `--allow-write` for the write tools, `--for claude-desktop --write` to write the host config directly, `--dry-run` to see the privileges first. Running it again with `--rotate` issues new keys for the same integration.
+
+By hand instead:
+
 1. Admin → **Settings → System → Integrations → Add integration**.
-2. Name it (e.g. `mcp-agent`). For a dev shop tick *Administrator*; for production assign a role with **read** access to product, order, customer, category, promotion, plugin, sales channel, currency and language (plus **write** on product, order and promotion if you plan to use write tools).
+2. Name it (e.g. `mcp-agent`). For a dev shop tick *Administrator*; for production assign a role with the privileges listed in [self-hosting](self-hosting.md#shopware-permissions).
 3. Save and copy the **Access key ID** and **Secret access key**. The secret is shown once.
 
 ## 2. Run the server
@@ -67,6 +77,10 @@ claude mcp add shopware -e SHOPWARE_URL=https://shop.example.com -e SHOPWARE_CLI
 
 ## 4. Ask questions
 
+- "Is today normal?" → `shop_pulse` compares today with the same hours of recent weeks and says how unusual the current quiet spell is.
+- "Why can't customer 10009 check out?" → `checkout_simulate { customerNumber: "10009", items: [{ productNumber: "SW10005" }] }` fills a throwaway cart as that customer and explains every cart error.
+- "Why does SUMMER26 not work for Switzerland?" → `checkout_simulate` with `country: "CH"` and `promotionCodes: ["SUMMER26"]`.
+- "Why can nobody find the steel shirt?" → `storefront_search { term: "steel shirt", explain: "SW10002" }`.
 - "Is everything okay with the shop?" → `shop_audit` returns prioritised findings with samples and hints.
 - "How did we do in August?" → `sales_report` with `from`/`to`, grouped by day, week or month.
 - "Which manufacturers have no logo?" → `entity_schema { entity: "product_manufacturer" }` then `entity_search` with a filter on `mediaId`.
@@ -126,9 +140,11 @@ Need a raw field that is not in the compact output (e.g. `customFields`, `ean`, 
 
 ## Without an MCP host
 
-The audit and the sales report also run from the command line, for cron jobs, CI or a quick look:
+The brief, the audit and the sales report also run from the command line, for cron jobs, CI or a quick look:
 
 ```bash
+npx shopware-mcp brief                       # the pulse, the audit and the last 7 days as Markdown
+npx shopware-mcp brief --html brief.html     # the same as one self-contained HTML page
 npx shopware-mcp audit                       # Markdown, exit 1 when a critical finding exists
 npx shopware-mcp audit --fail-on warning     # exit 1 on warnings too; --days and --threshold tune the checks
 npx shopware-mcp audit --json | jq .summary  # the same report as JSON
@@ -139,5 +155,25 @@ A cron line that mails the audit every Monday morning and only bothers you when 
 
 ```
 0 7 * * 1  cd /srv/shop-tools && npx shopware-mcp audit --fail-on warning || mail -s "Shop audit" you@example.com < audit.md
+```
+
+A brief every morning, as a page on your intranet and a few lines in Slack:
+
+```
+0 7 * * *  TZ=Europe/Berlin npx shopware-mcp brief --html /var/www/brief.html --slack https://hooks.slack.com/services/…
+```
+
+In GitHub Actions the repository is an action: it runs the audit, puts the Markdown into the job summary and fails the job on the severity you choose.
+
+```yaml
+- uses: bnymnDev/shopware-mcp@v0.8.0
+  id: audit
+  with:
+    url: https://shop.example.com
+    client-id: ${{ secrets.SHOPWARE_CLIENT_ID }}
+    client-secret: ${{ secrets.SHOPWARE_CLIENT_SECRET }}
+    fail-on: critical      # or warning, or none
+    html: audit.html       # optional, upload it with actions/upload-artifact
+# later steps can read ${{ steps.audit.outputs.critical }}, .warning and .info
 ```
 

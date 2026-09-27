@@ -1,0 +1,290 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "01a0690afda47162a7e8f040c507ae0e",
+      "apiAlias": "order"
+    }
+  ],
+  "aggregations": {
+    "o0n": {
+      "name": "o0n",
+      "count": 6,
+      "apiAlias": "o0n_aggregation"
+    },
+    "r0s": {
+      "name": "r0s",
+      "sum": 142679.2,
+      "apiAlias": "r0s_aggregation"
+    },
+    "p0t": {
+      "name": "p0t",
+      "buckets": [
+        {
+          "key": "paid",
+          "count": 6,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p0t_aggregation"
+    },
+    "o1n": {
+      "name": "o1n",
+      "count": 9,
+      "apiAlias": "o1n_aggregation"
+    },
+    "r1s": {
+      "name": "r1s",
+      "sum": 431318.9099999999,
+      "apiAlias": "r1s_aggregation"
+    },
+    "p1t": {
+      "name": "p1t",
+      "buckets": [
+        {
+          "key": "cancelled",
+          "count": 2,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "failed",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "paid",
+          "count": 8,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p1t_aggregation"
+    },
+    "o2n": {
+      "name": "o2n",
+      "count": 8,
+      "apiAlias": "o2n_aggregation"
+    },
+    "r2s": {
+      "name": "r2s",
+      "sum": 177771.7,
+      "apiAlias": "r2s_aggregation"
+    },
+    "p2t": {
+      "name": "p2t",
+      "buckets": [
+        {
+          "key": "paid",
+          "count": 7,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "reminded",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p2t_aggregation"
+    },
+    "o3n": {
+      "name": "o3n",
+      "count": 8,
+      "apiAlias": "o3n_aggregation"
+    },
+    "r3s": {
+      "name": "r3s",
+      "sum": 420876.86,
+      "apiAlias": "r3s_aggregation"
+    },
+    "p3t": {
+      "name": "p3t",
+      "buckets": [
+        {
+          "key": "paid",
+          "count": 5,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "reminded",
+          "count": 3,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p3t_aggregation"
+    },
+    "o4n": {
+      "name": "o4n",
+      "count": 10,
+      "apiAlias": "o4n_aggregation"
+    },
+    "r4s": {
+      "name": "r4s",
+      "sum": 374680.17,
+      "apiAlias": "r4s_aggregation"
+    },
+    "p4t": {
+      "name": "p4t",
+      "buckets": [
+        {
+          "key": "cancelled",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "failed",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "paid",
+          "count": 7,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "reminded",
+          "count": 2,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p4t_aggregation"
+    },
+    "o5n": {
+      "name": "o5n",
+      "count": 8,
+      "apiAlias": "o5n_aggregation"
+    },
+    "r5s": {
+      "name": "r5s",
+      "sum": 102152.99999999999,
+      "apiAlias": "r5s_aggregation"
+    },
+    "p5t": {
+      "name": "p5t",
+      "buckets": [
+        {
+          "key": "paid",
+          "count": 8,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p5t_aggregation"
+    },
+    "o6n": {
+      "name": "o6n",
+      "count": 11,
+      "apiAlias": "o6n_aggregation"
+    },
+    "r6s": {
+      "name": "r6s",
+      "sum": 477553.37000000005,
+      "apiAlias": "r6s_aggregation"
+    },
+    "p6t": {
+      "name": "p6t",
+      "buckets": [
+        {
+          "key": "failed",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "paid",
+          "count": 10,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p6t_aggregation"
+    },
+    "o7n": {
+      "name": "o7n",
+      "count": 11,
+      "apiAlias": "o7n_aggregation"
+    },
+    "r7s": {
+      "name": "r7s",
+      "sum": 9310.2,
+      "apiAlias": "r7s_aggregation"
+    },
+    "p7t": {
+      "name": "p7t",
+      "buckets": [
+        {
+          "key": "paid",
+          "count": 9,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "reminded",
+          "count": 2,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p7t_aggregation"
+    },
+    "o8n": {
+      "name": "o8n",
+      "count": 9,
+      "apiAlias": "o8n_aggregation"
+    },
+    "r8s": {
+      "name": "r8s",
+      "sum": 264803.07,
+      "apiAlias": "r8s_aggregation"
+    },
+    "p8t": {
+      "name": "p8t",
+      "buckets": [
+        {
+          "key": "paid",
+          "count": 7,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "reminded",
+          "count": 2,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "p8t_aggregation"
+    },
+    "g1n": {
+      "name": "g1n",
+      "count": 6,
+      "apiAlias": "g1n_aggregation"
+    },
+    "g2n": {
+      "name": "g2n",
+      "count": 4,
+      "apiAlias": "g2n_aggregation"
+    },
+    "g3n": {
+      "name": "g3n",
+      "count": 3,
+      "apiAlias": "g3n_aggregation"
+    },
+    "g4n": {
+      "name": "g4n",
+      "count": 5,
+      "apiAlias": "g4n_aggregation"
+    },
+    "g5n": {
+      "name": "g5n",
+      "count": 3,
+      "apiAlias": "g5n_aggregation"
+    },
+    "g6n": {
+      "name": "g6n",
+      "count": 5,
+      "apiAlias": "g6n_aggregation"
+    },
+    "g7n": {
+      "name": "g7n",
+      "count": 5,
+      "apiAlias": "g7n_aggregation"
+    },
+    "g8n": {
+      "name": "g8n",
+      "count": 6,
+      "apiAlias": "g8n_aggregation"
+    }
+  }
+}

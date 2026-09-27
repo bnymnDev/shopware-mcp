@@ -9,6 +9,7 @@ import { DAY_MS, notCancelled } from "./periods.js";
 import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
+import { computePulse, defaultTimeZone } from "./pulse.js";
 import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
 import { mapSalesChannel } from "./sales-channels.js";
 import { translated } from "./shared.js";
@@ -419,6 +420,35 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
         if (!items) throw new ShopwareMcpError(0, "UNAVAILABLE", "extension list unavailable");
         const outdated = items.filter((item) => item.installed && item.upgradeVersion);
         return { count: outdated.length, items: outdated.slice(0, limit) };
+      },
+    },
+    {
+      id: "checkout_silent",
+      severity: "critical",
+      title: "No orders for an unusually long time",
+      hint:
+        "The same hours of recent weeks brought orders, so this quiet spell is unlikely to be " +
+        "chance. Check the checkout: checkout_simulate shows what a customer sees, then " +
+        "maintenance mode, the payment provider and the error log.",
+      run: async () => {
+        const pulse = await computePulse(client, { weeks: 8, timeZone: defaultTimeZone(), now });
+        const silence = pulse.silence;
+        if (silence?.verdict !== "unusual") return { count: 0, items: [] };
+        return {
+          count: 1,
+          items: [
+            {
+              label:
+                `Last order #${pulse.lastOrder?.orderNumber ?? "?"} ${silence.minutes} minutes ago; ` +
+                `the same hours of the last 8 weeks brought ${silence.expectedOrders} on average`,
+              lastOrder: pulse.lastOrder?.orderNumber ?? null,
+              lastOrderAt: pulse.lastOrder?.at ?? null,
+              minutesWithoutOrder: silence.minutes,
+              expectedOrders: silence.expectedOrders,
+              chance: silence.chance,
+            },
+          ],
+        };
       },
     },
   ];

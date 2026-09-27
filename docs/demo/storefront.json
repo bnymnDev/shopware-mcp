@@ -1,0 +1,154 @@
+{
+  "title": "shopware-mcp · checkout_simulate and storefront_search: the shop as a customer sees it",
+  "lines": [
+    {
+      "kind": "shell",
+      "text": "npx shopware-mcp"
+    },
+    {
+      "kind": "prompt",
+      "text": "A customer in Switzerland says SUMMER26 does not work and the Headless checkout fails. Why?"
+    },
+    {
+      "kind": "call",
+      "tool": "checkout_simulate",
+      "args": [
+        "{ salesChannel: \"Headless\", country: \"CH\", promotionCodes: [\"SUMMER26\"],",
+        "  items: [{ productNumber: \"SW10005\", quantity: 2 }] }"
+      ]
+    },
+    {
+      "kind": "result",
+      "text": "{ \"salesChannel\": { \"id\": \"98432def39fc4624b33213a56b8c944d\", \"name\": \"Headless\" },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"as\": { \"guest\": true, \"shipsTo\": \"CH\" }, \"canOrder\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"currency\": \"EUR\", \"taxStatus\": \"tax-free\","
+    },
+    {
+      "kind": "result",
+      "text": "  \"items\": [ { \"productNumber\": \"SW10005\", \"name\": \"Awesome Steel Quick Turtle\", \"requested\": 2,"
+    },
+    {
+      "kind": "result",
+      "text": "               \"quantity\": 2, \"unitPrice\": 12.01, \"totalPrice\": 24.02, \"listingPrice\": 739.97 } ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"totals\": { \"positions\": 24.02, \"shipping\": 0, \"net\": 24.02, \"taxes\": [], \"total\": 24.02 },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"problems\": ["
+    },
+    {
+      "kind": "result",
+      "text": "    { \"key\": \"shipping-address-blocked\", \"blocksOrder\": true,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"explanation\": \"Switzerland is not among the countries of Headless (DE, GB)\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"key\": \"promotion-not-found\", \"blocksOrder\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"message\": \"Promo code \\\"SUMMER26\\\" could not be found.\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"explanation\": \"\\\"SUMMER26\\\" belongs to \\\"Summer Sale 2026\\\", but it ended on 2026-08-31\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "    { \"key\": \"price-differs-from-listing\", \"blocksOrder\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "      \"message\": \"SW10005 is listed at 739.97 but costs 12.01 per unit in the cart.\","
+    },
+    {
+      "kind": "result",
+      "text": "      \"explanation\": \"A tier price applies up to 10 units; the listing shows the base price\", … } ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"paymentMethods\": { \"selected\": \"Cash on delivery\", \"available\": [ \"Cash on delivery\","
+    },
+    {
+      "kind": "result",
+      "text": "    \"Paid in advance\", \"Invoice\" ], \"hidden\": [ { \"name\": \"Direct Debit\", \"reason\": \"inactive\" } ] },"
+    },
+    {
+      "kind": "result",
+      "text": "  \"shippingMethods\": { … }, \"cartDeleted\": true }"
+    },
+    {
+      "kind": "agent",
+      "text": "Three things, straight from Shopware's own cart:"
+    },
+    {
+      "kind": "agent",
+      "text": "1. Switzerland is not a country of the Headless channel (only DE and GB), so the order is"
+    },
+    {
+      "kind": "agent",
+      "text": "   blocked before payment. Add Switzerland to the channel's countries."
+    },
+    {
+      "kind": "agent",
+      "text": "2. SUMMER26 exists, but \"Summer Sale 2026\" ended on 31 August. The message is right."
+    },
+    {
+      "kind": "agent",
+      "text": "3. Worth a look anyway: the tier price for 1 to 10 units is 12.01 net for this customer, while"
+    },
+    {
+      "kind": "agent",
+      "text": "   the listing shows 739.97. That price looks like a data entry error."
+    },
+    {
+      "kind": "prompt",
+      "text": "And why can nobody find the Fantastic Steel Shirt there?"
+    },
+    {
+      "kind": "call",
+      "tool": "storefront_search",
+      "args": "{ salesChannel: \"Headless\", term: \"steel shirt\", explain: \"SW10002\" }"
+    },
+    {
+      "kind": "result",
+      "text": "{ \"salesChannel\": { \"name\": \"Headless\", … }, \"term\": \"steel shirt\", \"total\": 8,"
+    },
+    {
+      "kind": "result",
+      "text": "  \"items\": [ { \"position\": 1, \"productNumber\": \"SW10003.1\", \"name\": \"Ergonomic Steel Dream Fire\", … },"
+    },
+    {
+      "kind": "result",
+      "text": "             { \"position\": 2, \"productNumber\": \"SW10005\", … }, … ],"
+    },
+    {
+      "kind": "result",
+      "text": "  \"explain\": { \"productNumber\": \"SW10002\", \"found\": false,"
+    },
+    {
+      "kind": "result",
+      "text": "               \"reasons\": [ \"it is not visible in Headless\" ] } }"
+    },
+    {
+      "kind": "agent",
+      "text": "The search itself works; SW10002 is simply not visible in the Headless channel. Add Headless"
+    },
+    {
+      "kind": "agent",
+      "text": "under the product's visibility and it will show up for \"steel shirt\"."
+    }
+  ]
+}

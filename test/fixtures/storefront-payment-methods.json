@@ -1,0 +1,35 @@
+{
+  "elements": [
+    {
+      "translated": {
+        "name": "Cash on delivery"
+      },
+      "name": "Cash on delivery",
+      "id": "01a068fb6a0070b29f0358826da66587",
+      "apiAlias": "payment_method"
+    },
+    {
+      "translated": {
+        "name": "Paid in advance"
+      },
+      "name": "Paid in advance",
+      "id": "01a068fb6a02717ab706f09085a6ffa3",
+      "apiAlias": "payment_method"
+    },
+    {
+      "translated": {
+        "name": "Invoice"
+      },
+      "name": "Invoice",
+      "id": "01a068fb69fe71e6948ffd608d7cb535",
+      "apiAlias": "payment_method"
+    }
+  ],
+  "aggregations": [],
+  "page": 1,
+  "limit": 100,
+  "entity": "payment_method",
+  "total": 3,
+  "states": [],
+  "apiAlias": "dal_entity_search_result"
+}

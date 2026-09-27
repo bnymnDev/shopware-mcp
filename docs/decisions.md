@@ -224,3 +224,23 @@ The FroshTools pack calls the plugin's own read routes and maps their answers; i
 
 `scheduled_tasks_list` reads the `scheduled_task` table and calls a waiting task overdue when it is past its next run by more than a grace period. It never runs, resets or deactivates a task: that is the scheduler's job, and a task started from an API call would hide the fact that the scheduler is down. The audit uses the same reading with an hour of grace, because a stalled scheduler explains many other findings, from missing invoices to stale search results.
 
+## A simulated cart goes through the admin's own proxy
+
+`checkout_simulate` and `storefront_search` talk to the Store API through `/api/_proxy/store-api/{salesChannelId}`, the route the admin's "create order" dialog uses. The proxy supplies the channel's access key, so the server never reads or stores one, and the Admin API integration's own privileges decide what it may do. Each call uses a fresh random context token that no visitor holds, never touches the order route, and deletes the cart afterwards. Simulating as a customer goes through `_proxy/switch-customer`, which stores the customer in the context payload only; Shopware's cart restorer looks customers up by a column that route leaves empty, so a simulation cannot replace a customer's real session or saved cart. What remains is a context row that Shopware expires after a day.
+
+## Cart errors are Shopware's, the explanations are ours
+
+The cart already knows why an order would fail; it just says it in keys like `shipping-address-blocked` and messages written for a storefront. The tool keeps Shopware's key, level and message and adds one plain sentence from data it can read: which countries the channel ships to, when the promotion ended, which rule hides a payment method. It never guesses a rule's conditions, it names the rule. A price that differs from the listing is reported as a notice with the tier that explains it, because tier prices are normal and typos are not, and only a person can tell them apart.
+
+## A quiet spell is judged against the same hours, not the same day
+
+A shop sells more at eight in the evening than at eight in the morning and more on Sunday than on Tuesday, so "fewer orders than usual" needs the same stretch of the same weekday. `shop_pulse` counts, for each of the last weeks, the orders between the time of the last order and now, and treats the average as the expected count of a Poisson process. The chance of seeing none is then e to the minus that average: 5 expected orders make a silence a 0.7 % event. Below three expected orders a silence says nothing and the verdict stays normal, which keeps small shops and night hours quiet. One aggregation request carries every window, however large the shop.
+
+## Setup logs in once and grants what was measured
+
+`shopware-mcp setup` uses a person's admin login because only a person may create roles; Shopware asks for a freshly verified login for that, the same as the admin does. The password is used for that one token request and never written anywhere. The privileges come from the table the doctor checks, and every entry in it was measured: each tool ran against a role that started empty, and each privilege Shopware reported missing was added until none was. The two that could hurt are left out: administrator rights, never, and plugin maintenance, only with `--plugin-updates`. An existing integration is never changed silently: without `--rotate` setup refuses, because the old secret cannot be read back and the new one would cut off whoever uses it.
+
+## The brief is one file
+
+`--html` writes a single page with its styles and a few lines of script inline. It loads no font, no chart library and no image from anywhere, so it can be mailed, archived or opened offline, and it cannot leak that someone opened it. Charts are plain SVG drawn on the server with the values in a table next to them; the script only adds tooltips, and without it the SVG titles show the same. The Slack message is deliberately short: a headline, today, the week and the non-info findings. The page has the rest.
+

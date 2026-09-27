@@ -1,0 +1,34 @@
+{
+  "total": 7,
+  "data": [
+    {
+      "keyword": "awesome",
+      "apiAlias": "product_search_keyword"
+    },
+    {
+      "keyword": "steel",
+      "apiAlias": "product_search_keyword"
+    },
+    {
+      "keyword": "quick",
+      "apiAlias": "product_search_keyword"
+    },
+    {
+      "keyword": "turtle",
+      "apiAlias": "product_search_keyword"
+    },
+    {
+      "keyword": "awesome steel quick turtle",
+      "apiAlias": "product_search_keyword"
+    },
+    {
+      "keyword": "SW_01a069093244728b952dad42d4cc2021",
+      "apiAlias": "product_search_keyword"
+    },
+    {
+      "keyword": "Wilderman, Hermann and D'Amore",
+      "apiAlias": "product_search_keyword"
+    }
+  ],
+  "aggregations": []
+}

@@ -1,25 +1,14 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
-import { formatDoctorReport, runDoctor } from "../src/doctor.js";
+import { formatDoctorReport, REQUIREMENTS, runDoctor } from "../src/doctor.js";
 import { tools } from "../src/tools/index.js";
 import { createContext, mock, requests, SHOP_URL, searchHandler } from "./helpers/shopware.js";
 
 const empty = () => ({ total: 0, data: [] });
+/** Every entity the doctor probes, from the same table it reads. */
 const PROBED = [
-  "sales-channel",
-  "product",
-  "order",
-  "document",
-  "customer",
-  "category",
-  "promotion",
-  "plugin",
-  "order-line-item",
-  "order-delivery",
-  "order-transaction",
-  "currency",
-  "language",
-];
+  ...new Set(Object.values(REQUIREMENTS).flatMap((requirement) => requirement.reads)),
+].map((entity) => entity.replace(/_/g, "-"));
 const allEmpty = Object.fromEntries(PROBED.map((entity) => [entity, empty]));
 const forbidden = () =>
   HttpResponse.json(
@@ -101,6 +90,48 @@ describe("doctor", () => {
     });
     expect(byName.get("orders_search")).toMatchObject({ status: "ready" });
     expect(report.integration.privileges).toEqual(["order:read", "product:read", "product:update"]);
+  });
+
+  it("reports a missing optional privilege as reduced coverage, not as blocked", async () => {
+    const reads = [...new Set(Object.values(REQUIREMENTS).flatMap((r) => r.reads))];
+    mock.use(
+      searchHandler({
+        ...allEmpty,
+        integration: () => ({
+          total: 1,
+          data: [
+            {
+              id: "i1",
+              label: "reader",
+              admin: false,
+              aclRoles: [{ privileges: reads.map((entity) => `${entity}:read`) }],
+            },
+          ],
+        }),
+      }),
+    );
+    const report = await runDoctor(createContext());
+    const byName = new Map(report.tools.map((item) => [item.tool, item]));
+    expect(byName.get("checkout_simulate")).toMatchObject({
+      status: "ready",
+      detail: expect.stringContaining("without api_proxy_switch-customer"),
+    });
+  });
+
+  it("uses the privileges setup just granted when the role cannot be read", async () => {
+    mock.use(http.post(`${SHOP_URL}/api/search/integration`, forbidden), searchHandler(allEmpty));
+    const report = await runDoctor(createContext({ allowWrite: true }), {
+      label: "shopware-mcp",
+      privileges: ["product:update", "product:read"],
+    });
+    expect(report.integration).toEqual({
+      label: "shopware-mcp",
+      admin: false,
+      privileges: ["product:read", "product:update"],
+    });
+    const byName = new Map(report.tools.map((item) => [item.tool, item]));
+    expect(byName.get("stock_set")).toMatchObject({ status: "ready" });
+    expect(byName.get("order_note")).toMatchObject({ status: "blocked" });
   });
 
   it("stops at an unreachable shop", async () => {

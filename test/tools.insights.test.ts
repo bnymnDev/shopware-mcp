@@ -223,7 +223,7 @@ describe("sales_report", () => {
 describe("shop_audit", () => {
   it("runs every check and prioritises findings", async () => {
     const audit = await invoke(shopAudit, { stuckOrderDays: 14, lowStockThreshold: 3 }, ctx);
-    expect(audit.summary).toMatchObject({ checksRun: 16, healthy: false });
+    expect(audit.summary).toMatchObject({ checksRun: 17, healthy: false });
     expect(audit.shop).toMatchObject({ version: "6.6.10.3", edition: "Community" });
     const ids = audit.findings.map((finding) => finding.id);
     expect(ids[0]).toBe("orders_paid_not_shipped");
@@ -239,7 +239,9 @@ describe("shop_audit", () => {
     expect(stuck?.items[0]).toMatchObject({ orderNumber: "10042", paymentState: "paid" });
 
     const orderSearches = searchRequests("order");
-    expect(orderSearches).toHaveLength(4);
+    // Four order checks, then the pulse: the last order and one aggregation request.
+    expect(orderSearches).toHaveLength(6);
+    expect(JSON.stringify(orderSearches[5]?.body)).toContain('"type":"filter"');
     const housekeeping = audit.findings.find(
       (finding) => finding.id === "orders_shipped_not_completed",
     );
@@ -314,7 +316,7 @@ describe("shop_audit", () => {
     );
     const degraded = await invoke(shopAudit, {}, ctx);
     expect(degraded.warnings?.[0]).toContain("promotions_expired_active skipped");
-    expect(degraded.summary.checksRun).toBe(15);
+    expect(degraded.summary.checksRun).toBe(16);
   });
 });
 

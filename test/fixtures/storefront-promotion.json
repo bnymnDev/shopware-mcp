@@ -1,0 +1,36 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "translated": {
+        "name": "Summer Sale 2026",
+        "customFields": {
+          "shopwareDemoData": true
+        }
+      },
+      "name": "Summer Sale 2026",
+      "active": true,
+      "validFrom": "2026-06-01T00:00:00.000+00:00",
+      "validUntil": "2026-08-31T23:59:59.000+00:00",
+      "maxRedemptionsGlobal": null,
+      "useCodes": true,
+      "salesChannels": [
+        {
+          "salesChannelId": "01a068fb91ad7260939028219e459a91",
+          "apiAlias": "promotion_sales_channel"
+        },
+        {
+          "salesChannelId": "98432def39fc4624b33213a56b8c944d",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "orderRules": [],
+      "personaRules": [],
+      "cartRules": [],
+      "orderCount": 33,
+      "id": "01a0690afcca73469fb50d509ff9de3c",
+      "apiAlias": "promotion"
+    }
+  ],
+  "aggregations": []
+}

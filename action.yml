@@ -1,0 +1,62 @@
+name: Shopware shop audit
+description: Audit a Shopware 6 shop with shopware-mcp and fail the job when something is critical.
+author: bnymnDev
+branding:
+  icon: shopping-cart
+  color: blue
+
+inputs:
+  url:
+    description: Shop URL, e.g. https://shop.example.com
+    required: true
+  client-id:
+    description: Access key ID of a Shopware integration (read-only is enough)
+    required: true
+  client-secret:
+    description: Secret access key of that integration; pass it from a repository secret
+    required: true
+  fail-on:
+    description: Fail the job on findings of this severity - critical, warning or none
+    default: critical
+  days:
+    description: Days after which an unshipped or unpaid order counts as stuck
+    default: "7"
+  threshold:
+    description: Low-stock threshold
+    default: "5"
+  html:
+    description: Also write a self-contained HTML report to this path, for actions/upload-artifact
+    default: ""
+  version:
+    description: shopware-mcp version from npm
+    default: latest
+
+outputs:
+  critical:
+    description: Number of critical findings
+    value: ${{ steps.audit.outputs.critical }}
+  warning:
+    description: Number of warning findings
+    value: ${{ steps.audit.outputs.warning }}
+  info:
+    description: Number of info findings
+    value: ${{ steps.audit.outputs.info }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 22
+    - id: audit
+      shell: bash
+      env:
+        SHOPWARE_URL: ${{ inputs.url }}
+        SHOPWARE_CLIENT_ID: ${{ inputs.client-id }}
+        SHOPWARE_CLIENT_SECRET: ${{ inputs.client-secret }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_DAYS: ${{ inputs.days }}
+        INPUT_THRESHOLD: ${{ inputs.threshold }}
+        INPUT_HTML: ${{ inputs.html }}
+        INPUT_VERSION: ${{ inputs.version }}
+      run: bash "$GITHUB_ACTION_PATH/action/audit.sh"

@@ -1,0 +1,35 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "translated": {
+        "metaDescription": null,
+        "name": "Fantastic Steel Shirt",
+        "keywords": null,
+        "description": null,
+        "descriptionTeaser": null,
+        "metaTitle": null,
+        "packUnit": null,
+        "packUnitPlural": null,
+        "customFields": {},
+        "slotConfig": null,
+        "customSearchKeywords": null,
+        "ogTitle": null,
+        "ogDescription": null
+      },
+      "active": true,
+      "productNumber": "SW10002",
+      "availableStock": 0,
+      "isCloseout": false,
+      "purchaseSteps": 1,
+      "maxPurchase": null,
+      "minPurchase": 1,
+      "releaseDate": null,
+      "name": "Fantastic Steel Shirt",
+      "visibilities": [],
+      "id": "01a068fe7f997365b70f1e7c376101f8",
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": []
+}
