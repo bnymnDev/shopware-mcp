@@ -99,6 +99,9 @@ describe("columnChart", () => {
     expect(svg).toContain('class="cap"');
     expect(svg.match(/<tr>/g)).toHaveLength(4);
     expect(svg.match(/tabindex="0"/g)).toHaveLength(3);
+    // Every hover area spans the plot from its top, however short the bar.
+    const hits = [...svg.matchAll(/<rect class="hit" x="[\d.]+" y="([\d.]+)"/g)].map((m) => m[1]);
+    expect(hits).toEqual(["18", "18", "18"]);
     const widths = [...svg.matchAll(/H([\d.]+) Q([\d.]+),/g)].map(
       (m) => Number(m[2]) - Number(m[1]),
     );
@@ -142,7 +145,13 @@ describe("the brief", () => {
     mock.use(shop());
     const brief = await buildBrief(ctx.client, { timeZone: "Europe/Berlin" });
     expect(brief).toMatchObject({ shop: "https://shop.test", timeZone: "Europe/Berlin" });
-    expect(brief.sales.period.from.slice(0, 10)).toBe("2026-09-21");
+    // Seven local days: from Berlin's midnight six days ago up to this moment.
+    expect(brief.sales.period).toMatchObject({
+      from: "2026-09-20T22:00:00.000Z",
+      to: NOW.toISOString(),
+      timeZone: "Europe/Berlin",
+      running: true,
+    });
 
     const markdown = formatBriefMarkdown(brief);
     expect(markdown).toMatch(/^# Shop brief · https:\/\/shop\.test/);
@@ -185,6 +194,7 @@ describe("postWebhook", () => {
     await postWebhook("https://hooks.slack.test/a", "hello <b>", fake);
     expect(calls[0]?.url).toBe("https://hooks.slack.test/a");
     expect(JSON.parse(String(calls[0]?.init.body))).toEqual({ text: "hello <b>" });
+    expect(calls[0]?.init).toMatchObject({ redirect: "error", signal: expect.any(AbortSignal) });
     await expect(postWebhook("http://hooks.slack.test/a", "x", fake)).rejects.toThrow(/https/);
   });
 });

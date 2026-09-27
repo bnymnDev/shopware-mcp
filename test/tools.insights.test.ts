@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { formatAuditMarkdown } from "../src/format.js";
 import { shopAudit } from "../src/tools/audit.js";
 import { entitySchema, entitySearch, scrub } from "../src/tools/entities.js";
 import { salesReport } from "../src/tools/reports.js";
@@ -213,6 +214,59 @@ describe("sales_report", () => {
     });
   });
 
+  it("counts local days in a time zone, one filter per day", async () => {
+    mock.use(
+      searchHandler({
+        order: () => {
+          const response = fixture<{ aggregations: Record<string, unknown> }>("order-aggregations");
+          response.aggregations.d0n = { count: 2 };
+          response.aggregations.d0s = { sum: 299.98 };
+          response.aggregations.d6n = { count: 1 };
+          response.aggregations.d6s = { sum: 149.99 };
+          return response;
+        },
+        "order-line-item": () => ({ total: 0, data: [], aggregations: {} }),
+      }),
+    );
+    const report = await invoke(
+      salesReport,
+      { from: "2026-09-21", to: "2026-09-27", timeZone: "Europe/Berlin" },
+      ctx,
+    );
+    expect(report.period).toMatchObject({
+      from: "2026-09-20T22:00:00.000Z",
+      to: "2026-09-27T21:59:59.999Z",
+      timeZone: "Europe/Berlin",
+    });
+    const body = lastSearch("order").body as Body;
+    const aggs = body.aggregations as Array<Record<string, unknown>>;
+    expect(aggs.some((agg) => agg.type === "histogram")).toBe(false);
+    expect(aggs.find((agg) => agg.name === "d0")).toMatchObject({
+      type: "filter",
+      filter: [
+        {
+          type: "range",
+          field: "orderDateTime",
+          parameters: { gte: "2026-09-20T22:00:00.000Z", lte: "2026-09-21T21:59:59.999Z" },
+        },
+      ],
+    });
+    expect(report.timeline).toHaveLength(7);
+    expect(report.timeline[0]).toEqual({
+      bucket: "2026-09-21 00:00:00",
+      orders: 2,
+      revenue: 299.98,
+    });
+    expect(report.timeline[6]).toEqual({
+      bucket: "2026-09-27 00:00:00",
+      orders: 1,
+      revenue: 149.99,
+    });
+    await expect(
+      invoke(salesReport, { from: "2026-09-21", timeZone: "Mars/Olympus" }, ctx),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
   it("rejects inverted periods", async () => {
     await expect(
       invoke(salesReport, { from: "2024-07-01", to: "2024-06-01" }, ctx),
@@ -346,6 +400,30 @@ describe("shop_audit legal pages", () => {
     expect(probed).toEqual(["3a4b5c6d7e8f01020304050607080a0b"]);
     const delivery = audit.findings.find((item) => item.id === "products_without_delivery_time");
     expect(delivery).toMatchObject({ severity: "info" });
+  });
+});
+
+describe("shop_audit with a least-privilege role", () => {
+  it("reports checks the role leaves out as not covered, not as failed", async () => {
+    const denied = () =>
+      HttpResponse.json(
+        { errors: [{ code: "FRAMEWORK__MISSING_PRIVILEGE_ERROR", detail: "missing" }] },
+        { status: 403 },
+      );
+    mock.use(
+      http.get(`${SHOP_URL}/api/_action/system-config`, denied),
+      http.get(`${SHOP_URL}/api/_action/extension/installed`, denied),
+    );
+    const audit = await invoke(shopAudit, {}, ctx);
+    expect(audit.warnings).toBeUndefined();
+    expect(audit.notCovered).toEqual([
+      "legal_pages_missing (needs system_config:read)",
+      "plugins_outdated (needs system.plugin_maintain)",
+    ]);
+    expect(audit.summary.checksRun).toBe(15);
+    expect(formatAuditMarkdown(audit)).toContain(
+      "Not covered by this integration's role: legal_pages_missing (needs system_config:read)",
+    );
   });
 });
 

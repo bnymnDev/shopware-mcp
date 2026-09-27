@@ -28,8 +28,8 @@ inputs:
     description: Also write a self-contained HTML report to this path, for actions/upload-artifact
     default: ""
   version:
-    description: shopware-mcp version from npm
-    default: latest
+    description: shopware-mcp version from npm; default the version this action was released with
+    default: ""
 
 outputs:
   critical:
@@ -41,6 +41,9 @@ outputs:
   info:
     description: Number of info findings
     value: ${{ steps.audit.outputs.info }}
+  exit-code:
+    description: Exit code of the audit - 0 fine, 1 findings at fail-on or an error, 2 a check failed to run
+    value: ${{ steps.audit.outputs.exit-code }}
 
 runs:
   using: composite

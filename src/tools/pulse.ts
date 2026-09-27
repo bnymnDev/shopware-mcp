@@ -5,67 +5,14 @@ import { badRequest } from "../errors.js";
 import { notCancelled } from "./periods.js";
 import { idSchema, num, raw, rawList, str } from "./shared.js";
 import { defineTool } from "./types.js";
+import { defaultTimeZone, isTimeZone, localDate, shiftDays, startOfDay } from "./zone.js";
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+export { defaultTimeZone, isTimeZone, startOfDay } from "./zone.js";
+
 /** Below this many expected orders a quiet spell says nothing; small shops are often quiet. */
 const MIN_EXPECTED = 3;
 /** A payment state that means the customer tried and did not get through. */
 const FAILED_STATES = new Set(["failed", "cancelled"]);
-
-/* ------------------------------------------------------------------------------------------
- * Time zones without a library: Intl gives the wall clock, the offset follows from it.
- * ---------------------------------------------------------------------------------------- */
-
-function wallClock(date: Date, timeZone: string) {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  }).formatToParts(date);
-  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-  return {
-    year: get("year"),
-    month: get("month"),
-    day: get("day"),
-    hour: get("hour"),
-    minute: get("minute"),
-    second: get("second"),
-  };
-}
-
-function offsetMs(date: Date, timeZone: string): number {
-  const c = wallClock(date, timeZone);
-  const asUtc = Date.UTC(c.year, c.month - 1, c.day, c.hour, c.minute, c.second);
-  return asUtc - Math.floor(date.getTime() / 1000) * 1000;
-}
-
-/** Local midnight of the day `date` falls on, in `timeZone`, as an instant. */
-export function startOfDay(date: Date, timeZone: string): Date {
-  const c = wallClock(date, timeZone);
-  const midnightUtc = Date.UTC(c.year, c.month - 1, c.day);
-  const guess = midnightUtc - offsetMs(date, timeZone);
-  // The offset at midnight can differ from the one now (daylight saving changed during the day).
-  return new Date(midnightUtc - offsetMs(new Date(guess), timeZone));
-}
-
-export function isTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: value });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export const defaultTimeZone = (): string =>
-  process.env.TZ && isTimeZone(process.env.TZ)
-    ? process.env.TZ
-    : Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
 /* ------------------------------------------------------------------------------------------
  * The pulse
@@ -98,12 +45,10 @@ export function silenceChance(expected: number): number {
   return Math.exp(-expected);
 }
 
+/** From MIN_EXPECTED orders on, the chance of none is below 5 % (e^-3), so at least "watch". */
 export function silenceVerdict(minutes: number, expected: number): Verdict {
   if (minutes < 30 || expected < MIN_EXPECTED) return "normal";
-  const chance = silenceChance(expected);
-  if (chance < 0.01) return "unusual";
-  if (chance < 0.05) return "watch";
-  return "normal";
+  return silenceChance(expected) < 0.01 ? "unusual" : "watch";
 }
 
 function bucketCounts(aggregation: unknown): Map<string, number> {
@@ -134,10 +79,13 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   const lastTime = lastAt ? Date.parse(lastAt) : null;
 
   const dayStart = startOfDay(now, timeZone);
-  const elapsed = now.getTime() - dayStart.getTime();
+  // Same weekday, same clock time, stepped on the local calendar: across a daylight saving
+  // change a week is not 168 hours.
+  const weekBack = (date: Date, weeksAgo: number) =>
+    weeksAgo === 0 ? date : shiftDays(date, -7 * weeksAgo, timeZone);
   const windows = Array.from({ length: weeks + 1 }, (_, weeksAgo) => {
-    const from = startOfDay(new Date(now.getTime() - weeksAgo * WEEK_MS), timeZone);
-    return { weeksAgo, from, to: new Date(from.getTime() + elapsed) };
+    const to = weekBack(now, weeksAgo);
+    return { weeksAgo, from: startOfDay(to, timeZone), to };
   });
 
   const aggregations: Raw[] = [];
@@ -169,11 +117,15 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
       },
     );
   }
+  // The same stretch of silence, one to `weeks` weeks earlier: how many orders came then? A
+  // week whose stretch reaches into the silence itself is no comparison and is left out.
+  const gapWeeks: number[] = [];
   if (lastTime !== null) {
-    // The same stretch of silence, one to `weeks` weeks earlier: how many orders came then?
     for (let weeksAgo = 1; weeksAgo <= weeks; weeksAgo++) {
-      const from = new Date(lastTime - weeksAgo * WEEK_MS + 1000);
-      const to = new Date(now.getTime() - weeksAgo * WEEK_MS);
+      const from = new Date(weekBack(new Date(lastTime), weeksAgo).getTime() + 1000);
+      const to = weekBack(now, weeksAgo);
+      if (to.getTime() > lastTime) continue;
+      gapWeeks.push(weeksAgo);
       aggregations.push({
         name: `g${weeksAgo}`,
         type: "filter",
@@ -196,7 +148,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
 
   const history = windows.map((window) => ({
     weeksAgo: window.weeksAgo,
-    date: new Intl.DateTimeFormat("en-CA", { timeZone, dateStyle: "short" }).format(window.from),
+    date: localDate(window.from, timeZone),
     orders: count(`o${window.weeksAgo}n`),
     revenue: round2(sum(`r${window.weeksAgo}s`)),
     payments: bucketCounts(aggs[`p${window.weeksAgo}t`]),
@@ -207,9 +159,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   const typicalRevenue = mean(previous.map((week) => week.revenue));
 
   const minutes = lastTime === null ? null : Math.floor((now.getTime() - lastTime) / 60_000);
-  const sameGap = Array.from({ length: lastTime === null ? 0 : weeks }, (_, index) =>
-    count(`g${index + 1}n`),
-  );
+  const sameGap = gapWeeks.map((weeksAgo) => count(`g${weeksAgo}n`));
   const expected = mean(sameGap);
 
   const failedOf = (payments: Map<string, number>) =>
@@ -275,6 +225,15 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
 }
 
 export type Pulse = Awaited<ReturnType<typeof computePulse>>;
+
+/** "the last 8 Sundays" when every week was compared, "7 earlier Sundays" when some were not. */
+export function comparedWeeks(pulse: Pulse, unit: string): string {
+  const compared = pulse.silence?.sameGapInPreviousWeeks.length ?? 0;
+  const plural = `${unit}${compared === 1 ? "" : "s"}`;
+  return compared === pulse.typical.weeks
+    ? `the last ${compared} ${plural}`
+    : `${compared} earlier ${plural}`;
+}
 
 export const shopPulse = defineTool({
   name: "shop_pulse",

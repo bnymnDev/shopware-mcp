@@ -1,7 +1,8 @@
 import { describeItem } from "./format.js";
 import type { runAudit } from "./tools/audit.js";
-import type { Pulse } from "./tools/pulse.js";
+import { comparedWeeks, type Pulse } from "./tools/pulse.js";
 import type { buildSalesReport } from "./tools/reports.js";
+import { localDate } from "./tools/zone.js";
 
 type AuditReport = Awaited<ReturnType<typeof runAudit>>;
 type SalesReport = Awaited<ReturnType<typeof buildSalesReport>>;
@@ -136,8 +137,8 @@ export function columnChart(options: ColumnChartOptions): string {
     .map((column, index) => {
       const cx = left + band * index + band / 2;
       const x = cx - barWidth / 2;
-      const top = y(column.value);
-      const h = Math.max(0, y(0) - top);
+      const barTop = y(column.value);
+      const h = Math.max(0, y(0) - barTop);
       const r = Math.min(4, h, barWidth / 2);
       const tone = options.single || column.emphasis ? "accent" : "context";
       const cls = `bar ${tone}${column.partial ? " partial" : ""}`;
@@ -152,14 +153,15 @@ export function columnChart(options: ColumnChartOptions): string {
       const path =
         h <= 0
           ? ""
-          : `<path class="${cls}" d="M${x},${y(0)} V${top + r} Q${x},${top} ${x + r},${top} H${x + barWidth - r} Q${x + barWidth},${top} ${x + barWidth},${top + r} V${y(0)} Z"/>`;
+          : `<path class="${cls}" d="M${x},${y(0)} V${barTop + r} Q${x},${barTop} ${x + r},${barTop} H${x + barWidth - r} Q${x + barWidth},${barTop} ${x + barWidth},${barTop + r} V${y(0)} Z"/>`;
       const zero =
         h <= 0
           ? `<line class="zero ${tone}" x1="${x}" x2="${x + barWidth}" y1="${y(0) - 1}" y2="${y(0) - 1}"/>`
           : "";
       const label = column.labelled
-        ? `<text class="cap" x="${cx}" y="${top - 6}" text-anchor="middle">${esc(format(column.value))}${column.partial ? " so far" : ""}</text>`
+        ? `<text class="cap" x="${cx}" y="${barTop - 6}" text-anchor="middle">${esc(format(column.value))}${column.partial ? " so far" : ""}</text>`
         : "";
+      // The whole column of the plot answers the pointer, however short the bar.
       const hit = `<rect class="hit" x="${cx - band / 2}" y="${top - 2}" width="${band}" height="${plotHeight + 4}" fill="transparent" tabindex="0" data-tip="${esc(tip)}" aria-label="${esc(tip.replace(/\n/g, ", "))}"><title>${esc(tip)}</title></rect>`;
       const axis = `<text class="xlabel" x="${cx}" y="${height - 10}" text-anchor="middle">${esc(column.label)}</text>`;
       return `<g>${path}${zero}${label}${axis}${hit}</g>`;
@@ -249,7 +251,7 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
         ? "orders came in every time"
         : `${withOrders} of ${counts.length} brought orders`;
     banner = `<div class="banner ${kind}">${status(kind, verdict === "unusual" ? "Unusual silence" : "Quieter than usual")}
-<p>No order for <strong>${esc(duration(silence.minutes))}</strong>, since ${esc(since)}. Between ${esc(since)} and ${esc(now)} on the last ${counts.length} ${esc(day)}s, ${how}, <strong>${esc(decimal.format(silence.expectedOrders))}</strong> on average. A gap like this happens by chance ${esc(odds(silence.chance))} times. Check the checkout: maintenance mode, payment provider, error log.</p></div>`;
+<p>No order for <strong>${esc(duration(silence.minutes))}</strong>, since ${esc(since)}. Between ${esc(since)} and ${esc(now)} on ${esc(comparedWeeks(pulse, day))}, ${how}, <strong>${esc(decimal.format(silence.expectedOrders))}</strong> on average. A gap like this happens by chance ${esc(odds(silence.chance))} times. Check the checkout: maintenance mode, payment provider, error log.</p></div>`;
   } else if (pulse.payments.verdict !== "normal") {
     const kind: Status = pulse.payments.verdict === "unusual" ? "critical" : "warning";
     banner = `<div class="banner ${kind}">${status(kind, "Payments failing")}
@@ -313,8 +315,12 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
             label: `average ${decimal.format(silence.expectedOrders)}`,
           },
           columns: [
+            // The compared weeks are the oldest ones: a week reaching into the silence is left out.
             ...silence.sameGapInPreviousWeeks
-              .map((count, index) => ({ date: pulse.history[index + 1]?.date ?? "", value: count }))
+              .map((count, index, all) => ({
+                date: pulse.history[weeks - all.length + 1 + index]?.date ?? "",
+                value: count,
+              }))
               .reverse()
               .map((entry, index, all) => ({
                 label: dayLabels(all.map((item) => item.date))[index] ?? "",
@@ -356,7 +362,9 @@ export function salesSection(report: SalesReport, title = "Last 7 days"): string
     ),
   ].join("");
   const lastBucket = report.timeline.at(-1)?.bucket ?? "";
-  const running = Date.parse(report.period.to) > Date.now();
+  const running = report.period.running;
+  const zone = report.period.timeZone;
+  const dayOf = (iso: string) => (zone ? localDate(new Date(iso), zone) : iso.slice(0, 10));
   const chart = columnChart({
     caption: `Revenue per ${report.period.interval}${running ? ", today so far in light blue" : ""}`,
     valueHeader: "Revenue",
@@ -384,7 +392,7 @@ export function salesSection(report: SalesReport, title = "Last 7 days"): string
     .join("");
   return `<section>
 <h2>${esc(title)}</h2>
-<p class="lede">${esc(report.period.from.slice(0, 10))} to ${esc(report.period.to.slice(0, 10))}, cancelled orders excluded.</p>
+<p class="lede">${esc(dayOf(report.period.from))} to ${esc(dayOf(report.period.to))}, cancelled orders excluded.</p>
 <div class="tiles">${tiles}</div>
 <div class="charts">${chart}
 <table class="card"><caption>Sales channels</caption><thead><tr><th>Channel</th><th class="num">Orders</th><th class="num">Revenue</th></tr></thead><tbody>${channels || '<tr><td colspan="3" class="muted">No sales</td></tr>'}</tbody></table>
@@ -433,9 +441,13 @@ export function auditSection(
     (folded.length > 0
       ? `<details class="more"><summary>${folded.length} info ${folded.length === 1 ? "finding" : "findings"}</summary>${folded.map(card).join("")}</details>`
       : "");
-  const skipped = report.warnings?.length
-    ? `<p class="muted">Skipped: ${report.warnings.map((warning) => esc(warning)).join("; ")}</p>`
-    : "";
+  const skipped =
+    (report.warnings?.length
+      ? `<p class="muted">Skipped: ${report.warnings.map((warning) => esc(warning)).join("; ")}</p>`
+      : "") +
+    (report.notCovered?.length
+      ? `<p class="muted">Not covered by this integration's role: ${report.notCovered.map((entry) => esc(entry)).join(", ")}</p>`
+      : "");
   return `<section>
 <h2>Audit</h2>
 <p class="lede">${esc(summary.checksRun)} checks. ${chips}</p>

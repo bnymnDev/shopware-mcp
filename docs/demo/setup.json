@@ -11,11 +11,7 @@
     },
     {
       "kind": "result",
-      "text": "Shop         http://127.0.0.1:8000 (Shopware 6.7.13.1)"
-    },
-    {
-      "kind": "result",
-      "text": "Role         Created \"shopware-mcp (read-only)\" with 46 privileges"
+      "text": "Role         Created \"shopware-mcp (read-only)\" with 51 privileges"
     },
     {
       "kind": "result",
@@ -23,7 +19,15 @@
     },
     {
       "kind": "result",
-      "text": "Verified     29 of 29 read tools ready"
+      "text": "Access key   SWIADDVUNKZ2…"
+    },
+    {
+      "kind": "result",
+      "text": "Secret       QU15QWlHNUhS…"
+    },
+    {
+      "kind": "result",
+      "text": "             Shown once. Keep it in the host config, not in a repository."
     },
     {
       "kind": "result",
@@ -31,7 +35,15 @@
     },
     {
       "kind": "result",
-      "text": "The secret is shown once. Keep it in the host config, not in a repository."
+      "text": "Shop         http://127.0.0.1:8000 (Shopware 6.7.13.1)"
+    },
+    {
+      "kind": "result",
+      "text": "Verified     28 of 28 read tools ready"
+    },
+    {
+      "kind": "result",
+      "text": "  – shop_settings: left out, pass --settings to include it"
     },
     {
       "kind": "result",
@@ -55,11 +67,11 @@
     },
     {
       "kind": "result",
-      "text": "  -e SHOPWARE_CLIENT_ID=SWIAU2C3MHRR… \\"
+      "text": "  -e SHOPWARE_CLIENT_ID=SWIADDVUNKZ2… \\"
     },
     {
       "kind": "result",
-      "text": "  -e SHOPWARE_CLIENT_SECRET=NzlKSGJHM3lX… \\"
+      "text": "  -e SHOPWARE_CLIENT_SECRET=QU15QWlHNUhS… \\"
     },
     {
       "kind": "result",

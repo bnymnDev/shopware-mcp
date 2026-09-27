@@ -236,9 +236,22 @@ export const merqoPack: ExtensionPack = {
   label: "Merqo",
   url: "https://github.com/bnymnDev/merqo",
   tools: [
-    { requires: ["MerqoHub"], tool: merqoHealth },
-    { requires: ["MerqoVault"], tool: merqoEinvoiceInbox },
-    { requires: ["MerqoReturns"], tool: merqoReturns },
-    { requires: ["MerqoRescue"], tool: merqoAbandonedCarts },
+    // The Hub status route checks no privilege; the others read the plugins' own entities.
+    { requires: ["MerqoHub"], tool: merqoHealth, privileges: [] },
+    {
+      requires: ["MerqoVault"],
+      tool: merqoEinvoiceInbox,
+      privileges: ["merqo_vault_document:read"],
+    },
+    {
+      requires: ["MerqoReturns"],
+      tool: merqoReturns,
+      privileges: ["merqo_return:read", "merqo_return_line_item:read", "order:read"],
+    },
+    {
+      requires: ["MerqoRescue"],
+      tool: merqoAbandonedCarts,
+      privileges: ["merqo_cart_snapshot:read"],
+    },
   ],
 };

@@ -28,6 +28,8 @@ interface CountryInfo {
   id: string;
   iso: string | null;
   name: string | null;
+  active?: boolean | null;
+  shippingAvailable?: boolean | null;
 }
 
 export interface ChannelInfo {
@@ -132,7 +134,10 @@ async function loadCountries(client: ShopwareClient, channelId: string): Promise
 
 /** A channel by id or name; without a reference the first active storefront, else any active one. */
 export async function resolveChannel(client: ShopwareClient, ref?: string): Promise<ChannelInfo> {
-  const channels = await loadChannels(client);
+  return pickChannel(await loadChannels(client), ref);
+}
+
+function pickChannel(channels: ChannelInfo[], ref?: string): ChannelInfo {
   if (ref) {
     const wanted = ref.trim().toLowerCase();
     const found = UUID_PATTERN.test(wanted)
@@ -163,7 +168,16 @@ export class StoreSession {
   constructor(
     private readonly client: ShopwareClient,
     readonly channelId: string,
+    /** The channel's own language: the API language may not be assigned to the channel at all. */
+    private readonly languageId: string | null = null,
   ) {}
+
+  private get headers(): Record<string, string> {
+    return {
+      "sw-context-token": this.token,
+      ...(this.languageId ? { "sw-language-id": this.languageId } : {}),
+    };
+  }
 
   call<T>(
     path: string,
@@ -173,7 +187,7 @@ export class StoreSession {
       method: options.method ?? "GET",
       ...(options.body !== undefined ? { body: options.body } : {}),
       ...(options.idempotent !== undefined ? { idempotent: options.idempotent } : {}),
-      headers: { "sw-context-token": this.token },
+      headers: this.headers,
     });
   }
 
@@ -182,7 +196,7 @@ export class StoreSession {
     await this.client.request("/api/_proxy/switch-customer", {
       method: "PATCH",
       body: { salesChannelId: this.channelId, customerId },
-      headers: { "sw-context-token": this.token },
+      headers: this.headers,
       idempotent: true,
     });
   }
@@ -205,6 +219,8 @@ export class StoreSession {
 
 interface ProductInfo {
   id: string;
+  parentId: string | null;
+  childCount: number | null;
   productNumber: string | null;
   name: string | null;
   active: boolean | null;
@@ -220,6 +236,8 @@ interface ProductInfo {
 function mapProductInfo(product: Raw): ProductInfo {
   return {
     id: str(product.id) ?? "",
+    parentId: str(product.parentId),
+    childCount: num(product.childCount),
     productNumber: str(product.productNumber),
     name: translated(product, "name"),
     active: bool(product.active),
@@ -241,6 +259,8 @@ const PRODUCT_CRITERIA = {
   includes: {
     product: [
       "id",
+      "parentId",
+      "childCount",
       "productNumber",
       "name",
       "translated",
@@ -293,8 +313,10 @@ function productReasons(product: ProductInfo, channel: ChannelInfo, now: Date, f
         : "its visibility excludes search",
     );
   }
-  if (product.isCloseout && (product.availableStock ?? 0) <= 0) {
-    reasons.push("it is a closeout article with no available stock");
+  if (forSearch && product.isCloseout && (product.availableStock ?? 0) <= 0) {
+    reasons.push(
+      "it is a closeout article without stock, which search hides while the listing setting 'Hide products after clearance sale' is on",
+    );
   }
   if (product.releaseDate && Date.parse(product.releaseDate) > now.getTime()) {
     reasons.push(`it is released on ${product.releaseDate.slice(0, 10)}`);
@@ -308,14 +330,27 @@ interface PromotionInfo {
   validFrom: string | null;
   validUntil: string | null;
   useCodes: boolean | null;
+  useIndividualCodes: boolean | null;
   maxRedemptionsGlobal: number | null;
   orderCount: number | null;
+  maxRedemptionsPerCustomer: number | null;
+  ordersPerCustomerCount: Record<string, number>;
   salesChannelIds: string[];
+  /** Discounts configured; null when they were not loaded. */
+  discounts: number | null;
   rules: string[];
 }
 
+const PROMOTION_ASSOCIATIONS = associations([
+  "salesChannels",
+  "discounts",
+  "personaRules",
+  "cartRules",
+  "orderRules",
+]);
+
 const PROMOTION_CRITERIA = {
-  associations: associations(["salesChannels", "personaRules", "cartRules", "orderRules"]),
+  associations: PROMOTION_ASSOCIATIONS,
   includes: {
     promotion: [
       "id",
@@ -325,14 +360,19 @@ const PROMOTION_CRITERIA = {
       "validFrom",
       "validUntil",
       "useCodes",
+      "useIndividualCodes",
       "maxRedemptionsGlobal",
       "orderCount",
+      "maxRedemptionsPerCustomer",
+      "ordersPerCustomerCount",
       "salesChannels",
+      "discounts",
       "personaRules",
       "cartRules",
       "orderRules",
     ],
     promotion_sales_channel: ["salesChannelId"],
+    promotion_discount: ["id"],
     rule: ["name"],
   },
 };
@@ -345,23 +385,34 @@ function mapPromotion(promotion: Raw): PromotionInfo {
   ]
     .map((rule) => str(rule.name))
     .filter((name): name is string => name !== null);
+  const counts: Record<string, number> = {};
+  for (const [customerId, count] of Object.entries(raw(promotion.ordersPerCustomerCount) ?? {})) {
+    const value = num(count);
+    if (value !== null) counts[customerId.toLowerCase()] = value;
+  }
   return {
     name: translated(promotion, "name"),
     active: bool(promotion.active),
     validFrom: str(promotion.validFrom),
     validUntil: str(promotion.validUntil),
     useCodes: bool(promotion.useCodes),
+    useIndividualCodes: bool(promotion.useIndividualCodes),
     maxRedemptionsGlobal: num(promotion.maxRedemptionsGlobal),
     orderCount: num(promotion.orderCount),
+    maxRedemptionsPerCustomer: num(promotion.maxRedemptionsPerCustomer),
+    ordersPerCustomerCount: counts,
     salesChannelIds: rawList(promotion.salesChannels)
       .map((entry) => str(entry.salesChannelId))
       .filter((id): id is string => id !== null),
+    discounts: Array.isArray(promotion.discounts) ? promotion.discounts.length : null,
     rules: [...new Set(rules)],
   };
 }
 
+type FoundPromotion = PromotionInfo & { codeType: "fixed" | "individual"; redeemed: boolean };
+
 /** The promotion behind a code: a fixed code first, then an individual code. */
-async function findPromotion(client: ShopwareClient, code: string) {
+async function findPromotion(client: ShopwareClient, code: string): Promise<FoundPromotion | null> {
   const fixed = await client.search<Raw>("promotion", {
     page: 1,
     limit: 1,
@@ -369,16 +420,12 @@ async function findPromotion(client: ShopwareClient, code: string) {
     ...PROMOTION_CRITERIA,
   });
   const promotion = fixed.items[0];
-  if (promotion) return mapPromotion(promotion);
+  if (promotion) return { ...mapPromotion(promotion), codeType: "fixed", redeemed: false };
   const individual = await client.search<Raw>("promotion-individual-code", {
     page: 1,
     limit: 1,
     filter: [equals("code", code)],
-    associations: {
-      promotion: {
-        associations: associations(["salesChannels", "personaRules", "cartRules", "orderRules"]),
-      },
-    },
+    associations: { promotion: { associations: PROMOTION_ASSOCIATIONS } },
     includes: {
       promotion_individual_code: ["promotion", "payload"],
       ...PROMOTION_CRITERIA.includes,
@@ -387,14 +434,18 @@ async function findPromotion(client: ShopwareClient, code: string) {
   const entry = individual.items[0];
   const parent = raw(entry?.promotion);
   if (!entry || !parent) return null;
-  const info = mapPromotion(parent);
-  return { ...info, redeemed: raw(entry.payload) !== null };
+  return { ...mapPromotion(parent), codeType: "individual", redeemed: raw(entry.payload) !== null };
 }
 
+/**
+ * Why Shopware refuses a code, following its own checks: the permitted-promotion filters
+ * (active, channel, dates, code type) and the collector's eligibility (limits, discounts).
+ */
 function promotionReasons(
-  promotion: PromotionInfo & { redeemed?: boolean },
+  promotion: FoundPromotion,
   channel: ChannelInfo,
   now: Date,
+  customerId: string | null,
 ): string[] {
   const reasons: string[] = [];
   if (promotion.active === false) reasons.push("it is inactive");
@@ -404,17 +455,31 @@ function promotionReasons(
   if (promotion.validUntil && Date.parse(promotion.validUntil) < now.getTime()) {
     reasons.push(`it ended on ${promotion.validUntil.slice(0, 10)}`);
   }
-  if (promotion.salesChannelIds.length > 0 && !promotion.salesChannelIds.includes(channel.id)) {
+  if (promotion.salesChannelIds.length === 0) {
+    reasons.push("it is not assigned to any sales channel");
+  } else if (!promotion.salesChannelIds.includes(channel.id)) {
     reasons.push(`it is not assigned to ${channel.name ?? "this sales channel"}`);
   }
-  if (
-    promotion.maxRedemptionsGlobal &&
-    (promotion.orderCount ?? 0) >= promotion.maxRedemptionsGlobal
-  ) {
-    reasons.push(`it has reached its limit of ${promotion.maxRedemptionsGlobal} redemptions`);
+  if (promotion.useCodes === false) {
+    reasons.push("it needs no code and applies automatically");
+  } else if (promotion.codeType === "fixed" && promotion.useIndividualCodes === true) {
+    reasons.push("it now uses individual codes, so its fixed code no longer works");
+  } else if (promotion.codeType === "individual" && promotion.useIndividualCodes === false) {
+    reasons.push("it now uses one fixed code, so its individual codes no longer work");
   }
   if (promotion.redeemed) reasons.push("this individual code has already been redeemed");
-  if (promotion.useCodes === false) reasons.push("it needs no code and applies automatically");
+  const globalLimit = promotion.maxRedemptionsGlobal ?? 0;
+  if (globalLimit > 0 && (promotion.orderCount ?? 0) >= globalLimit) {
+    reasons.push(`it has reached its limit of ${globalLimit} redemptions`);
+  }
+  const customerLimit = promotion.maxRedemptionsPerCustomer ?? 0;
+  const used = customerId ? (promotion.ordersPerCustomerCount[customerId.toLowerCase()] ?? 0) : 0;
+  if (customerLimit > 0 && used >= customerLimit) {
+    reasons.push(
+      `this customer has used it ${used} ${used === 1 ? "time" : "times"}, the limit per customer`,
+    );
+  }
+  if (promotion.discounts === 0) reasons.push("it has no discount configured");
   return reasons;
 }
 
@@ -447,38 +512,76 @@ export function cartErrors(cart: Raw): Raw[] {
 interface ExplainContext {
   client: ShopwareClient;
   channel: ChannelInfo;
-  country: { iso: string | null; name: string | null } | null;
+  /** The country the cart ships to, when known: the guest's choice or the customer's address. */
+  country: CountryInfo | null;
   products: ProductInfo[];
+  /** The customer the session is logged in as, for per-customer promotion limits. */
+  customerId: string | null;
   now: Date;
 }
 
 const list = (values: (string | null)[]) => values.filter(Boolean).join(", ") || "none";
 
+/**
+ * The product an error is about. Shopware keys product errors as message key plus product id;
+ * the name in the parameters is a fallback, since it is in the channel's language.
+ */
+function productOf(error: Raw, ctx: ExplainContext): ProductInfo | null {
+  const errorKey = str(error.key) ?? "";
+  const name = str(raw(error.parameters)?.name);
+  return (
+    ctx.products.find((product) => product.id !== "" && errorKey.endsWith(product.id)) ??
+    ctx.products.find((product) => product.name !== null && product.name === name) ??
+    null
+  );
+}
+
+function countryReason(ctx: ExplainContext, name: string | null): string {
+  const channelName = ctx.channel.name ?? "this sales channel";
+  const countries = list(ctx.channel.countries.map((country) => country.iso));
+  const target = ctx.country;
+  if (!target) {
+    const assigned = ctx.channel.countries.some((country) => country.name === name);
+    return assigned
+      ? `${name} is assigned to ${channelName}, but the country is inactive or shipping there is switched off`
+      : `${name ?? "The country"} is not among the countries of ${channelName} (${countries})`;
+  }
+  const label = target.name ?? target.iso ?? "The country";
+  if (target.active === false) return `${label} is inactive in the shop's country settings`;
+  if (!ctx.channel.countries.some((country) => country.id === target.id)) {
+    return `${label} is not among the countries of ${channelName} (${countries})`;
+  }
+  if (target.shippingAvailable === false) {
+    return `${label} is assigned to ${channelName}, but shipping there is switched off for the country`;
+  }
+  return `${label} is assigned to ${channelName} and active; a plugin or rule blocks the address`;
+}
+
+async function explainCode(code: string, ctx: ExplainContext): Promise<string> {
+  const promotion = await findPromotion(ctx.client, code);
+  if (!promotion) return `No promotion uses the code "${code}"`;
+  const reasons = promotionReasons(promotion, ctx.channel, ctx.now, ctx.customerId);
+  return reasons.length > 0
+    ? `"${code}" belongs to "${promotion.name}", but ${reasons.join(", and ")}`
+    : `"${code}" belongs to "${promotion.name}", which looks valid; Shopware still refused it`;
+}
+
 async function explain(error: Raw, ctx: ExplainContext): Promise<string | null> {
   const key = str(error.messageKey) ?? str(error.key) ?? "";
   const params = raw(error.parameters) ?? {};
   const name = str(params.name);
-  const byName = (value: string | null) =>
-    ctx.products.find((product) => product.name === value) ?? null;
   switch (key) {
     case "shipping-address-blocked":
+      return countryReason(ctx, name);
     case "billing-address-blocked": {
-      const countries = ctx.channel.countries.map((country) => country.iso);
-      const target = ctx.country?.name ?? name ?? "this country";
-      const assigned = ctx.channel.countries.some((country) => country.name === target);
+      const assigned = ctx.channel.countries.some((country) => country.name === name);
       return assigned
-        ? `${target} is assigned to ${ctx.channel.name}, but shipping there is switched off for the country`
-        : `${target} is not among the countries of ${ctx.channel.name} (${list(countries)})`;
+        ? `${name} is assigned to ${ctx.channel.name}, but the country is inactive or blocked for billing`
+        : `${name ?? "The billing country"} is not among the countries of ${ctx.channel.name} (${list(ctx.channel.countries.map((country) => country.iso))})`;
     }
     case "promotion-not-found": {
       const code = str(params.code);
-      if (!code) return null;
-      const promotion = await findPromotion(ctx.client, code);
-      if (!promotion) return `No promotion uses the code "${code}"`;
-      const reasons = promotionReasons(promotion, ctx.channel, ctx.now);
-      return reasons.length > 0
-        ? `"${code}" belongs to "${promotion.name}", but ${reasons.join(", and ")}`
-        : `"${code}" belongs to "${promotion.name}", which looks valid; Shopware still refused it`;
+      return code ? explainCode(code, ctx) : null;
     }
     case "promotion-not-eligible":
     case "promotion-excluded": {
@@ -503,23 +606,23 @@ async function explain(error: Raw, ctx: ExplainContext): Promise<string | null> 
       return reasons.length > 0 ? `${product.productNumber}: ${reasons.join(", and ")}` : null;
     }
     case "product-out-of-stock": {
-      const product = byName(name);
+      const product = productOf(error, ctx);
       return product
         ? `${product.productNumber} is a closeout article with ${product.availableStock ?? 0} available`
         : null;
     }
     case "product-stock-reached": {
-      const product = byName(name);
+      const product = productOf(error, ctx);
       return product
         ? `Only ${product.availableStock ?? 0} of ${product.productNumber} are available; the cart lowered the quantity to ${num(params.quantity) ?? "that"}`
         : null;
     }
     case "min-order-quantity": {
-      const product = byName(name);
+      const product = productOf(error, ctx);
       return product ? `${product.productNumber} sells from ${product.minPurchase} units` : null;
     }
     case "purchase-steps-quantity": {
-      const product = byName(name);
+      const product = productOf(error, ctx);
       return product
         ? `${product.productNumber} sells in steps of ${product.purchaseSteps}; the cart rounded the quantity`
         : null;
@@ -530,10 +633,15 @@ async function explain(error: Raw, ctx: ExplainContext): Promise<string | null> 
         key === "shipping-method-blocked"
           ? ctx.channel.shippingMethods
           : ctx.channel.paymentMethods;
-      const method = methods.find((entry) => entry.name === name) ?? null;
+      const id = str(params.id);
+      const method =
+        (id ? methods.find((entry) => entry.id === id) : undefined) ??
+        methods.find((entry) => entry.name === name) ??
+        null;
+      const label = method?.name ?? name;
       const reason = str(params.reason);
-      if (method?.rule) return `${name} is only available when the rule "${method.rule}" matches`;
-      return reason ? `${name}: ${reason}` : null;
+      if (method?.rule) return `${label} is only available when the rule "${method.rule}" matches`;
+      return reason ? `${label}: ${reason}` : null;
     }
     default:
       return null;
@@ -542,13 +650,20 @@ async function explain(error: Raw, ctx: ExplainContext): Promise<string | null> 
 
 async function mapProblems(errors: Raw[], ctx: ExplainContext): Promise<CartProblem[]> {
   return Promise.all(
-    errors.map(async (error) => ({
-      key: str(error.messageKey) ?? str(error.key) ?? "unknown",
-      level: LEVELS[num(error.level) ?? 0] ?? "notice",
-      blocksOrder: bool(error.block) ?? false,
-      message: str(error.translatedMessage) ?? str(error.message),
-      explanation: await explain(error, ctx).catch(() => null),
-    })),
+    errors.map(async (error) => {
+      const key = str(error.messageKey) ?? str(error.key) ?? "unknown";
+      return {
+        key,
+        level: LEVELS[num(error.level) ?? 0] ?? "notice",
+        blocksOrder: bool(error.block) ?? false,
+        message: str(error.translatedMessage) ?? str(error.message),
+        explanation: await explain(error, ctx).catch((cause: unknown) => {
+          // A refused lookup (often a missing read privilege) costs the explanation, not the answer.
+          logger.warn("could not explain a cart error", { key, error: String(cause) });
+          return null;
+        }),
+      };
+    }),
   );
 }
 
@@ -576,17 +691,58 @@ function findMethod(methods: MethodInfo[], wanted: string): MethodInfo | undefin
 
 const round = (value: number | null) => (value === null ? null : Math.round(value * 100) / 100);
 
-/** The tier a quantity falls into, from the Store API's calculated prices (upper bounds). */
-function tierFor(tiers: Raw[], quantity: number) {
+/**
+ * The advanced-price tier a quantity falls into, as the product page shows it. The Store API
+ * sorts tiers by their start and gives each its end as quantity; the open-ended last tier
+ * carries its start instead, so ranges are rebuilt from the previous tier's end.
+ */
+export function tierFor(tiers: Raw[], quantity: number) {
   const sorted = tiers
-    .map((tier) => ({ upTo: num(tier.quantity), unitPrice: num(tier.unitPrice) }))
+    .map((tier) => ({ bound: num(tier.quantity), unitPrice: num(tier.unitPrice) }))
     .filter(
-      (tier): tier is { upTo: number; unitPrice: number } =>
-        tier.upTo !== null && tier.unitPrice !== null,
+      (tier): tier is { bound: number; unitPrice: number } =>
+        tier.bound !== null && tier.unitPrice !== null,
     )
-    .sort((a, b) => a.upTo - b.upTo);
-  return sorted.find((tier) => quantity <= tier.upTo) ?? sorted.at(-1) ?? null;
+    .sort((a, b) => a.bound - b.bound);
+  for (const [index, tier] of sorted.entries()) {
+    const start = index === 0 ? 1 : (sorted[index - 1]?.bound ?? 0) + 1;
+    const last = index === sorted.length - 1;
+    if (last || quantity <= tier.bound) {
+      return {
+        unitPrice: tier.unitPrice,
+        label: last ? `from ${start} units` : `${start} to ${tier.bound} units`,
+      };
+    }
+  }
+  return null;
 }
+
+/** Wait for every call before throwing, so no request is still in flight when the cart goes. */
+async function settleAll<T extends readonly unknown[]>(
+  promises: readonly [...{ [K in keyof T]: Promise<T[K]> }],
+): Promise<T> {
+  const results = await Promise.allSettled(promises);
+  const failed = results.find((result) => result.status === "rejected");
+  if (failed) throw (failed as PromiseRejectedResult).reason;
+  return results.map((result) => (result as PromiseFulfilledResult<unknown>).value) as unknown as T;
+}
+
+/** A few variant numbers of a parent product, to say which one to pick instead. */
+async function variantNumbers(client: ShopwareClient, parentId: string): Promise<string[]> {
+  const variants = await client.search<Raw>("product", {
+    page: 1,
+    limit: 3,
+    filter: [equals("parentId", parentId)],
+    sort: [{ field: "productNumber", order: "ASC" }],
+    includes: { product: ["productNumber"] },
+  });
+  return variants.items
+    .map((variant) => str(variant.productNumber))
+    .filter((value): value is string => value !== null);
+}
+
+const sameNumber = (a: string | null, b: string | undefined) =>
+  a !== null && b !== undefined && a.toLowerCase() === b.toLowerCase();
 
 /* ------------------------------------------------------------------------------------------
  * checkout_simulate
@@ -609,7 +765,8 @@ export const checkoutSimulate = defineTool({
     "taxes, total, which payment and shipping methods the customer is offered, which are " +
     "hidden and by which rule, and every cart error with a plain explanation (country not " +
     "assigned, code expired, product not visible, stock). Nothing is ordered and the cart is " +
-    "deleted afterwards. Use it for 'why can't this customer order?', 'why does this code not " +
+    "deleted afterwards; as a customer, extensions that react to saved carts (abandoned-cart " +
+    "mailers) see it like any other cart of that customer. Use it for 'why can't this customer order?', 'why does this code not " +
     "work?' or 'what does shipping to Switzerland cost?'. Returns { salesChannel, as, " +
     "canOrder, items[], promotions[], shipping, totals, problems[], paymentMethods, " +
     "shippingMethods }.",
@@ -651,7 +808,8 @@ export const checkoutSimulate = defineTool({
       throw badRequest("A customer ships to their own address; pass country only for a guest");
     }
     const now = new Date();
-    const channel = await resolveChannel(client, input.salesChannel);
+    const channels = await loadChannels(client);
+    const channel = pickChannel(channels, input.salesChannel);
     const channelView = { id: channel.id, name: channel.name };
 
     if (!channel.active || channel.maintenance) {
@@ -685,11 +843,12 @@ export const checkoutSimulate = defineTool({
       };
     }
 
+    const countryIncludes = ["id", "iso", "name", "translated", "active", "shippingAvailable"];
     const [products, country, customer, countries] = await Promise.all([
       loadProducts(client, input.items),
       input.country
         ? client.findOne<Raw>("country", "iso", input.country.toUpperCase(), {
-            includes: { country: ["id", "iso", "name", "translated"] },
+            includes: { country: countryIncludes },
           })
         : Promise.resolve(null),
       input.customerNumber
@@ -709,7 +868,7 @@ export const checkoutSimulate = defineTool({
               ],
               customer_group: ["name", "translated", "displayGross"],
               customer_address: ["country"],
-              country: ["id", "iso", "name", "translated"],
+              country: countryIncludes,
             },
           })
         : Promise.resolve(null),
@@ -719,7 +878,9 @@ export const checkoutSimulate = defineTool({
 
     const lineItems = input.items.map((item) => {
       const product = products.find((entry) =>
-        item.productId ? entry.id === item.productId : entry.productNumber === item.productNumber,
+        item.productId
+          ? entry.id === item.productId
+          : sameNumber(entry.productNumber, item.productNumber),
       );
       if (!product) throw notFound("product", item.productNumber ?? item.productId ?? "");
       return { product, quantity: item.quantity };
@@ -749,19 +910,56 @@ export const checkoutSimulate = defineTool({
       }
     }
 
+    // Shopware logs only active customers in, and only in their bound channel; anyone else
+    // silently becomes a guest, which is exactly what "why can't X order?" has to say.
+    let loggedIn = false;
+    if (customer) {
+      const number = str(customer.customerNumber) ?? input.customerNumber;
+      const boundTo = str(customer.boundSalesChannelId);
+      if (bool(customer.active) === false) {
+        problems.push({
+          key: "customer-inactive",
+          level: "error",
+          blocksOrder: true,
+          message: `Customer ${number} is inactive and cannot log in.`,
+          explanation:
+            "Shopware does not log inactive customers in (the account may still wait for its double opt-in confirmation); the cart below is priced for a guest",
+        });
+      } else if (boundTo && boundTo !== channel.id) {
+        const other = channels.find((entry) => entry.id === boundTo)?.name;
+        problems.push({
+          key: "customer-bound-to-other-channel",
+          level: "error",
+          blocksOrder: true,
+          message: `Customer ${number} is bound to ${other ?? "another sales channel"} and cannot log in to ${channel.name}.`,
+          explanation:
+            "An account bound to one sales channel only works there; the cart below is priced for a guest",
+        });
+      } else {
+        loggedIn = true;
+      }
+    }
+
+    const toCountry = (entry: Raw | null): CountryInfo | null =>
+      entry
+        ? {
+            id: str(entry.id) ?? "",
+            iso: str(entry.iso),
+            name: translated(entry, "name"),
+            active: bool(entry.active),
+            shippingAvailable: bool(entry.shippingAvailable),
+          }
+        : null;
     const shipTo = country
-      ? { iso: str(country.iso), name: translated(country, "name") }
-      : customer
-        ? (() => {
-            const target = raw(raw(customer.defaultShippingAddress)?.country);
-            return target ? { iso: str(target.iso), name: translated(target, "name") } : null;
-          })()
+      ? toCountry(country)
+      : customer && loggedIn
+        ? toCountry(raw(raw(customer.defaultShippingAddress)?.country))
         : null;
 
-    const session = new StoreSession(client, channel.id);
+    const session = new StoreSession(client, channel.id, channel.languageId);
     let discarded = false;
     try {
-      if (customer) await session.switchCustomer(String(customer.id));
+      if (customer && loggedIn) await session.switchCustomer(String(customer.id));
       if (Object.keys(contextPatch).length > 0) {
         await session.call("context", { method: "PATCH", body: contextPatch, idempotent: true });
       }
@@ -784,7 +982,7 @@ export const checkoutSimulate = defineTool({
         },
       });
       const productIds = lineItems.map(({ product }) => product.id);
-      const [payments, shippings, listing] = await Promise.all([
+      const [payments, shippings, listing] = await settleAll<[Raw, Raw, Raw]>([
         session.call<Raw>("payment-method", {
           method: "POST",
           idempotent: true,
@@ -809,22 +1007,35 @@ export const checkoutSimulate = defineTool({
         }),
       ]);
 
-      const explainCtx: ExplainContext = { client, channel, country: shipTo, products, now };
-      problems.push(...(await mapProblems(cartErrors(cart), explainCtx)));
+      const errors = cartErrors(cart);
+      const explainCtx: ExplainContext = {
+        client,
+        channel,
+        country: shipTo,
+        products,
+        customerId: customer && loggedIn ? String(customer.id) : null,
+        now,
+      };
+      problems.push(...(await mapProblems(errors, explainCtx)));
 
       const listed = new Map(
         rawList(listing.elements).map((element) => [str(element.id) ?? "", element]),
       );
       const cartLines = rawList(cart.lineItems);
+      const missing: ProductInfo[] = [];
       const items = lineItems.map(({ product, quantity }) => {
         const line = cartLines.find(
           (entry) => entry.type === "product" && entry.referencedId === product.id,
         );
+        if (!line) missing.push(product);
         const price = raw(line?.price);
         const element = listed.get(product.id);
-        const listingPrice = round(num(raw(element?.calculatedPrice)?.unitPrice));
         const unitPrice = round(num(price?.unitPrice));
+        // With advanced prices the product page shows the tier for the quantity, not the base price.
         const tier = tierFor(rawList(element?.calculatedPrices), num(line?.quantity) ?? quantity);
+        const listingPrice = tier
+          ? round(tier.unitPrice)
+          : round(num(raw(element?.calculatedPrice)?.unitPrice));
         if (
           line &&
           listingPrice !== null &&
@@ -835,11 +1046,9 @@ export const checkoutSimulate = defineTool({
             key: "price-differs-from-listing",
             level: "notice",
             blocksOrder: false,
-            message: `${product.productNumber} is listed at ${listingPrice} but costs ${unitPrice} per unit in the cart.`,
+            message: `${product.productNumber} shows ${listingPrice} per unit${tier ? ` (tier ${tier.label})` : ""} but costs ${unitPrice} in the cart.`,
             explanation:
-              tier && Math.abs(tier.unitPrice - unitPrice) <= 0.01
-                ? `A tier price applies up to ${tier.upTo} units; the listing shows the base price`
-                : "A price rule applies in the cart that the listing does not show",
+              "A price rule, plugin or price overwrite changes the price in the cart that the product page does not show",
           });
         }
         return {
@@ -850,8 +1059,41 @@ export const checkoutSimulate = defineTool({
           unitPrice,
           totalPrice: round(num(price?.totalPrice)),
           listingPrice,
+          priceTier: tier?.label ?? null,
         };
       });
+
+      // Shopware drops some products without an error, a parent with variants above all.
+      for (const product of missing) {
+        const explained = errors.some(
+          (error) =>
+            (str(error.key) ?? "").endsWith(product.id) ||
+            str(raw(error.parameters)?.id) === product.id,
+        );
+        if (explained) continue;
+        if ((product.childCount ?? 0) > 0) {
+          const examples = await variantNumbers(client, product.id).catch(() => []);
+          problems.push({
+            key: "product-has-variants",
+            level: "error",
+            blocksOrder: true,
+            message: `${product.productNumber} has ${product.childCount} variants and cannot be bought itself.`,
+            explanation: `Shopware removes a parent product from the cart without a message; put a variant in the cart instead${examples.length > 0 ? `, e.g. ${examples.join(", ")}` : ""}`,
+          });
+        } else {
+          const reasons = productReasons(product, channel, now);
+          problems.push({
+            key: "product-not-in-cart",
+            level: "error",
+            blocksOrder: true,
+            message: `${product.productNumber} did not make it into the cart.`,
+            explanation:
+              reasons.length > 0
+                ? reasons.join(", and ")
+                : "Shopware removed it without a message; a plugin or the product's data may keep it out",
+          });
+        }
+      }
 
       const promotions = cartLines
         .filter((entry) => entry.type === "promotion")
@@ -860,6 +1102,27 @@ export const checkoutSimulate = defineTool({
           label: str(entry.label),
           discount: round(num(raw(entry.price)?.totalPrice)),
         }));
+
+      // Shopware keys every refused code as the same error, so the cart names only the last
+      // one; each code that is neither applied nor named gets its own explanation here.
+      const same = (a: string | null, b: string) => a?.toLowerCase() === b.toLowerCase();
+      const named = errors
+        .filter((error) => str(error.messageKey) === "promotion-not-found")
+        .map((error) => str(raw(error.parameters)?.code));
+      for (const code of input.promotionCodes ?? []) {
+        if (promotions.some((entry) => same(entry.code, code))) continue;
+        if (named.some((entry) => same(entry, code))) continue;
+        problems.push({
+          key: "promotion-not-found",
+          level: "error",
+          blocksOrder: false,
+          message: `Promo code "${code}" was not applied.`,
+          explanation: await explainCode(code, explainCtx).catch((cause: unknown) => {
+            logger.warn("could not explain a promotion code", { error: String(cause) });
+            return null;
+          }),
+        });
+      }
 
       const delivery = rawList(cart.deliveries)[0];
       const cartPrice = raw(cart.price);
@@ -896,6 +1159,7 @@ export const checkoutSimulate = defineTool({
               group: translated(group, "name"),
               active: bool(customer.active),
               guest: bool(customer.guest),
+              loggedIn,
               shipsTo: shipTo?.iso ?? null,
             }
           : { guest: true, shipsTo: shipTo?.iso ?? null },
@@ -951,6 +1215,7 @@ export const checkoutSimulate = defineTool({
 const SEARCH_INCLUDES = {
   product: [
     "id",
+    "parentId",
     "productNumber",
     "name",
     "translated",
@@ -1007,7 +1272,7 @@ export const storefrontSearch = defineTool({
           : "The sales channel is inactive.",
       };
     }
-    const session = new StoreSession(client, channel.id);
+    const session = new StoreSession(client, channel.id, channel.languageId);
     const result = await session.call<Raw>("search", {
       method: "POST",
       idempotent: true,
@@ -1038,7 +1303,6 @@ export const storefrontSearch = defineTool({
     if (!input.explain) return { salesChannel: channelView, term: input.term, total, items };
 
     const wanted = input.explain;
-    const position = elements.findIndex((element) => element.productNumber === wanted);
     const [product] = await loadProducts(client, [{ productNumber: wanted }]);
     if (!product) {
       return {
@@ -1049,6 +1313,16 @@ export const storefrontSearch = defineTool({
         explain: { productNumber: wanted, found: false, reasons: ["no product has this number"] },
       };
     }
+    // Search groups variants and shows one per product; a sibling or the parent stands in.
+    const family = product.parentId ?? product.id;
+    let position = elements.findIndex((element) => element.id === product.id);
+    let shownAs: string | null = null;
+    if (position < 0) {
+      position = elements.findIndex(
+        (element) => element.parentId === family || element.id === product.parentId,
+      );
+      if (position >= 0) shownAs = str(elements[position]?.productNumber);
+    }
     if (position >= 0) {
       return {
         salesChannel: channelView,
@@ -1056,11 +1330,14 @@ export const storefrontSearch = defineTool({
         total,
         items,
         explain: {
-          productNumber: wanted,
+          productNumber: product.productNumber ?? wanted,
           found: true,
           position: position + 1,
           page: Math.floor(position / 24) + 1,
-          reasons: [],
+          ...(shownAs ? { shownAs } : {}),
+          reasons: shownAs
+            ? [`search shows one variant per product; ${shownAs} stands for its variants here`]
+            : [],
         },
       };
     }
@@ -1099,7 +1376,7 @@ export const storefrontSearch = defineTool({
       term: input.term,
       total,
       items,
-      explain: { productNumber: wanted, found: false, reasons },
+      explain: { productNumber: product.productNumber ?? wanted, found: false, reasons },
     };
   },
 });

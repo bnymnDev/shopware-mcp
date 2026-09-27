@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Raw } from "../src/client/index.js";
 import { ShopwareClient } from "../src/client/index.js";
@@ -156,13 +157,14 @@ describe.skipIf(!E2E_ENABLED)("the shop as a customer sees it", () => {
     expect(pulse.today.orders).toBeGreaterThanOrEqual(0);
     expect(["normal", "watch", "unusual"]).toContain(pulse.payments.verdict);
     if (pulse.lastOrder) {
-      expect(pulse.silence?.sameGapInPreviousWeeks).toHaveLength(4);
+      // Weeks whose stretch reaches into a long silence are left out.
+      expect(pulse.silence?.sameGapInPreviousWeeks.length).toBeLessThanOrEqual(4);
     }
   });
 });
 
 describe.skipIf(!E2E_ENABLED)("setup against a real shop", () => {
-  it("creates a least-privilege integration that the doctor finds ready, then rotates it", async () => {
+  it("creates a least-privilege integration that runs the tools, then rotates it", async () => {
     const admin = await e2eContext(true);
     const session = await AdminSession.login(
       SHOP_URL,
@@ -177,28 +179,95 @@ describe.skipIf(!E2E_ENABLED)("setup against a real shop", () => {
     };
     const plan = await planSetup(session, options);
     const created = await applySetup(session, plan, options);
+    // A code that exists but is assigned to no sales channel: only its explanation says why.
+    const code = `E2E-NOCHANNEL-${suffix()}`.toUpperCase();
+    const promotionId = randomUUID().replace(/-/g, "");
+    await admin.client.request("/api/promotion", {
+      method: "POST",
+      body: {
+        id: promotionId,
+        name: `e2e ${code}`,
+        active: true,
+        useCodes: true,
+        code,
+        discounts: [{ scope: "cart", type: "percentage", value: 10, considerAdvancedRules: false }],
+      },
+    });
     try {
       expect(created.role.created).toBe(true);
-      const config = {
-        ...admin.config,
-        clientId: created.credentials.clientId,
-        clientSecret: created.credentials.clientSecret,
-      };
-      const report = await runDoctor(
-        { client: new ShopwareClient(config), config },
-        { label: options.name, privileges: plan.privileges },
-      );
+      const keys = created.credentials;
+      if (!keys) throw new Error("setup returned no credentials for a new integration");
+      const config = { ...admin.config, clientId: keys.clientId, clientSecret: keys.clientSecret };
+      const limited: ToolContext = { client: new ShopwareClient(config), config };
+      const report = await runDoctor(limited, { label: options.name, privileges: plan.privileges });
       const blocked = report.tools.filter((item) => item.status !== "ready");
-      expect(blocked).toEqual([]);
+      // Everything but the settings tool, which needs the opt-in --settings.
+      expect(blocked.map((item) => item.tool)).toEqual(["shop_settings"]);
+
+      const channels = await admin.client.search<Raw>("sales-channel", {
+        page: 1,
+        limit: 1,
+        filter: [
+          { type: "equals", field: "active", value: true },
+          { type: "equals", field: "maintenance", value: false },
+          {
+            type: "not",
+            operator: "and",
+            queries: [
+              { type: "equals", field: "typeId", value: "ed535e5722134ac1aa6524f73e26881b" },
+            ],
+          },
+        ],
+        includes: { sales_channel: ["id"] },
+      });
+      const channelId = channels.items[0]?.id;
+      const products = await admin.client.search<Raw>("product", {
+        page: 1,
+        limit: 1,
+        filter: [
+          { type: "equals", field: "active", value: true },
+          { type: "equals", field: "childCount", value: 0 },
+          { type: "equals", field: "visibilities.salesChannelId", value: channelId },
+          { type: "range", field: "availableStock", parameters: { gt: 2 } },
+        ],
+        includes: { product: ["productNumber"] },
+      });
+      const productNumber = products.items[0]?.productNumber;
+      if (typeof channelId !== "string" || typeof productNumber !== "string") {
+        throw new Error("no open channel with a product in stock");
+      }
+      const result = await checkoutSimulate.handler(
+        {
+          salesChannel: channelId,
+          items: [{ productNumber, quantity: 1 }],
+          promotionCodes: [code],
+        },
+        limited,
+      );
+      expect(result.problems).toContainEqual(
+        expect.objectContaining({
+          key: "promotion-not-found",
+          explanation: `"${code}" belongs to "e2e ${code}", but it is not assigned to any sales channel`,
+        }),
+      );
+
+      // Run again, as after an upgrade: the role is brought up to date and the keys stay.
+      const update = await applySetup(session, await planSetup(session, options), options);
+      expect(update).toMatchObject({
+        role: { created: false, added: [], removed: [] },
+        integration: { created: false, rotated: false },
+        credentials: null,
+      });
 
       const again = await planSetup(session, { ...options, rotate: true });
       const rotated = await applySetup(session, again, { ...options, rotate: true });
       expect(rotated).toMatchObject({
-        role: { created: false, added: [] },
+        role: { created: false, added: [], removed: [] },
         integration: { created: false, rotated: true },
       });
-      expect(rotated.credentials.clientId).not.toBe(created.credentials.clientId);
+      expect(rotated.credentials?.clientId).not.toBe(keys.clientId);
     } finally {
+      await admin.client.request(`/api/promotion/${promotionId}`, { method: "DELETE" });
       await admin.client.request(`/api/integration/${created.integration.id}`, {
         method: "DELETE",
       });

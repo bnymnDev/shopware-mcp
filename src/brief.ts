@@ -3,7 +3,6 @@ import type { ShopwareClient } from "./client/index.js";
 import {
   auditSection,
   duration,
-  esc,
   money,
   odds,
   pulseSection,
@@ -11,8 +10,9 @@ import {
   salesSection,
 } from "./html.js";
 import { runAudit } from "./tools/audit.js";
-import { computePulse, type Pulse } from "./tools/pulse.js";
+import { comparedWeeks, computePulse, type Pulse } from "./tools/pulse.js";
 import { buildSalesReport } from "./tools/reports.js";
+import { shiftDays, startOfDay } from "./tools/zone.js";
 
 type AuditReport = Awaited<ReturnType<typeof runAudit>>;
 type SalesReport = Awaited<ReturnType<typeof buildSalesReport>>;
@@ -27,30 +27,34 @@ export interface Brief {
   sales: SalesReport;
 }
 
-const localDate = (date: Date, timeZone: string) =>
-  new Intl.DateTimeFormat("en-CA", { timeZone, dateStyle: "short" }).format(date);
-
 /** The pulse, the audit and the last seven days: what a shop manager wants before coffee. */
 export async function buildBrief(
   client: ShopwareClient,
   options: { timeZone: string; now?: Date },
 ): Promise<Brief> {
   const now = options.now ?? new Date();
-  const to = localDate(now, options.timeZone);
-  const from = localDate(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000), options.timeZone);
+  const { timeZone } = options;
+  // Seven local days: from midnight six days ago up to this moment.
+  const from = startOfDay(shiftDays(now, -6, timeZone), timeZone).toISOString();
+  const pulsing = computePulse(client, { weeks: 8, timeZone, now });
   const [pulse, audit, sales, currency] = await Promise.all([
-    computePulse(client, { weeks: 8, timeZone: options.timeZone, now }),
-    runAudit(client, {
-      stuckOrderDays: 7,
-      lowStockThreshold: 5,
-      forecastDays: 14,
-      maxItems: 5,
-      complianceChecks: false,
-    }),
+    pulsing,
+    pulsing.then((pulse) =>
+      runAudit(client, {
+        stuckOrderDays: 7,
+        lowStockThreshold: 5,
+        forecastDays: 14,
+        maxItems: 5,
+        complianceChecks: false,
+        timeZone,
+        pulse,
+      }),
+    ),
     buildSalesReport(client, {
       from,
-      to,
+      to: now.toISOString(),
       interval: "day",
+      timeZone,
       excludeCancelled: true,
       topProducts: 5,
       compareWithPrevious: true,
@@ -92,8 +96,8 @@ export function pulseHeadline(pulse: Pulse): {
     return {
       level: silence.verdict === "unusual" ? "critical" : "warning",
       text:
-        `No order for ${duration(silence.minutes)}; the same hours of the last ` +
-        `${pulse.typical.weeks} weeks brought ${silence.expectedOrders} on average ` +
+        `No order for ${duration(silence.minutes)}; the same hours of ` +
+        `${comparedWeeks(pulse, "week")} brought ${silence.expectedOrders} on average ` +
         `(by chance ${odds(silence.chance)} times)`,
     };
   }
@@ -226,8 +230,11 @@ export async function postWebhook(
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text }),
+    // The summary goes to this URL and nowhere else, and a hanging hook must not hang a cron job.
+    redirect: "error",
+    signal: AbortSignal.timeout(10_000),
   });
   if (!response.ok) {
-    throw new Error(`The webhook answered ${response.status} ${esc(response.statusText)}`);
+    throw new Error(`The webhook answered ${response.status} ${response.statusText}`.trimEnd());
   }
 }

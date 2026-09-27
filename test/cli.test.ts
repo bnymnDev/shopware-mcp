@@ -1,10 +1,23 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
-import { main, parseCli } from "../src/cli.js";
+import { checkSetupUrl, main, parseCli } from "../src/cli.js";
 import { mock, SHOP_URL, searchHandler } from "./helpers/shopware.js";
+
+describe("checkSetupUrl", () => {
+  it("sends the admin password over https, or plain http only to this machine", () => {
+    expect(checkSetupUrl("https://shop.example.com")).toBe("https://shop.example.com");
+    expect(checkSetupUrl("http://localhost:8000")).toBe("http://localhost:8000");
+    expect(checkSetupUrl("http://127.0.0.1:8000")).toBe("http://127.0.0.1:8000");
+    expect(checkSetupUrl("http://shop.localhost")).toBe("http://shop.localhost");
+    expect(() => checkSetupUrl("http://shop.example.com")).toThrow(/plain http/);
+    expect(() => checkSetupUrl("http://localhost.example.com")).toThrow(/plain http/);
+    expect(() => checkSetupUrl("ftp://shop.example.com")).toThrow(/Invalid/);
+    expect(() => checkSetupUrl("shop.example.com")).toThrow(/Invalid/);
+  });
+});
 
 describe("parseCli", () => {
   it("has safe defaults", () => {
@@ -24,6 +37,7 @@ describe("parseCli", () => {
       threshold: 5,
       failOn: undefined,
       html: undefined,
+      jsonFile: undefined,
       slack: undefined,
       tz: undefined,
       from: undefined,
@@ -34,6 +48,7 @@ describe("parseCli", () => {
       name: "shopware-mcp",
       rotate: false,
       pluginUpdates: false,
+      settings: false,
       dryRun: false,
       help: false,
       version: false,
@@ -334,5 +349,121 @@ describe("html, brief and slack", () => {
     ]);
     expect(broken.code).toBe(1);
     expect(broken.err).toContain("Slack: The webhook answered 404");
+  });
+});
+
+describe("setup command", () => {
+  async function run(
+    argv: string[],
+    env: Record<string, string>,
+  ): Promise<{ out: string; err: string; code: number }> {
+    const previous = { ...process.env };
+    Object.assign(process.env, env);
+    process.exitCode = 0;
+    let out = "";
+    let err = "";
+    const write = process.stdout.write.bind(process.stdout);
+    const writeErr = process.stderr.write.bind(process.stderr);
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      out += String(chunk);
+      return true;
+    }) as typeof process.stdout.write;
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+      err += String(chunk);
+      return true;
+    }) as typeof process.stderr.write;
+    try {
+      await main(argv);
+      return { out, err, code: Number(process.exitCode ?? 0) };
+    } finally {
+      process.stdout.write = write;
+      process.stderr.write = writeErr;
+      process.exitCode = 0;
+      process.env = previous;
+    }
+  }
+
+  const adminShop = () => [
+    http.post(`${SHOP_URL}/api/oauth/token`, async ({ request }) => {
+      const body = (await request.clone().json()) as Record<string, unknown>;
+      if (body.grant_type !== "password") return undefined;
+      return HttpResponse.json({ access_token: "admin-token", expires_in: 600 });
+    }),
+    http.post(`${SHOP_URL}/api/search/plugin`, () => HttpResponse.json({ data: [] })),
+    http.post(`${SHOP_URL}/api/search/acl-role`, () => HttpResponse.json({ data: [] })),
+    http.post(`${SHOP_URL}/api/search/integration`, () => HttpResponse.json({ data: [] })),
+    http.get(`${SHOP_URL}/api/_action/access-key/intergration`, () =>
+      HttpResponse.json({ accessKey: "SWIANEWKEY", secretAccessKey: "new-secret" }),
+    ),
+    http.post(`${SHOP_URL}/api/acl-role`, () => new HttpResponse(null, { status: 204 })),
+    http.post(`${SHOP_URL}/api/integration`, () => new HttpResponse(null, { status: 204 })),
+  ];
+
+  it("shows the secret first, then writes a new host config readable by the owner only", async () => {
+    mock.use(...adminShop());
+    const home = mkdtempSync(join(tmpdir(), "swmcp-setup-"));
+    const result = await run(
+      ["setup", "--url", SHOP_URL, "--user", "admin", "--for", "claude-desktop", "--write"],
+      { SHOPWARE_ADMIN_PASSWORD: "right", XDG_CONFIG_HOME: home },
+    );
+    const secretAt = result.err.indexOf("Secret       new-secret");
+    expect(secretAt).toBeGreaterThan(-1);
+    expect(secretAt).toBeLessThan(result.err.indexOf("Verified"));
+    expect(result.err).toContain("shop_settings: left out, pass --settings to include it");
+    const target = join(home, "Claude", "claude_desktop_config.json");
+    expect(statSync(target).mode & 0o777).toBe(0o600);
+    expect(JSON.parse(readFileSync(target, "utf8"))).toMatchObject({
+      mcpServers: {
+        shopware: {
+          env: { SHOPWARE_CLIENT_ID: "SWIANEWKEY", SHOPWARE_CLIENT_SECRET: "new-secret" },
+        },
+      },
+    });
+  });
+
+  it("keeps the secret on screen when the host config cannot be written", async () => {
+    mock.use(...adminShop());
+    const home = mkdtempSync(join(tmpdir(), "swmcp-setup-"));
+    mkdirSync(join(home, "Claude"));
+    writeFileSync(join(home, "Claude", "claude_desktop_config.json"), "{ not json");
+    const result = await run(["setup", "--url", SHOP_URL, "--for", "claude-desktop", "--write"], {
+      SHOPWARE_ADMIN_PASSWORD: "right",
+      XDG_CONFIG_HOME: home,
+    });
+    expect(result.err).toContain("Secret       new-secret");
+    expect(result.err).toContain("Could not write the host config");
+    expect(result.code).toBe(1);
+  });
+
+  it("updates the role of its own integration after an upgrade and keeps the keys", async () => {
+    const description =
+      "Created by shopware-mcp setup: exactly the privileges its tools need, nothing else.";
+    mock.use(...adminShop());
+    mock.use(
+      http.post(`${SHOP_URL}/api/search/acl-role`, () =>
+        HttpResponse.json({
+          data: [{ id: "ro", privileges: ["product:read", "user:update"], description }],
+        }),
+      ),
+      http.post(`${SHOP_URL}/api/search/integration`, () =>
+        HttpResponse.json({ data: [{ id: "i1", accessKey: "SWIAOLD", aclRoles: [{ id: "ro" }] }] }),
+      ),
+      http.patch(`${SHOP_URL}/api/acl-role/ro`, () => new HttpResponse(null, { status: 204 })),
+    );
+    const result = await run(["setup", "--url", SHOP_URL], { SHOPWARE_ADMIN_PASSWORD: "right" });
+    expect(result.err).toContain("1 removed (user:update)");
+    expect(result.err).toContain('Integration  "shopware-mcp" keeps its keys');
+    expect(result.err).not.toContain("Secret");
+    expect(result.code).toBe(0);
+  });
+
+  it("refuses to send the admin password over plain http to a remote shop", async () => {
+    const result = await run(["setup", "--url", "http://shop.example.com"], {
+      SHOPWARE_ADMIN_PASSWORD: "right",
+    });
+    expect(result.err).toContain(
+      "Setup failed: Refusing to send the admin password over plain http",
+    );
+    expect(result.code).toBe(1);
   });
 });

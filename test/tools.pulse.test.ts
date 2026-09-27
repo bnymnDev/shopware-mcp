@@ -8,6 +8,7 @@ import {
   silenceVerdict,
   startOfDay,
 } from "../src/tools/pulse.js";
+import { shiftDays } from "../src/tools/zone.js";
 import { createContext, fixture, invoke, mock, SHOP_URL } from "./helpers/shopware.js";
 
 const ctx = createContext();
@@ -44,6 +45,20 @@ describe("startOfDay", () => {
       "2026-09-26T04:00:00.000Z",
     );
     expect(startOfDay(NOW, "UTC").toISOString()).toBe("2026-09-27T00:00:00.000Z");
+  });
+});
+
+describe("shiftDays", () => {
+  it("keeps the local clock time when daylight saving changes in between", () => {
+    // Monday 00:30 in Berlin, the day after clocks went forward: a week back is Monday 00:30 CET.
+    expect(shiftDays(new Date("2026-03-29T22:30:00Z"), -7, "Europe/Berlin").toISOString()).toBe(
+      "2026-03-22T23:30:00.000Z",
+    );
+    // Monday 23:30 in New York, a week after clocks went back: two weeks back is still Monday.
+    expect(shiftDays(new Date("2026-11-10T04:30:00Z"), -14, "America/New_York").toISOString()).toBe(
+      "2026-10-27T03:30:00.000Z",
+    );
+    expect(shiftDays(NOW, -7, "UTC").toISOString()).toBe("2026-09-20T18:01:38.402Z");
   });
 });
 
@@ -111,6 +126,60 @@ describe("shop_pulse", () => {
       "2026-08-02",
     ]);
     expect(pulse.history[0]).not.toHaveProperty("payments");
+  });
+
+  it("compares the same weekday across daylight saving changes", async () => {
+    const bodies: Body[] = [];
+    mock.use(
+      http.post(`${SHOP_URL}/api/search/order`, async ({ request }) => {
+        bodies.push((await request.clone().json()) as Body);
+        return HttpResponse.json({ total: 0, data: [], aggregations: {} });
+      }),
+    );
+    const berlin = await computePulse(ctx.client, {
+      weeks: 2,
+      timeZone: "Europe/Berlin",
+      now: new Date("2026-03-29T22:30:00Z"),
+    });
+    expect(berlin.history.map((week) => week.date)).toEqual([
+      "2026-03-30",
+      "2026-03-23",
+      "2026-03-16",
+    ]);
+    const lastWeek = bodies[1]?.aggregations?.find((agg) => agg.name === "o1");
+    expect(JSON.stringify(lastWeek?.filter)).toContain(
+      '"gte":"2026-03-22T23:00:00.000Z","lt":"2026-03-22T23:30:00.000Z"',
+    );
+
+    const newYork = await computePulse(ctx.client, {
+      weeks: 3,
+      timeZone: "America/New_York",
+      now: new Date("2026-11-10T04:30:00Z"),
+    });
+    expect(newYork.history.map((week) => week.date)).toEqual([
+      "2026-11-09",
+      "2026-11-02",
+      "2026-10-26",
+      "2026-10-19",
+    ]);
+  });
+
+  it("leaves out weeks whose stretch reaches into the silence itself", async () => {
+    const { bodies, handler } = orderSearches();
+    mock.use(
+      http.post(`${SHOP_URL}/api/search/order`, async ({ request }) => {
+        const body = (await request.clone().json()) as Body;
+        if (!body.sort) return undefined;
+        const last = fixture<{ data: Array<Record<string, unknown>> }>("pulse-last-order");
+        if (last.data[0]) last.data[0].orderDateTime = "2026-09-17T12:00:00.000+00:00";
+        return HttpResponse.json(last as JsonBodyType);
+      }),
+      handler,
+    );
+    const pulse = await computePulse(ctx.client, { weeks: 4, timeZone: "UTC", now: NOW });
+    const names = (bodies.find((body) => !body.sort)?.aggregations ?? []).map((agg) => agg.name);
+    expect(names.filter((name) => String(name).startsWith("g"))).toEqual(["g2", "g3", "g4"]);
+    expect(pulse.silence?.sameGapInPreviousWeeks).toHaveLength(3);
   });
 
   it("flags a run of failed payments against their usual share", async () => {

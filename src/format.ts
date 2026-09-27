@@ -93,6 +93,9 @@ export function formatAuditMarkdown(report: AuditReport): string {
     for (const warning of report.warnings) lines.push(`- ${warning}`);
     lines.push("");
   }
+  if (report.notCovered && report.notCovered.length > 0) {
+    lines.push(`Not covered by this integration's role: ${report.notCovered.join(", ")}.`, "");
+  }
   return `${lines.join("\n").trimEnd()}\n`;
 }
 

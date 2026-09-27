@@ -31,11 +31,15 @@
     },
     {
       "kind": "result",
-      "text": "  \"items\": [ { \"productNumber\": \"SW10005\", \"name\": \"Awesome Steel Quick Turtle\", \"requested\": 2,"
+      "text": "  \"items\": [ { \"productNumber\": \"SW10005\", \"name\": \"Awesome Steel Quick Turtle\","
     },
     {
       "kind": "result",
-      "text": "               \"quantity\": 2, \"unitPrice\": 12.01, \"totalPrice\": 24.02, \"listingPrice\": 739.97 } ],"
+      "text": "               \"requested\": 2, \"quantity\": 2, \"unitPrice\": 12.01, \"listingPrice\": 12.01,"
+    },
+    {
+      "kind": "result",
+      "text": "               \"priceTier\": \"1 to 10 units\" } ],"
     },
     {
       "kind": "result",
@@ -63,19 +67,7 @@
     },
     {
       "kind": "result",
-      "text": "      \"explanation\": \"\\\"SUMMER26\\\" belongs to \\\"Summer Sale 2026\\\", but it ended on 2026-08-31\", … },"
-    },
-    {
-      "kind": "result",
-      "text": "    { \"key\": \"price-differs-from-listing\", \"blocksOrder\": false,"
-    },
-    {
-      "kind": "result",
-      "text": "      \"message\": \"SW10005 is listed at 739.97 but costs 12.01 per unit in the cart.\","
-    },
-    {
-      "kind": "result",
-      "text": "      \"explanation\": \"A tier price applies up to 10 units; the listing shows the base price\", … } ],"
+      "text": "      \"explanation\": \"\\\"SUMMER26\\\" belongs to \\\"Summer Sale 2026\\\", but it ended on 2026-08-31\", … } ],"
     },
     {
       "kind": "result",
@@ -91,7 +83,7 @@
     },
     {
       "kind": "agent",
-      "text": "Three things, straight from Shopware's own cart:"
+      "text": "Two things, straight from Shopware's own cart:"
     },
     {
       "kind": "agent",
@@ -104,14 +96,6 @@
     {
       "kind": "agent",
       "text": "2. SUMMER26 exists, but \"Summer Sale 2026\" ended on 31 August. The message is right."
-    },
-    {
-      "kind": "agent",
-      "text": "3. Worth a look anyway: the tier price for 1 to 10 units is 12.01 net for this customer, while"
-    },
-    {
-      "kind": "agent",
-      "text": "   the listing shows 739.97. That price looks like a data entry error."
     },
     {
       "kind": "prompt",

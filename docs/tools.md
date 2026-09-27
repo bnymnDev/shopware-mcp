@@ -430,7 +430,7 @@ _Simulate a checkout_
 
 **Read tool** — always registered.
 
-See the checkout the way a customer does: puts products (and promotion codes) into a throwaway cart of a sales channel through Shopware's own Store API, as a guest shipping to a country or as a given customer with their group, prices and rules, and returns what Shopware calculates: prices per item next to the listing price, discounts, shipping, taxes, total, which payment and shipping methods the customer is offered, which are hidden and by which rule, and every cart error with a plain explanation (country not assigned, code expired, product not visible, stock). Nothing is ordered and the cart is deleted afterwards. Use it for 'why can't this customer order?', 'why does this code not work?' or 'what does shipping to Switzerland cost?'. Returns { salesChannel, as, canOrder, items[], promotions[], shipping, totals, problems[], paymentMethods, shippingMethods }.
+See the checkout the way a customer does: puts products (and promotion codes) into a throwaway cart of a sales channel through Shopware's own Store API, as a guest shipping to a country or as a given customer with their group, prices and rules, and returns what Shopware calculates: prices per item next to the listing price, discounts, shipping, taxes, total, which payment and shipping methods the customer is offered, which are hidden and by which rule, and every cart error with a plain explanation (country not assigned, code expired, product not visible, stock). Nothing is ordered and the cart is deleted afterwards; as a customer, extensions that react to saved carts (abandoned-cart mailers) see it like any other cart of that customer. Use it for 'why can't this customer order?', 'why does this code not work?' or 'what does shipping to Switzerland cost?'. Returns { salesChannel, as, canOrder, items[], promotions[], shipping, totals, problems[], paymentMethods, shippingMethods }.
 
 ### Input
 
@@ -463,6 +463,7 @@ Aggregate sales figures for a period straight from Shopware: order count, gross/
 | `excludeCancelled` | `boolean` | no | default `true` |
 | `topProducts` | `integer` | no | default `10`, min 1, max 25 |
 | `compareWithPrevious` | `boolean` | no | Also report the preceding period of equal length and the change. default `false` |
+| `timeZone` | `string` | no | IANA time zone, e.g. Europe/Berlin: date-only from/to and daily buckets become local days. Default: UTC |
 
 ## customer_report
 
@@ -516,6 +517,7 @@ Run a one-shot health check across the shop and return prioritised findings: pai
 | `forecastDays` | `integer` | no | Flag products whose stock lasts fewer days than this at the recent sales pace. default `14`, min 1, max 365 |
 | `maxItems` | `integer` | no | Sample items per finding. default `10`, min 1, max 50 |
 | `complianceChecks` | `boolean` | no | Include the EU duty coverage map. Set false outside the EU. default `true` |
+| `timeZone` | `string` | no | IANA time zone of the shop for the order-silence check; default: the server's |
 
 ## entity_schema
 

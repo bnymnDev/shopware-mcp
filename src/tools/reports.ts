@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { equals, equalsAny, type ShopwareFilter } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
+import { badRequest } from "../errors.js";
 import { bucketsOf, round2, sumOf } from "./aggregations.js";
 import {
   change,
@@ -9,8 +10,53 @@ import {
   previousPeriod as periodBefore,
   resolvePeriod,
 } from "./periods.js";
-import { idSchema, str, translated } from "./shared.js";
+import { idSchema, num, raw, str, translated } from "./shared.js";
 import { defineTool } from "./types.js";
+import { isTimeZone, localDate, midnightOf, shiftDays } from "./zone.js";
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+/** Local days are counted one filter per day; beyond this the timeline uses Shopware's UTC days. */
+const MAX_LOCAL_DAYS = 92;
+
+/**
+ * The period with date-only bounds read as local days in `timeZone`: `from` at its local
+ * midnight, `to` at the last millisecond of its local day.
+ */
+function resolveLocalPeriod(
+  input: { from?: string; to?: string },
+  timeZone: string,
+  now: Date,
+): { from: string; to: string } {
+  const fallback = resolvePeriod(input, 30, now);
+  const from =
+    input.from && DATE_ONLY.test(input.from)
+      ? midnightOf(input.from, timeZone).toISOString()
+      : fallback.from;
+  const to =
+    input.to && DATE_ONLY.test(input.to)
+      ? new Date(shiftDays(midnightOf(input.to, timeZone), 1, timeZone).getTime() - 1).toISOString()
+      : fallback.to;
+  if (from > to) throw badRequest("`from` must be before `to`");
+  return { from, to };
+}
+
+/** One filter aggregation pair (orders, revenue) per local day of the period. */
+function localDays(from: string, to: string, timeZone: string) {
+  const days: { date: string; from: string; to: string }[] = [];
+  let date = localDate(new Date(from), timeZone);
+  const last = localDate(new Date(to), timeZone);
+  while (date <= last && days.length <= MAX_LOCAL_DAYS) {
+    const start = midnightOf(date, timeZone);
+    const next = shiftDays(start, 1, timeZone);
+    days.push({
+      date,
+      from: new Date(Math.max(start.getTime(), Date.parse(from))).toISOString(),
+      to: new Date(Math.min(next.getTime() - 1, Date.parse(to))).toISOString(),
+    });
+    date = localDate(next, timeZone);
+  }
+  return days.length > MAX_LOCAL_DAYS ? null : days;
+}
 
 function orderFilters(from: string, to: string, input: SalesReportInput): ShopwareFilter[] {
   const filters: ShopwareFilter[] = [
@@ -63,6 +109,8 @@ export interface SalesReportInput {
   from?: string;
   to?: string;
   interval: "day" | "week" | "month";
+  /** Read date-only bounds and daily buckets in this IANA time zone instead of UTC. */
+  timeZone?: string | undefined;
   salesChannelId?: string;
   excludeCancelled: boolean;
   topProducts: number;
@@ -70,8 +118,45 @@ export interface SalesReportInput {
 }
 
 export async function buildSalesReport(client: ShopwareClient, input: SalesReportInput) {
-  const { from, to } = resolvePeriod(input, 30);
+  const now = new Date();
+  const timeZone = input.timeZone;
+  if (timeZone && !isTimeZone(timeZone)) throw badRequest(`Unknown time zone "${timeZone}"`);
+  const { from, to } = timeZone
+    ? resolveLocalPeriod(input, timeZone, now)
+    : resolvePeriod(input, 30, now);
   const previous = periodBefore({ from, to });
+  const days = timeZone && input.interval === "day" ? localDays(from, to, timeZone) : null;
+  const timelineAggregations = days
+    ? days.flatMap((day, index) => {
+        const range = {
+          type: "range",
+          field: "orderDateTime",
+          parameters: { gte: day.from, lte: day.to },
+        };
+        return [
+          {
+            name: `d${index}`,
+            type: "filter",
+            filter: [range],
+            aggregation: { name: `d${index}n`, type: "count", field: "id" },
+          },
+          {
+            name: `d${index}r`,
+            type: "filter",
+            filter: [range],
+            aggregation: { name: `d${index}s`, type: "sum", field: "amountTotal" },
+          },
+        ];
+      })
+    : [
+        {
+          name: "timeline",
+          type: "histogram",
+          field: "orderDateTime",
+          interval: input.interval,
+          aggregation: { name: "revenue", type: "sum", field: "amountTotal" },
+        },
+      ];
 
   const lineItemFilters: ShopwareFilter[] = [
     equals("type", "product"),
@@ -101,13 +186,7 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
         { name: "byCurrency", type: "terms", field: "currency.isoCode", aggregation: revenue },
         { name: "bySalesChannel", type: "terms", field: "salesChannel.name", aggregation: revenue },
         { name: "byPaymentMethod", type: "terms", field: "transactions.paymentMethod.name" },
-        {
-          name: "timeline",
-          type: "histogram",
-          field: "orderDateTime",
-          interval: input.interval,
-          aggregation: revenue,
-        },
+        ...timelineAggregations,
       ],
     }),
     client.search<Raw>("order-line-item", {
@@ -197,8 +276,29 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
       }
     : {};
 
+  const aggs = orders.aggregations;
+  const timeline = days
+    ? days.map((day, index) => ({
+        bucket: `${day.date} 00:00:00`,
+        orders: num(raw(aggs[`d${index}n`])?.count) ?? 0,
+        revenue: round2(num(raw(aggs[`d${index}s`])?.sum) ?? 0),
+      }))
+    : bucketsOf(aggs, "timeline").map((bucket) => ({
+        bucket: bucket.key,
+        orders: bucket.count,
+        revenue: round2(sumOf(bucket.nested)),
+      }));
+
   return {
-    period: { from, to, interval: input.interval },
+    period: {
+      from,
+      to,
+      interval: input.interval,
+      // Days are local to this zone; without one they are UTC days.
+      timeZone: days ? (timeZone ?? null) : null,
+      // The period includes this moment, so its last bucket is still filling.
+      running: Date.parse(to) >= now.getTime(),
+    },
     filters: {
       salesChannelId: input.salesChannelId ?? null,
       excludeCancelled: input.excludeCancelled,
@@ -226,11 +326,7 @@ export async function buildSalesReport(client: ShopwareClient, input: SalesRepor
     ordersByPaymentState: termsTable("byPayment"),
     ordersByDeliveryState: termsTable("byDelivery"),
     ordersByPaymentMethod: termsTable("byPaymentMethod"),
-    timeline: bucketsOf(orders.aggregations, "timeline").map((bucket) => ({
-      bucket: bucket.key,
-      orders: bucket.count,
-      revenue: round2(sumOf(bucket.nested)),
-    })),
+    timeline,
     topProducts: topBuckets.map((bucket) => {
       const product = productById.get(bucket.key);
       return {
@@ -270,6 +366,13 @@ export const salesReport = defineTool({
       .boolean()
       .default(false)
       .describe("Also report the preceding period of equal length and the change"),
+    timeZone: z
+      .string()
+      .trim()
+      .optional()
+      .describe(
+        "IANA time zone, e.g. Europe/Berlin: date-only from/to and daily buckets become local days. Default: UTC",
+      ),
   },
   handler: (input, ctx) => buildSalesReport(ctx.client, input),
 });

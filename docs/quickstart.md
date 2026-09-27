@@ -10,7 +10,7 @@ The quick way is one command. It logs in as an admin once (the password is never
 npx shopware-mcp setup --url https://shop.example.com --user admin
 ```
 
-Add `--allow-write` for the write tools, `--for claude-desktop --write` to write the host config directly, `--dry-run` to see the privileges first. Running it again with `--rotate` issues new keys for the same integration.
+Add `--allow-write` for the write tools, `--settings` for `shop_settings` (it reads the whole system config, secrets included), `--for claude-desktop --write` to write the host config directly, `--dry-run` to see the privileges first. The secret is printed right after the integration is created. Running it again after an upgrade updates the role and keeps the keys; `--rotate` issues new keys for the same integration.
 
 By hand instead:
 
@@ -163,7 +163,7 @@ A brief every morning, as a page on your intranet and a few lines in Slack:
 0 7 * * *  TZ=Europe/Berlin npx shopware-mcp brief --html /var/www/brief.html --slack https://hooks.slack.com/services/…
 ```
 
-In GitHub Actions the repository is an action: it runs the audit, puts the Markdown into the job summary and fails the job on the severity you choose.
+In GitHub Actions the repository is an action: it runs the audit with the shopware-mcp release of the tag you pin, puts the Markdown into the job summary and fails the job on the severity you choose. Checks the integration's role leaves out on purpose are reported as not covered and do not fail the job.
 
 ```yaml
 - uses: bnymnDev/shopware-mcp@v0.8.0
@@ -174,6 +174,6 @@ In GitHub Actions the repository is an action: it runs the audit, puts the Markd
     client-secret: ${{ secrets.SHOPWARE_CLIENT_SECRET }}
     fail-on: critical      # or warning, or none
     html: audit.html       # optional, upload it with actions/upload-artifact
-# later steps can read ${{ steps.audit.outputs.critical }}, .warning and .info
+# later steps can read ${{ steps.audit.outputs.critical }}, .warning, .info and .exit-code
 ```
 

@@ -8,6 +8,7 @@ import {
   requiredPrivileges,
   roleNameFor,
   type SetupOptions,
+  toolsLeftOut,
 } from "../src/setup.js";
 import { tools } from "../src/tools/index.js";
 import { mock, SHOP_URL } from "./helpers/shopware.js";
@@ -36,11 +37,13 @@ describe("requiredPrivileges", () => {
         "state_machine_state:read",
         "product_search_keyword:read",
         "api_proxy_switch-customer",
-        "system_config:read",
+        "promotion_individual_code:read",
+        "promotion_sales_channel:read",
       ]),
     );
     expect(privileges.some((privilege) => /:(create|update|delete)$/.test(privilege))).toBe(false);
     expect(privileges).not.toContain("system.plugin_maintain");
+    expect(privileges).not.toContain("system_config:read");
     expect(privileges.some((privilege) => privilege.startsWith("frosh_"))).toBe(false);
   });
 
@@ -64,10 +67,35 @@ describe("requiredPrivileges", () => {
     ).toBe(false);
   });
 
-  it("grants plugin maintenance only on request, and plugin privileges only when installed", () => {
+  it("grants plugin maintenance and the whole system config only on request", () => {
     expect(requiredPrivileges({ allowWrite: false, pluginUpdates: true })).toContain(
       "system.plugin_maintain",
     );
+    expect(requiredPrivileges({ allowWrite: false, settings: true })).toContain(
+      "system_config:read",
+    );
+    expect(toolsLeftOut({ allowWrite: false })).toEqual([
+      { tool: "shop_settings", flag: "--settings" },
+    ]);
+    expect(toolsLeftOut({ allowWrite: false, settings: true })).toEqual([]);
+  });
+
+  it("grants the Merqo pack's reads only for the Merqo plugins that are installed", () => {
+    const privileges = requiredPrivileges({
+      allowWrite: false,
+      plugins: new Set(["MerqoReturns", "MerqoVault"]),
+    });
+    expect(privileges).toEqual(
+      expect.arrayContaining([
+        "merqo_return:read",
+        "merqo_return_line_item:read",
+        "merqo_vault_document:read",
+      ]),
+    );
+    expect(privileges).not.toContain("merqo_cart_snapshot:read");
+  });
+
+  it("grants plugin privileges only when the plugin is installed", () => {
     const withFrosh = requiredPrivileges({ allowWrite: false, plugins: new Set(["FroshTools"]) });
     expect(withFrosh).toEqual(
       expect.arrayContaining([
@@ -85,9 +113,11 @@ interface Recorded {
   body: unknown;
 }
 
+const OURS = "Created by shopware-mcp setup: exactly the privileges its tools need, nothing else.";
+
 function adminShop(state: {
-  role?: { id: string; privileges: string[] };
-  integration?: { id: string; roles: { id: string; name: string }[] };
+  role?: { id: string; privileges: string[]; description?: string };
+  integration?: { id: string; admin?: boolean; roles: { id: string; name: string }[] };
   plugins?: string[];
 }) {
   const writes: Recorded[] = [];
@@ -129,7 +159,14 @@ function adminShop(state: {
     http.post(`${SHOP_URL}/api/search/integration`, () =>
       HttpResponse.json({
         data: state.integration
-          ? [{ id: state.integration.id, accessKey: "SWIAOLD", aclRoles: state.integration.roles }]
+          ? [
+              {
+                id: state.integration.id,
+                accessKey: "SWIAOLD",
+                admin: state.integration.admin ?? false,
+                aclRoles: state.integration.roles,
+              },
+            ]
           : [],
       }),
     ),
@@ -188,7 +225,7 @@ describe("setup against a shop", () => {
     expect(role).toMatchObject({
       method: "POST",
       path: "/api/acl-role",
-      body: { name: "shopware-mcp (read-only)", privileges: plan.privileges },
+      body: { name: "shopware-mcp (read-only)", description: OURS, privileges: plan.privileges },
     });
     const roleId = (role?.body as { id: string } | undefined)?.id;
     expect(integration).toMatchObject({
@@ -198,10 +235,11 @@ describe("setup against a shop", () => {
         label: "shopware-mcp",
         accessKey: "SWIANEWKEY",
         secretAccessKey: "new-secret",
-        admin: false,
         aclRoles: [{ id: roleId }],
       },
     });
+    // Only administrators may send the admin flag at all; a new integration is not one anyway.
+    expect(integration?.body).not.toHaveProperty("admin");
     expect(result).toMatchObject({
       role: { id: roleId, created: true, privileges: plan.privileges.length },
       integration: { created: true, rotated: false },
@@ -223,9 +261,10 @@ describe("setup against a shop", () => {
 
   it("updates the role, rotates the keys and drops its own stale role, not a foreign one", async () => {
     const shop = adminShop({
-      role: { id: "rw", privileges: ["product:read"] },
+      role: { id: "rw", privileges: ["product:read", "user:update"], description: OURS },
       integration: {
         id: "i1",
+        admin: true,
         roles: [
           { id: "ro", name: roleNameFor("shopware-mcp", false) },
           { id: "other", name: "Support team" },
@@ -238,12 +277,13 @@ describe("setup against a shop", () => {
     const session = await AdminSession.login(SHOP_URL, "admin", "right");
     const plan = await planSetup(session, options);
     const result = await applySetup(session, plan, options);
+    // The stale role goes before the keys change, so a failure leaves the old keys working.
     expect(shop.writes.map((write) => `${write.method} ${write.path}`)).toEqual([
       "PATCH /api/acl-role/rw",
-      "PATCH /api/integration/i1",
       "DELETE /api/integration/i1/acl-roles/ro",
+      "PATCH /api/integration/i1",
     ]);
-    expect(shop.writes[1]?.body).toEqual({
+    expect(shop.writes[2]?.body).toEqual({
       accessKey: "SWIANEWKEY",
       secretAccessKey: "new-secret",
       admin: false,
@@ -252,6 +292,39 @@ describe("setup against a shop", () => {
     expect(result.role).toMatchObject({ created: false, name: "shopware-mcp (read and write)" });
     expect(result.role.added).toContain("product:update");
     expect(result.role.added).not.toContain("product:read");
+    expect(result.role.removed).toEqual(["user:update"]);
     expect(result.integration).toMatchObject({ created: false, rotated: true });
+  });
+
+  it("brings the role of its own integration up to date without touching the keys", async () => {
+    const shop = adminShop({
+      role: { id: "ro", privileges: ["product:read", "user:update"], description: OURS },
+      integration: { id: "i1", roles: [{ id: "ro", name: roleNameFor("shopware-mcp", false) }] },
+    });
+    mock.use(...shop.handlers);
+    const session = await AdminSession.login(SHOP_URL, "admin", "right");
+    const result = await applySetup(session, await planSetup(session, OPTIONS), OPTIONS);
+    expect(shop.writes.map((write) => `${write.method} ${write.path}`)).toEqual([
+      "PATCH /api/acl-role/ro",
+    ]);
+    expect(result).toMatchObject({
+      credentials: null,
+      integration: { created: false, rotated: false },
+      role: { removed: ["user:update"] },
+    });
+  });
+
+  it("does not take over a role of the same name that setup did not create", async () => {
+    const shop = adminShop({
+      role: { id: "theirs", privileges: ["order:read"], description: "Support team" },
+    });
+    mock.use(...shop.handlers);
+    const session = await AdminSession.login(SHOP_URL, "admin", "right");
+    const plan = await planSetup(session, OPTIONS);
+    await expect(applySetup(session, plan, OPTIONS)).rejects.toMatchObject({
+      code: "ROLE_EXISTS",
+      status: 409,
+    });
+    expect(shop.writes).toEqual([]);
   });
 });

@@ -12,19 +12,29 @@ const ROUTE_PRIVILEGES: [prefix: string, privilege: string][] = [
   ["/api/_action/system-config", "system_config:read"],
 ];
 
-/**
- * Privileges setup never grants unless asked: `system.plugin_maintain` lets an integration
- * install and update extensions, far more than reading which updates exist.
- */
-const OPT_IN = new Set(["system.plugin_maintain"]);
-
 export interface PrivilegeOptions {
   allowWrite: boolean;
   /** Also grant what `plugins_list` needs to show available updates. */
   pluginUpdates?: boolean;
+  /** Also grant what `shop_settings` needs: read access to the whole system config. */
+  settings?: boolean;
   /** Active plugins of the shop, so plugin-aware tools get their privileges. */
   plugins?: Set<string>;
 }
+
+/**
+ * Privileges setup never grants unless asked, because they reach far beyond what the tools
+ * show: `system.plugin_maintain` lets an integration install and update extensions, and
+ * `system_config:read` reads every setting, SMTP passwords and payment keys included, even
+ * though shop_settings only ever shows a scrubbed selection.
+ */
+export const OPT_IN: Record<string, { flag: string; enabled: (o: PrivilegeOptions) => boolean }> = {
+  "system.plugin_maintain": {
+    flag: "--plugin-updates",
+    enabled: (options) => options.pluginUpdates === true,
+  },
+  "system_config:read": { flag: "--settings", enabled: (options) => options.settings === true },
+};
 
 /**
  * Exactly what the registered tools need, from the same table the doctor checks. Every entry
@@ -32,7 +42,7 @@ export interface PrivilegeOptions {
  */
 export function requiredPrivileges(options: PrivilegeOptions): string[] {
   const granted = new Set<string>();
-  const optIn = (privilege: string) => !OPT_IN.has(privilege) || options.pluginUpdates === true;
+  const optIn = (privilege: string) => OPT_IN[privilege]?.enabled(options) ?? true;
   for (const tool of tools) {
     if (tool.write && !options.allowWrite) continue;
     const requirement = REQUIREMENTS[tool.name];
@@ -43,7 +53,7 @@ export function requiredPrivileges(options: PrivilegeOptions): string[] {
       if (optIn(privilege)) granted.add(privilege);
     for (const route of [...(requirement.routes ?? []), ...(requirement.optionalRoutes ?? [])]) {
       for (const [prefix, privilege] of ROUTE_PRIVILEGES) {
-        if (route.startsWith(prefix)) granted.add(privilege);
+        if (route.startsWith(prefix) && optIn(privilege)) granted.add(privilege);
       }
     }
   }
@@ -55,6 +65,25 @@ export function requiredPrivileges(options: PrivilegeOptions): string[] {
     }
   }
   return [...granted].sort();
+}
+
+/** Tools that cannot run without an opt-in privilege that was not asked for, and the flag. */
+export function toolsLeftOut(options: PrivilegeOptions): { tool: string; flag: string }[] {
+  const left: { tool: string; flag: string }[] = [];
+  for (const tool of tools) {
+    if (tool.write && !options.allowWrite) continue;
+    const requirement = REQUIREMENTS[tool.name];
+    if (!requirement) continue;
+    const needed = [
+      ...(requirement.writes ?? []),
+      ...(requirement.routes ?? []).flatMap((route) =>
+        ROUTE_PRIVILEGES.filter(([prefix]) => route.startsWith(prefix)).map(([, p]) => p),
+      ),
+    ];
+    const missing = needed.find((privilege) => OPT_IN[privilege]?.enabled(options) === false);
+    if (missing) left.push({ tool: tool.name, flag: OPT_IN[missing]?.flag ?? "" });
+  }
+  return left;
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -145,6 +174,8 @@ export interface SetupOptions {
   name: string;
   allowWrite: boolean;
   pluginUpdates: boolean;
+  /** Grant system_config:read so shop_settings works; off by default, see OPT_IN. */
+  settings?: boolean;
   /** Issue new credentials for an integration of the same name instead of refusing. */
   rotate: boolean;
 }
@@ -153,12 +184,18 @@ export interface SetupPlan {
   roleName: string;
   privileges: string[];
   plugins: string[];
-  role: { id: string; privileges: string[] } | null;
-  integration: { id: string; accessKey: string | null; roleIds: string[] } | null;
+  role: { id: string; privileges: string[]; ours: boolean } | null;
+  integration: { id: string; accessKey: string | null; admin: boolean; roleIds: string[] } | null;
+  /** What an update does to an existing role: setup keeps it at exactly what the tools need. */
+  changes: { added: string[]; removed: string[] };
 }
 
 export const roleNameFor = (name: string, allowWrite: boolean) =>
   `${name} (${allowWrite ? "read and write" : "read-only"})`;
+
+/** Marks a role as setup's own; a role of the same name without it is someone else's. */
+const ROLE_DESCRIPTION =
+  "Created by shopware-mcp setup: exactly the privileges its tools need, nothing else.";
 
 export async function planSetup(session: AdminSession, options: SetupOptions): Promise<SetupPlan> {
   const roleName = roleNameFor(options.name, options.allowWrite);
@@ -171,54 +208,85 @@ export async function planSetup(session: AdminSession, options: SetupOptions): P
     session.search("acl-role", {
       limit: 1,
       filter: [equals("name", roleName)],
-      includes: { acl_role: ["id", "privileges"] },
+      includes: { acl_role: ["id", "privileges", "description"] },
     }),
     session.search("integration", {
       limit: 1,
       filter: [equals("label", options.name)],
       associations: { aclRoles: {} },
-      includes: { integration: ["id", "accessKey", "aclRoles"], acl_role: ["id"] },
+      includes: { integration: ["id", "accessKey", "admin", "aclRoles"], acl_role: ["id"] },
     }),
   ]);
   const active = new Set(plugins.map((plugin) => str(plugin.name)).filter((n): n is string => !!n));
   const role = roles[0];
   const integration = integrations[0];
+  const privileges = requiredPrivileges({
+    allowWrite: options.allowWrite,
+    pluginUpdates: options.pluginUpdates,
+    settings: options.settings === true,
+    plugins: active,
+  });
+  const current = role ? strList(role.privileges) : [];
   return {
     roleName,
-    privileges: requiredPrivileges({
-      allowWrite: options.allowWrite,
-      pluginUpdates: options.pluginUpdates,
-      plugins: active,
-    }),
+    privileges,
     plugins: [...active].sort(),
-    role: role ? { id: String(role.id), privileges: strList(role.privileges) } : null,
+    role: role
+      ? {
+          id: String(role.id),
+          privileges: current,
+          ours: str(role.description) === ROLE_DESCRIPTION,
+        }
+      : null,
     integration: integration
       ? {
           id: String(integration.id),
           accessKey: str(integration.accessKey),
+          admin: integration.admin === true,
           roleIds: rawList(integration.aclRoles).map((entry) => String(entry.id)),
         }
       : null,
+    changes: role
+      ? {
+          added: privileges.filter((privilege) => !current.includes(privilege)),
+          removed: current.filter((privilege) => !privileges.includes(privilege)).sort(),
+        }
+      : { added: privileges, removed: [] },
   };
 }
 
 export interface SetupResult {
-  role: { id: string; name: string; created: boolean; privileges: number; added: string[] };
+  role: {
+    id: string;
+    name: string;
+    created: boolean;
+    privileges: number;
+    added: string[];
+    removed: string[];
+  };
   integration: { id: string; label: string; created: boolean; rotated: boolean };
-  credentials: { clientId: string; clientSecret: string };
+  /** The new keys; null when only the role of an existing integration was brought up to date. */
+  credentials: { clientId: string; clientSecret: string } | null;
 }
 
 /**
  * Create or update the role, then create the integration (or, with `rotate`, give the
- * existing one new keys). Idempotent for the role: running it after an upgrade adds the
- * privileges new tools need.
+ * existing one new keys). Idempotent for the role: running it after an upgrade sets exactly
+ * the privileges the current tools need and reports what it added and removed.
  */
 export async function applySetup(
   session: AdminSession,
   plan: SetupPlan,
   options: SetupOptions,
 ): Promise<SetupResult> {
-  if (plan.integration && !options.rotate) {
+  // An integration that already uses setup's role only needs the role brought up to date, for
+  // example after an upgrade added tools; its keys stay. Anything else needs --rotate.
+  const updateOnly =
+    plan.integration !== null &&
+    !options.rotate &&
+    plan.role !== null &&
+    plan.integration.roleIds.includes(plan.role.id);
+  if (plan.integration && !options.rotate && !updateOnly) {
     throw new ShopwareMcpError(
       409,
       "INTEGRATION_EXISTS",
@@ -226,10 +294,15 @@ export async function applySetup(
         "Pass --rotate to give it new keys (the old ones stop working) or --name to create another.",
     );
   }
+  if (plan.role && !plan.role.ours) {
+    throw new ShopwareMcpError(
+      409,
+      "ROLE_EXISTS",
+      `A role named "${plan.roleName}" exists that setup did not create; it may be assigned to ` +
+        "people. Pass --name to use another name, or rename that role.",
+    );
+  }
   const roleId = plan.role?.id ?? newId();
-  const added = plan.role
-    ? plan.privileges.filter((privilege) => !plan.role?.privileges.includes(privilege))
-    : plan.privileges;
   if (plan.role) {
     await session.request(`/api/acl-role/${roleId}`, {
       method: "PATCH",
@@ -241,29 +314,31 @@ export async function applySetup(
       body: {
         id: roleId,
         name: plan.roleName,
-        description:
-          "Created by shopware-mcp setup: exactly the privileges its tools need, nothing else.",
+        description: ROLE_DESCRIPTION,
         privileges: plan.privileges,
       },
     });
   }
 
-  // Shopware's route really is spelled "intergration".
-  const keys = await session.request<{ accessKey: string; secretAccessKey: string }>(
-    "/api/_action/access-key/intergration",
-  );
+  const role = {
+    id: roleId,
+    name: plan.roleName,
+    created: plan.role === null,
+    privileges: plan.privileges.length,
+    added: plan.changes.added,
+    removed: plan.changes.removed,
+  };
   const integrationId = plan.integration?.id ?? newId();
+  if (updateOnly) {
+    return {
+      role,
+      integration: { id: integrationId, label: options.name, created: false, rotated: false },
+      credentials: null,
+    };
+  }
   if (plan.integration) {
-    await session.request(`/api/integration/${integrationId}`, {
-      method: "PATCH",
-      body: {
-        accessKey: keys.accessKey,
-        secretAccessKey: keys.secretAccessKey,
-        admin: false,
-        aclRoles: [{ id: roleId }],
-      },
-    });
-    // A role from an earlier setup with the other mode would keep its privileges; drop it.
+    // Unlink a role from an earlier setup with the other mode before the keys change, so a
+    // failure here leaves the old keys working instead of new ones nobody has seen.
     const ours = [roleNameFor(options.name, true), roleNameFor(options.name, false)];
     const stale = plan.integration.roleIds.filter((id) => id !== roleId);
     if (stale.length > 0) {
@@ -280,6 +355,23 @@ export async function applySetup(
         }
       }
     }
+  }
+
+  // Shopware's route really is spelled "intergration".
+  const keys = await session.request<{ accessKey: string; secretAccessKey: string }>(
+    "/api/_action/access-key/intergration",
+  );
+  if (plan.integration) {
+    await session.request(`/api/integration/${integrationId}`, {
+      method: "PATCH",
+      body: {
+        accessKey: keys.accessKey,
+        secretAccessKey: keys.secretAccessKey,
+        // Only an administrator may touch this flag; send it only to take admin rights away.
+        ...(plan.integration.admin ? { admin: false } : {}),
+        aclRoles: [{ id: roleId }],
+      },
+    });
   } else {
     await session.request("/api/integration", {
       method: "POST",
@@ -288,20 +380,13 @@ export async function applySetup(
         label: options.name,
         accessKey: keys.accessKey,
         secretAccessKey: keys.secretAccessKey,
-        admin: false,
         aclRoles: [{ id: roleId }],
       },
     });
   }
 
   return {
-    role: {
-      id: roleId,
-      name: plan.roleName,
-      created: plan.role === null,
-      privileges: plan.privileges.length,
-      added,
-    },
+    role,
     integration: {
       id: integrationId,
       label: options.name,

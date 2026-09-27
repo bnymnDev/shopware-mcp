@@ -4,13 +4,31 @@
 # for local testing.
 set -uo pipefail
 
-read -r -a cmd <<< "${SHOPWARE_MCP_CMD:-npx --yes shopware-mcp@${INPUT_VERSION:-latest}}"
-args=(audit --fail-on "${INPUT_FAIL_ON:-critical}" --days "${INPUT_DAYS:-7}" --threshold "${INPUT_THRESHOLD:-5}")
+# The version defaults to the one this action was released with, so pinning the action to a tag
+# also pins the code that receives the shop's secret.
+version="${INPUT_VERSION:-}"
+if [ -z "$version" ]; then
+  version="$(node -p 'require(process.argv[1]).version' "${GITHUB_ACTION_PATH:-.}/package.json" 2>/dev/null || true)"
+fi
+if ! [[ "$version" =~ ^(latest|[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?)$ ]]; then
+  echo "::error::Invalid version '${version}': use latest or a release like 0.8.0" >&2
+  exit 2
+fi
+
+if [ -n "${SHOPWARE_MCP_CMD:-}" ]; then
+  read -r -a cmd <<< "$SHOPWARE_MCP_CMD"
+else
+  cmd=(npx --yes "shopware-mcp@${version}")
+fi
+
+report="${RUNNER_TEMP:-/tmp}/shopware-audit.md"
+json="${RUNNER_TEMP:-/tmp}/shopware-audit.json"
+rm -f "$json"
+args=(audit --fail-on "${INPUT_FAIL_ON:-critical}" --days "${INPUT_DAYS:-7}" --threshold "${INPUT_THRESHOLD:-5}" --json-file "$json")
 if [ -n "${INPUT_HTML:-}" ]; then
   args+=(--html "$INPUT_HTML")
 fi
 
-report="${RUNNER_TEMP:-/tmp}/shopware-audit.md"
 "${cmd[@]}" "${args[@]}" > "$report"
 code=$?
 
@@ -20,8 +38,9 @@ else
   cat "$report"
 fi
 
+# Counts come from the JSON report, never from the Markdown's wording.
 count() {
-  grep -m1 -oE "[0-9]+ $1" "$report" | grep -oE '^[0-9]+' || echo 0
+  node -e 'const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); process.stdout.write(String(r.summary?.[process.argv[2]] ?? 0));' "$json" "$1" 2>/dev/null || echo 0
 }
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
   {

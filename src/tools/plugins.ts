@@ -71,6 +71,8 @@ function fromExtension(extension: Raw): ExtensionInfo {
 
 export async function listExtensions(client: ShopwareClient) {
   const warnings: string[] = [];
+  /** The shop refused the update list for lack of a privilege (system.plugin_maintain). */
+  let updatesRefused = false;
   const [plugins, extensions] = await Promise.allSettled([
     allPlugins(client),
     client.request<unknown>("/api/_action/extension/installed"),
@@ -100,11 +102,12 @@ export async function listExtensions(client: ShopwareClient) {
     const detail =
       reason instanceof ShopwareMcpError ? `${reason.code}: ${reason.detail}` : "failed";
     warnings.push(`apps and update info unavailable: /_action/extension/installed ${detail}`);
+    updatesRefused = reason instanceof ShopwareMcpError && reason.status === 403;
     logger.debug("extension endpoint failed");
   }
 
   const items = [...byName.values()].sort((a, b) => a.name.localeCompare(b.name));
-  return { items, warnings };
+  return { items, warnings, updatesKnown: extensions.status === "fulfilled", updatesRefused };
 }
 
 export const pluginsList = defineTool({

@@ -13,7 +13,9 @@
       "validFrom": "2026-06-01T00:00:00.000+00:00",
       "validUntil": "2026-08-31T23:59:59.000+00:00",
       "maxRedemptionsGlobal": null,
+      "maxRedemptionsPerCustomer": null,
       "useCodes": true,
+      "useIndividualCodes": false,
       "salesChannels": [
         {
           "salesChannelId": "01a068fb91ad7260939028219e459a91",
@@ -24,10 +26,28 @@
           "apiAlias": "promotion_sales_channel"
         }
       ],
+      "discounts": [
+        {
+          "id": "01a0690afccc714a8485a1f88b3622a0",
+          "apiAlias": "promotion_discount"
+        },
+        {
+          "id": "01a0690afccc714a8485a1f88bb8940e",
+          "apiAlias": "promotion_discount"
+        },
+        {
+          "id": "01a0690afccc714a8485a1f88bdcfb01",
+          "apiAlias": "promotion_discount"
+        }
+      ],
       "orderRules": [],
       "personaRules": [],
       "cartRules": [],
       "orderCount": 33,
+      "ordersPerCustomerCount": {
+        "01a0690928de701bb4a5a788944ea120": 4,
+        "01a0690928f1703ebf786c33c326cba4": 5
+      },
       "id": "01a0690afcca73469fb50d509ff9de3c",
       "apiAlias": "promotion"
     }

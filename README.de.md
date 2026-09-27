@@ -53,7 +53,7 @@ aus wie ein Kunde, um herauszufinden, warum:
 | | |
 |---|---|
 | **Kuratierte Werkzeuge** | Produkte, Bestellungen samt Verlauf, Belege, Kunden, Kategorien, Aktionen, Bewertungen, Zahlungs- und Versandarten, Plugins, Bestand, Verkaufskanäle, geplante Aufgaben, die Shop-Einstellungen: zwanzig Werkzeuge mit kompaktem JSON, exakten Trefferzahlen, Beschreibungen für ein Modell und Shopwares eigenen Criteria-Filtern. Keine erfundene Abfragesprache. |
-| **Die Sicht des Kunden** | `checkout_simulate` legt Produkte und Codes in einen Wegwerf-Warenkorb, über Shopwares eigene Store API, als Gast mit Lieferland oder als bestimmter Kunde mit Gruppe, Preisen und Regeln, und erklärt jeden Warenkorbfehler in Klartext: ein Land, in das der Kanal nicht liefert, ein abgelaufener Code, eine Zahlungsart, die eine Regel ausblendet, ein Preis, den die Listung nicht zeigt. `storefront_search` sucht wie ein Kunde und sagt, warum ein Produkt nicht auftaucht. Bestellt wird nichts; der Warenkorb wird gelöscht. |
+| **Die Sicht des Kunden** | `checkout_simulate` legt Produkte und Codes in einen Wegwerf-Warenkorb, über Shopwares eigene Store API, als Gast mit Lieferland oder als bestimmter Kunde mit Gruppe, Preisen und Regeln, und erklärt jeden Warenkorbfehler in Klartext: ein Land, in das der Kanal nicht liefert, ein abgelaufener Code, eine Zahlungsart, die eine Regel ausblendet, ein Hauptprodukt, das eine Variante braucht, ein Kunde, der sich dort nicht anmelden kann. `storefront_search` sucht wie ein Kunde und sagt, warum ein Produkt nicht auftaucht. Bestellt wird nichts; der Warenkorb wird gelöscht. |
 | **Ein Puls** | `shop_pulse` stellt heute neben dieselben Stunden desselben Wochentags der letzten Wochen und bewertet die aktuelle Stille: wie viele Bestellungen diese Stunden sonst bringen und wie wahrscheinlich es ist, zufällig keine zu sehen. „Seit sechs Stunden nichts, wo sonst immer drei bis sieben kamen" ist ein kaputter Checkout, kein ruhiger Sonntag. |
 | **Ein Audit** | `shop_audit` prüft siebzehn Dinge in einem Aufruf: einen Checkout, der ungewöhnlich still geworden ist, bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, geplante Aufgaben, die nicht mehr laufen, Erweiterungen mit Update, und welche EU-Pflichten durch eine installierte Erweiterung abgedeckt scheinen. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
 | **Reports und eine Prognose** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. `stock_forecast` macht aus Absatzgeschwindigkeit und Bestand Reichweite in Tagen, Ausverkaufsdatum und Nachbestellmenge. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
@@ -100,11 +100,11 @@ findet die Storefront im Wartungsmodus. Bestellt und geändert wurde nichts.
 
 **Der Checkout, wie ein Kunde ihn sieht.** Ein Kunde aus der Schweiz sagt, ein
 Code funktioniert nicht. Ein Wegwerf-Warenkorb über Shopwares eigene Store API
-erklärt drei Dinge auf einmal: Die Schweiz ist kein Land dieses Kanals, die
-Aktion hinter dem Code endete im August, und ein Staffelpreis sieht nach
-Tippfehler aus. Danach erklärt die Suche, warum ein Produkt nie auftaucht.
+erklärt beide Probleme auf einmal: Die Schweiz ist kein Land dieses Kanals, und
+die Aktion hinter dem Code endete im August. Danach erklärt die Suche, warum
+ein Produkt nie auftaucht.
 
-![checkout_simulate erklärt ein gesperrtes Land, einen abgelaufenen Code und einen Preisunterschied; storefront_search erklärt ein unsichtbares Produkt](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/storefront.svg)
+![checkout_simulate erklärt ein gesperrtes Land und einen abgelaufenen Code; storefront_search erklärt ein unsichtbares Produkt](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/storefront.svg)
 
 **Jeden Morgen eine Seite.** `shopware-mcp brief --html brief.html` schreibt
 Puls, Audit und die letzten sieben Tage als eine eigenständige Seite, die
@@ -121,9 +121,11 @@ mit `--slack` als kurze Zusammenfassung in einem Kanal.
 **Minimale Rechte in einem Befehl.** `shopware-mcp setup` meldet sich einmal
 als Admin an, legt eine Rolle mit genau den Rechten an, die die Werkzeuge
 brauchen, gemessen an einem echten Shop statt geraten, dazu eine Integration
-ohne Administratorrechte, prüft beides und zeigt die Host-Konfiguration.
+ohne Administratorrechte. Es zeigt das Secret einmal, prüft beides und zeigt
+die Host-Konfiguration. Nach einem Update noch einmal ausgeführt, bringt es die
+Rolle auf den neuen Stand, die Schlüssel bleiben.
 
-![shopware-mcp setup legt eine Leserolle mit 46 Rechten und eine Integration an, prüft 29 von 29 Lesewerkzeugen und zeigt den Befehl für Claude Code](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/setup.svg)
+![shopware-mcp setup legt eine Leserolle mit 51 Rechten und eine Integration an, zeigt das Secret einmal, prüft 28 von 28 Lesewerkzeugen, lässt shop_settings weg und zeigt den Befehl für Claude Code](https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/demo/setup.svg)
 
 **Eine Frage, ein Aufruf.** Drei bezahlte Bestellungen warten auf den
 Versand, die Storefront ist im Wartungsmodus, eine Sommeraktion hat den August
@@ -230,7 +232,7 @@ entstand: 31 von 33 Aufgaben überfällig, keine je gelaufen, der Scheduler steh
 npx shopware-mcp setup --url https://shop.example.com --user admin --for claude-desktop --write
 ```
 
-Mit `--allow-write` kommen die Schreibwerkzeuge dazu; `--dry-run` zeigt vorher die Rechte der Rolle. Lieber selbst klicken? Unter *Einstellungen → System → Integrationen* eine Integration mit Rolle anlegen ([welche Rechte](docs/self-hosting.md#shopware-permissions)) und mit Schritt 2 weitermachen.
+Mit `--allow-write` kommen die Schreibwerkzeuge dazu, mit `--settings` auch `shop_settings`; `--dry-run` zeigt vorher die Rechte der Rolle. Nach einem Update denselben Befehl noch einmal ausführen: Er aktualisiert die Rolle und behält die Schlüssel. Lieber selbst klicken? Unter *Einstellungen → System → Integrationen* eine Integration mit Rolle anlegen ([welche Rechte](docs/self-hosting.md#shopware-permissions)) und mit Schritt 2 weitermachen.
 
 **2.** Oder den Assistenten vorhandene Zugangsdaten prüfen und die Host-Konfiguration schreiben lassen:
 
@@ -450,8 +452,8 @@ unter `src/extensions/`; Pull Requests sind willkommen.
 - **Jeder Schreibzugriff ist zuerst ein Probelauf.** Alle fünfzehn Schreibwerkzeuge, von `stock_set` bis `tag_assign`, stehen auf `dryRun: true` und liefern `{ dryRun: true, wouldSend: { method, url, body } }`, als Liste, wenn ein Aufruf mehrere Requests braucht. Ein echter Schreibzugriff liefert die neu gelesene Entität.
 - **Ein Schreib-Budget.** `SHOPWARE_MCP_MAX_WRITES=20` weist den einundzwanzigsten echten Schreibzugriff eines Prozesses mit `WRITE_BUDGET_EXHAUSTED` ab; Probeläufe bleiben frei. Kein Prompt kann das aufheben.
 - **Schmale Schreibzugriffe.** `product_update` ändert Name, Beschreibung, Aktiv-Status und den Preis einer Währung; `product_create` legt ein einfaches Produkt an, mehr nicht; `product_cover_set` fügt ein Bild hinzu (JPEG, PNG, WebP, GIF oder AVIF, nie SVG), das der Shop selbst lädt. `promotion_create` erzeugt einen Warenkorbrabatt, inaktiv, solange nichts anderes gesagt wird. `customer_update` ändert Aktiv-Status und Kundengruppe. Die Transition-Werkzeuge bewegen nur Status, nie Geld. Belege erzeugt Shopwares eigener Generator, versendet werden sie von diesem Server nie; `order_documents_bulk_create` macht höchstens fünfzig je Aufruf und belastet das Schreib-Budget je Bestellung. `tag_assign` setzt oder entfernt Tags nach Namen und lässt den Rest des Datensatzes in Ruhe. Nichts löscht. Sonst nichts.
-- **Ein simulierter Warenkorb ist keine Bestellung.** `checkout_simulate` und `storefront_search` gehen über Shopwares eigenen Admin-Proxy zur Store API, mit einem zufälligen Kontext-Token, das kein Besucher hat. Die Bestellroute wird nie aufgerufen, der Warenkorb danach gelöscht; übrig bleibt eine Kontextzeile, die Shopware selbst verfallen lässt. Die Simulation als Kunde berührt weder dessen Sitzung noch seinen gespeicherten Warenkorb.
-- **Minimale Rechte als Standard.** `shopware-mcp setup` vergibt jedem Werkzeug genau die Rechte, die an einer sonst leeren Rolle gemessen wurden, nie Administratorrechte und nie das Recht zur Plugin-Installation, außer mit `--plugin-updates`. Das Admin-Passwort dient einer einzigen Anmeldung und wird nie gespeichert.
+- **Ein simulierter Warenkorb ist keine Bestellung.** `checkout_simulate` und `storefront_search` gehen über Shopwares eigenen Admin-Proxy zur Store API, mit einem zufälligen Kontext-Token, das kein Besucher hat. Die Bestellroute wird nie aufgerufen, der Warenkorb danach gelöscht; übrig bleibt eine Kontextzeile, die Shopware selbst verfallen lässt. Die Simulation als Kunde berührt weder dessen Sitzung noch seinen gespeicherten Warenkorb. Erweiterungen, die auf gespeicherte Warenkörbe reagieren, etwa Mails zu abgebrochenen Warenkörben, sehen den simulierten Warenkorb aber als den des Kunden; als echter Kunde also nur simulieren, wo das in Ordnung ist.
+- **Minimale Rechte als Standard.** `shopware-mcp setup` vergibt jedem Werkzeug genau die Rechte, die an einer sonst leeren Rolle gemessen wurden, und nie Administratorrechte. Zwei Rechte reichen weiter als ihr Werkzeug und bleiben draußen, außer auf Wunsch: die ganze Systemkonfiguration lesen, SMTP-Passwörter und Zahlungsschlüssel eingeschlossen (`--settings`), und Erweiterungen installieren (`--plugin-updates`). Setup ändert nur eine Rolle, die es selbst angelegt hat, nennt jedes Recht, das es hinzufügt oder entfernt, und zeigt das neue Secret, bevor irgendetwas anderes scheitern kann. Das Admin-Passwort dient einer einzigen Anmeldung über https, unverschlüsselt nur zum eigenen Rechner, und wird nie gespeichert.
 - **Bereinigte Lesezugriffe.** `entity_search` entfernt Passwörter, Schlüssel, Tokens und Hashes aus jeder Antwort und verweigert Entitäten, die Zugangsdaten oder Systeminterna enthalten: Benutzer, Integrationen, ACL-Rollen, Apps, Systemkonfiguration.
 - **Nirgends Geheimnisse.** Zugangsdaten erscheinen nie in Ausgaben, Logs oder Fehlermeldungen. Logs gehen nur nach stderr.
 - **Keine Telemetrie.** Der Server spricht mit Ihrem Shop und mit Ihrem Host. Mit niemandem sonst.
