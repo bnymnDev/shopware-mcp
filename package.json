@@ -65,7 +65,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",
     "@changesets/cli": "^3.0.1",
-    "@types/node": "^22.20.2",
+    "@types/node": "^26.6.1",
     "msw": "^2.15.0",
     "tsup": "^8.5.1",
     "tsx": "^4.23.13",

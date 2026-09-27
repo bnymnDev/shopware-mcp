@@ -39,11 +39,11 @@ jobs:
           cp docs/video/*.mp4 docs/video/*.jpg docs/video/*.vtt site/video/
           cp docs/brief/example.html site/brief/index.html
           cp docs/brief/brief.png site/brief/
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
         with:
           enablement: true
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
