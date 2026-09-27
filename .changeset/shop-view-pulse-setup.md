@@ -11,4 +11,5 @@ See the shop the way a customer does, notice when orders stop, and set everythin
 - `shopware-mcp brief` puts the pulse, the audit and the last seven local days on one page: Markdown, JSON, or with `--html` a self-contained HTML file with charts that follows the reader's dark mode and loads nothing from anywhere. `audit` and `report` take `--html` too, all three take `--json-file`; `brief` and `audit` post a short summary to Slack with `--slack`; `--tz` sets the time zone for days and "today".
 - The repository is a GitHub Action: `uses: bnymnDev/shopware-mcp@v0.8.0` runs the audit with the shopware-mcp release of that tag, writes the job summary, exposes the counts and the exit code as outputs and fails the job on the chosen severity.
 - Extension packs can declare the ACL privileges their plugin's routes need; the FroshTools and Merqo packs do.
+- `order_documents_bulk_create` says plainly when there is nothing to do, and separately when explicit order ids do not exist.
 - New recordings of the pulse, the customer's view and setup, and a real example brief on the website.
