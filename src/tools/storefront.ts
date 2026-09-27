@@ -997,7 +997,8 @@ export const checkoutSimulate = defineTool({
           method: "POST",
           idempotent: true,
           body: {
-            filter: [equalsAny("id", productIds)],
+            // Plain ids: Shopware 6.6 and early 6.7 refuse a filter on product.id in the Store API.
+            ids: productIds,
             limit: productIds.length,
             includes: {
               product: ["id", "calculatedPrice", "calculatedPrices"],
