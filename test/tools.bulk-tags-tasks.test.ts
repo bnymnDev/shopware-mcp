@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { mapBulkResponse, orderDocumentsBulkCreate } from "../src/tools/documents.js";
-import { tagAssign } from "../src/tools/tags.js";
+import { newTagId, tagAssign } from "../src/tools/tags.js";
 import { listScheduledTasks, scheduledTasksList } from "../src/tools/tasks.js";
 import { chargeWrites, writesLeft } from "../src/writes.js";
 import {
@@ -346,6 +346,10 @@ describe("tag_assign", () => {
     expect(sent[0]?.body).toEqual({
       tags: [{ id: NEWSLETTER }, { id: expect.stringMatching(HEX), name: "B2B" }],
     });
+    // The id of a new tag comes from its name: the dry run shows the request the write sends
+    expect(sent[0]?.body).toEqual({
+      tags: [{ id: NEWSLETTER }, { id: newTagId("b2b"), name: "B2B" }],
+    });
     expect(writeRequests()).toEqual([]);
   });
 
@@ -419,6 +423,34 @@ describe("tag_assign", () => {
       dryRun: false,
       result: { entity: "customer", id: CUSTOMER, tags: [{ id: VIP, name: "VIP" }] },
     });
+  });
+
+  it("creates a new tag under the same id in the dry run and the real write", async () => {
+    mock.use(withTags([]));
+    const first = await invoke(
+      tagAssign,
+      { entity: "customer", id: CUSTOMER, add: ["Versand klären"] },
+      ctx,
+    );
+    const second = await invoke(
+      tagAssign,
+      { entity: "customer", id: CUSTOMER, add: ["versand KLÄREN"] },
+      ctx,
+    );
+    if (first.dryRun !== true || second.dryRun !== true) throw new Error("expected dry runs");
+    const body = (result: typeof first) =>
+      Array.isArray(result.wouldSend) ? result.wouldSend[0]?.body : null;
+    const id = newTagId("Versand klären");
+    expect(id).toMatch(/^[0-9a-f]{12}5[0-9a-f]{3}[89ab][0-9a-f]{15}$/);
+    expect(body(first)).toEqual({ tags: [{ id, name: "Versand klären" }] });
+    expect((body(second) as { tags: { id: string }[] }).tags[0]?.id).toBe(id);
+
+    await invoke(
+      tagAssign,
+      { entity: "customer", id: CUSTOMER, add: ["Versand klären"], dryRun: false },
+      ctx,
+    );
+    expect(writeRequests()[0]?.body).toEqual(body(first));
   });
 
   it("rejects empty and contradictory input", async () => {
