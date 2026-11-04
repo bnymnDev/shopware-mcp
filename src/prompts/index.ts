@@ -60,6 +60,45 @@ export function registerPrompts(server: McpServer): void {
   );
 
   server.registerPrompt(
+    "campaign_ready",
+    {
+      title: "Ready for a campaign day",
+      description:
+        "Before Black Friday or any sale: promotions, checkout, stock and what to watch on the day.",
+      argsSchema: {
+        until: z.string().min(1).describe("Last day of the campaign, ISO date, e.g. 2026-11-30"),
+        expect: z
+          .string()
+          .optional()
+          .describe("How many times the usual orders the day should bring, e.g. 3"),
+      },
+    },
+    ({ until, expect }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text:
+              `Prepare the shop for a campaign that ends on ${until}. 1) Run promotions_check ` +
+              `with until="${until}" and list every critical and warning finding by promotion. ` +
+              "2) Take the three codes or automatic promotions customers will use most and run " +
+              "checkout_simulate for each with a typical product, as a guest in the main country, " +
+              "to prove the discount really applies. 3) Run stock_forecast and name products that " +
+              `will run out before ${until} at ${Number(expect) > 1 ? `${Number(expect)} times ` : ""}` +
+              "the current pace. 4) Run shop_audit and pick only what can break orders: " +
+              "maintenance, payment or shipping problems, stuck scheduled tasks. Finish with a " +
+              "checklist of fixes, each with the exact tool call (dry run first for writes), and " +
+              "the command to watch the day: shopware-mcp watch --baseline last-year" +
+              `${Number(expect) > 1 ? ` --expect ${Number(expect)}` : ""} --slack <webhook>. ` +
+              "Use only figures from the tool results.",
+          },
+        },
+      ],
+    }),
+  );
+
+  server.registerPrompt(
     "low_stock_report",
     {
       title: "Low stock report",

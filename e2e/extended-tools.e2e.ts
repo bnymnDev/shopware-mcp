@@ -330,7 +330,7 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
       ctx,
     );
     expect(audit.warnings).toBeUndefined();
-    expect(audit.summary.checksRun).toBe(17);
+    expect(audit.summary.checksRun).toBe(18);
   });
 
   it("product_cover_set uploads bytes and a URL, sets the cover, and the pictures are removed again", async () => {

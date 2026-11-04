@@ -9,6 +9,7 @@ import { DAY_MS, notCancelled } from "./periods.js";
 import { type ExtensionInfo, listExtensions } from "./plugins.js";
 import { mapProductSummary } from "./products.js";
 import { mapPromotion } from "./promotions.js";
+import { checkPromotions } from "./promotions-check.js";
 import { comparedWeeks, computePulse, defaultTimeZone, isTimeZone, type Pulse } from "./pulse.js";
 import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
 import { mapSalesChannel } from "./sales-channels.js";
@@ -382,6 +383,33 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       },
     },
     {
+      id: "promotions_broken",
+      severity: "warning",
+      title: "Promotions in the next 14 days that will not work",
+      hint:
+        "promotions_check shows every finding per promotion; fix them before the campaign, " +
+        "since a broken code is only noticed when customers complain.",
+      run: async () => {
+        const check = await checkPromotions(client, {
+          until: new Date(now.getTime() + 14 * DAY_MS),
+          now,
+        });
+        const broken = check.promotions.filter((promotion) =>
+          promotion.findings.some((finding) => finding.severity === "critical"),
+        );
+        return {
+          count: broken.length,
+          items: broken.slice(0, limit).map((promotion) => ({
+            label: promotion.name,
+            id: promotion.id,
+            problems: promotion.findings
+              .filter((finding) => finding.severity === "critical")
+              .map((finding) => finding.problem),
+          })),
+        };
+      },
+    },
+    {
       id: "sales_channels_maintenance",
       severity: "critical",
       title: "Sales channels in maintenance mode",
@@ -617,12 +645,14 @@ export const shopAudit = defineTool({
     "Run a one-shot health check across the shop and return prioritised findings: paid orders " +
     "not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock " +
     "products, products without cover image, delivery time or sales channel visibility, " +
-    "expired promotions still active, sales channels in maintenance mode, storefronts missing " +
+    "expired promotions still active, promotions in the next 14 days that will not work, sales " +
+    "channels in maintenance mode, storefronts missing " +
     "legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, " +
     "scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a " +
     "severity, total count, sample items and a hint. " +
     "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
-    "labelling) appear to be covered by an installed extension, guessed from extension names. " +
+    "labelling) appear to be covered by an installed extension, guessed from extension names, " +
+    "and whether Shopware itself is set up for ZUGFeRD e-invoices. " +
     "Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.",
   inputSchema: {
     stuckOrderDays: z.number().int().min(1).max(365).default(7),

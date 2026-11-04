@@ -277,7 +277,7 @@ describe("sales_report", () => {
 describe("shop_audit", () => {
   it("runs every check and prioritises findings", async () => {
     const audit = await invoke(shopAudit, { stuckOrderDays: 14, lowStockThreshold: 3 }, ctx);
-    expect(audit.summary).toMatchObject({ checksRun: 17, healthy: false });
+    expect(audit.summary).toMatchObject({ checksRun: 18, healthy: false });
     expect(audit.shop).toMatchObject({ version: "6.6.10.3", edition: "Community" });
     const ids = audit.findings.map((finding) => finding.id);
     expect(ids[0]).toBe("orders_paid_not_shipped");
@@ -420,7 +420,7 @@ describe("shop_audit with a least-privilege role", () => {
       "legal_pages_missing (needs system_config:read)",
       "plugins_outdated (needs system.plugin_maintain)",
     ]);
-    expect(audit.summary.checksRun).toBe(15);
+    expect(audit.summary.checksRun).toBe(16);
     expect(formatAuditMarkdown(audit)).toContain(
       "Not covered by this integration's role: legal_pages_missing (needs system_config:read)",
     );

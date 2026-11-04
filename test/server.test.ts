@@ -125,6 +125,7 @@ describe("MCP server", () => {
 
     const { prompts } = await client.listPrompts();
     expect(prompts.map((prompt) => prompt.name).sort()).toEqual([
+      "campaign_ready",
       "customer_profile",
       "low_stock_report",
       "order_summary",
@@ -142,6 +143,13 @@ describe("MCP server", () => {
     });
     expect(JSON.stringify(profile.messages[0]?.content)).toContain("order_history");
 
+    const campaign = await client.getPrompt({
+      name: "campaign_ready",
+      arguments: { until: "2026-11-30", expect: "3" },
+    });
+    const campaignText = JSON.stringify(campaign.messages[0]?.content);
+    expect(campaignText).toContain('promotions_check with until=\\"2026-11-30\\"');
+    expect(campaignText).toContain("watch --baseline last-year --expect 3");
     const weekly = await client.getPrompt({ name: "weekly_review" });
     expect(JSON.stringify(weekly.messages[0]?.content)).toContain("compareWithPrevious");
     const prompt = await client.getPrompt({
