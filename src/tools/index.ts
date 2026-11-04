@@ -24,6 +24,7 @@ import {
 import { pluginsList } from "./plugins.js";
 import { productCreate, productsGet, productsSearch, productUpdate } from "./products.js";
 import { promotionCreate, promotionsList, promotionToggle } from "./promotions.js";
+import { promotionsCheck } from "./promotions-check.js";
 import { shopPulse } from "./pulse.js";
 import { salesReport } from "./reports.js";
 import { reviewModerate, reviewsSearch } from "./reviews.js";
@@ -52,6 +53,7 @@ export const tools: ToolDefinition[] = [
   customersGet,
   categoriesList,
   promotionsList,
+  promotionsCheck,
   reviewsSearch,
   paymentMethodsList,
   shippingMethodsList,

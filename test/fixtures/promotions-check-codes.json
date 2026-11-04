@@ -1,0 +1,11 @@
+{
+  "total": 0,
+  "data": [],
+  "aggregations": {
+    "unused": {
+      "name": "unused",
+      "buckets": [],
+      "apiAlias": "unused_aggregation"
+    }
+  }
+}

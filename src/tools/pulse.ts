@@ -19,9 +19,24 @@ const FAILED_STATES = new Set(["failed", "cancelled"]);
  * ---------------------------------------------------------------------------------------- */
 
 export type Verdict = "normal" | "watch" | "unusual";
+export type Baseline = "recent" | "last-year";
+
+/** The weeks back a baseline compares with. Last year: 52 weeks back keeps the weekday. */
+export function baselineWeeks(baseline: Baseline, weeks: number): number[] {
+  return baseline === "last-year"
+    ? [51, 52, 53]
+    : Array.from({ length: weeks }, (_, index) => index + 1);
+}
 
 export interface PulseOptions {
   weeks: number;
+  /**
+   * What "usual" means: the same weekday of the last `weeks` weeks, or the same weekday around
+   * this day last year (51 to 53 weeks back), which is what a campaign day compares with.
+   */
+  baseline?: Baseline;
+  /** Today is expected to bring this many times the usual orders, e.g. 3 on Black Friday. */
+  expectFactor?: number;
   timeZone: string;
   salesChannelId?: string | undefined;
   now?: Date;
@@ -63,6 +78,9 @@ function bucketCounts(aggregation: unknown): Map<string, number> {
 export async function computePulse(client: ShopwareClient, options: PulseOptions) {
   const now = options.now ?? new Date();
   const { weeks, timeZone } = options;
+  const baseline = options.baseline ?? "recent";
+  const factor = options.expectFactor ?? 1;
+  const offsets = baselineWeeks(baseline, weeks);
   const scope: ShopwareFilter[] = options.salesChannelId
     ? [equals("salesChannelId", options.salesChannelId)]
     : [];
@@ -83,7 +101,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   // change a week is not 168 hours.
   const weekBack = (date: Date, weeksAgo: number) =>
     weeksAgo === 0 ? date : shiftDays(date, -7 * weeksAgo, timeZone);
-  const windows = Array.from({ length: weeks + 1 }, (_, weeksAgo) => {
+  const windows = [0, ...offsets].map((weeksAgo) => {
     const to = weekBack(now, weeksAgo);
     return { weeksAgo, from: startOfDay(to, timeZone), to };
   });
@@ -121,7 +139,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   // week whose stretch reaches into the silence itself is no comparison and is left out.
   const gapWeeks: number[] = [];
   if (lastTime !== null) {
-    for (let weeksAgo = 1; weeksAgo <= weeks; weeksAgo++) {
+    for (const weeksAgo of offsets) {
       const from = new Date(weekBack(new Date(lastTime), weeksAgo).getTime() + 1000);
       const to = weekBack(now, weeksAgo);
       if (to.getTime() > lastTime) continue;
@@ -155,12 +173,13 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   }));
   const [today, ...previous] = history;
   if (!today) throw badRequest("No pulse window");
-  const typicalOrders = mean(previous.map((week) => week.orders));
-  const typicalRevenue = mean(previous.map((week) => week.revenue));
+  // A campaign day is expected to bring more: the factor raises what "usual" means today.
+  const typicalOrders = mean(previous.map((week) => week.orders)) * factor;
+  const typicalRevenue = mean(previous.map((week) => week.revenue)) * factor;
 
   const minutes = lastTime === null ? null : Math.floor((now.getTime() - lastTime) / 60_000);
   const sameGap = gapWeeks.map((weeksAgo) => count(`g${weeksAgo}n`));
-  const expected = mean(sameGap);
+  const expected = mean(sameGap) * factor;
 
   const failedOf = (payments: Map<string, number>) =>
     [...payments].filter(([state]) => FAILED_STATES.has(state)).reduce((n, [, c]) => n + c, 0);
@@ -189,7 +208,9 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
       revenue: today.revenue,
     },
     typical: {
-      weeks,
+      weeks: offsets.length,
+      baseline,
+      expectFactor: factor,
       orders: round1(typicalOrders),
       revenue: round2(typicalRevenue),
       ordersRange: {
@@ -212,6 +233,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
             minutes,
             expectedOrders: round1(expected),
             sameGapInPreviousWeeks: sameGap,
+            comparedWeeksAgo: gapWeeks,
             chance: Number(silenceChance(expected).toPrecision(2)),
             verdict: silenceVerdict(minutes, expected),
           },
@@ -230,9 +252,20 @@ export type Pulse = Awaited<ReturnType<typeof computePulse>>;
 export function comparedWeeks(pulse: Pulse, unit: string): string {
   const compared = pulse.silence?.sameGapInPreviousWeeks.length ?? 0;
   const plural = `${unit}${compared === 1 ? "" : "s"}`;
+  if (pulse.typical.baseline === "last-year")
+    return `${compared} ${plural} around this day last year`;
   return compared === pulse.typical.weeks
     ? `the last ${compared} ${plural}`
     : `${compared} earlier ${plural}`;
+}
+
+/** What "usual" was, in words: "the last 8 Sundays" or "the Sundays around this day last year". */
+export function baselineText(pulse: Pulse, day: string): string {
+  const base =
+    pulse.typical.baseline === "last-year"
+      ? `the ${day}s around this day last year`
+      : `the last ${pulse.typical.weeks} ${day}s`;
+  return pulse.typical.expectFactor === 1 ? base : `${base}, times ${pulse.typical.expectFactor}`;
 }
 
 export const shopPulse = defineTool({
@@ -244,7 +277,9 @@ export const shopPulse = defineTool({
     "current quiet spell is: the orders the same stretch brought in earlier weeks and the " +
     "chance of seeing none by accident (a Poisson estimate). 'unusual' means the checkout, " +
     "payment or storefront may be broken; follow up with checkout_simulate. Also compares " +
-    "today's failed or cancelled payments with their usual share. Read-only. Returns { today, " +
+    "today's failed or cancelled payments with their usual share. On a campaign day compare " +
+    "with last year (baseline 'last-year') or raise the expectation (expectFactor 3 on Black " +
+    "Friday), so a quiet spell is judged against what the day should bring. Read-only. Returns { today, " +
     "typical, change, lastOrder, silence, payments, history[] }.",
   inputSchema: {
     weeks: z
@@ -260,6 +295,16 @@ export const shopPulse = defineTool({
       .optional()
       .describe("IANA time zone of the shop, e.g. Europe/Berlin; default: the server's"),
     salesChannelId: idSchema.optional().describe("Only this sales channel"),
+    baseline: z
+      .enum(["recent", "last-year"])
+      .default("recent")
+      .describe("Compare with recent weeks, or with the same weekday around this day last year"),
+    expectFactor: z
+      .number()
+      .min(0.1)
+      .max(20)
+      .default(1)
+      .describe("Today should bring this many times the usual orders, e.g. 3 on a campaign day"),
   },
   handler: async (input, ctx) => {
     const timeZone = input.timeZone ?? defaultTimeZone();
@@ -268,6 +313,8 @@ export const shopPulse = defineTool({
       weeks: input.weeks,
       timeZone,
       salesChannelId: input.salesChannelId,
+      baseline: input.baseline,
+      expectFactor: input.expectFactor,
     });
   },
 });

@@ -16,6 +16,7 @@ import { paymentMethodsList, shippingMethodsList } from "../src/tools/methods.js
 import { orderDeliveryTransition, ordersSearch } from "../src/tools/orders.js";
 import { productCreate, productsSearch } from "../src/tools/products.js";
 import { promotionCreate, promotionsList } from "../src/tools/promotions.js";
+import { checkPromotions } from "../src/tools/promotions-check.js";
 import { reviewModerate, reviewsSearch } from "../src/tools/reviews.js";
 import { salesChannelsList } from "../src/tools/sales-channels.js";
 import { shopSettings } from "../src/tools/settings.js";
@@ -141,6 +142,38 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
       });
     } finally {
       await ctx.client.request(`/api/product-review/${reviewId}`, { method: "DELETE" });
+    }
+  });
+
+  it("promotions_check flags a campaign that starts but was never switched on", async () => {
+    const id = randomBytes(16).toString("hex");
+    const name = `e2e campaign ${suffix()}`;
+    const starts = new Date(Date.now() + 5 * 86_400_000);
+    await ctx.client.request("/api/promotion", {
+      method: "POST",
+      body: {
+        id,
+        name,
+        active: false,
+        useCodes: false,
+        validFrom: starts.toISOString(),
+        validUntil: new Date(starts.getTime() + 3 * 86_400_000).toISOString(),
+        discounts: [{ scope: "cart", type: "percentage", value: 10, considerAdvancedRules: false }],
+      },
+    });
+    try {
+      const result = await checkPromotions(ctx.client, {
+        until: new Date(Date.now() + 10 * 86_400_000),
+      });
+      const found = result.promotions.find((promotion) => promotion.id === id);
+      expect(found?.findings.map((finding) => finding.problem)).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/^starts on .* but is inactive/),
+          "is assigned to no sales channel: it applies nowhere",
+        ]),
+      );
+    } finally {
+      await ctx.client.request(`/api/promotion/${id}`, { method: "DELETE" });
     }
   });
 

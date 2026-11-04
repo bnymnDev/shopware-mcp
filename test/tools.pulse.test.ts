@@ -182,6 +182,29 @@ describe("shop_pulse", () => {
     expect(pulse.silence?.sameGapInPreviousWeeks).toHaveLength(3);
   });
 
+  it("compares a campaign day with last year and raises the expectation", async () => {
+    const { bodies, handler } = orderSearches();
+    mock.use(handler);
+    const plain = await computePulse(ctx.client, { weeks: 8, timeZone: "Europe/Berlin", now: NOW });
+    const pulse = await computePulse(ctx.client, {
+      weeks: 8,
+      timeZone: "Europe/Berlin",
+      now: NOW,
+      baseline: "last-year",
+      expectFactor: 2,
+    });
+    const names = (bodies.at(-1)?.aggregations ?? []).map((agg) => String(agg.name));
+    expect(names.filter((name) => /^o\d+$/.test(name))).toEqual(["o0", "o51", "o52", "o53"]);
+    expect(names.filter((name) => name.startsWith("g"))).toEqual(["g51", "g52", "g53"]);
+    const lastYear = bodies.at(-1)?.aggregations?.find((agg) => agg.name === "o52");
+    // 52 weeks before Sunday 2026-09-27 is Sunday 2025-09-28, Berlin midnight.
+    expect(JSON.stringify(lastYear?.filter)).toContain('"gte":"2025-09-27T22:00:00.000Z"');
+    expect(pulse.typical).toMatchObject({ weeks: 3, baseline: "last-year", expectFactor: 2 });
+    expect(pulse.history.map((week) => week.weeksAgo)).toEqual([0, 51, 52, 53]);
+    expect(pulse.silence?.comparedWeeksAgo).toEqual([51, 52, 53]);
+    expect(plain.typical).toMatchObject({ baseline: "recent", expectFactor: 1 });
+  });
+
   it("flags a run of failed payments against their usual share", async () => {
     const aggregations = () => {
       const response = fixture<{ aggregations: Record<string, unknown> }>("pulse-aggregations");

@@ -95,6 +95,15 @@ export const REQUIREMENTS: Record<string, Requirement> = {
   },
   categories_list: { reads: ["category"] },
   promotions_list: { reads: ["promotion", "promotion_discount"] },
+  promotions_check: {
+    reads: [
+      "promotion",
+      "promotion_discount",
+      "promotion_individual_code",
+      "promotion_sales_channel",
+      "sales_channel",
+    ],
+  },
   reviews_search: { reads: ["product_review", "customer", "product", "sales_channel"] },
   payment_methods_list: { reads: ["payment_method", "rule", "sales_channel"] },
   shipping_methods_list: { reads: ["shipping_method", "delivery_time", "rule", "sales_channel"] },

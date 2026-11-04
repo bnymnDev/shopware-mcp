@@ -4,6 +4,7 @@ import type { Raw } from "../src/client/index.js";
 import { ShopwareClient } from "../src/client/index.js";
 import { runDoctor } from "../src/doctor.js";
 import { AdminSession, applySetup, planSetup, type SetupOptions } from "../src/setup.js";
+import { checkPromotions } from "../src/tools/promotions-check.js";
 import { computePulse } from "../src/tools/pulse.js";
 import { checkoutSimulate, resolveChannel, storefrontSearch } from "../src/tools/storefront.js";
 import type { ToolContext } from "../src/tools/types.js";
@@ -200,6 +201,10 @@ describe.skipIf(!E2E_ENABLED)("setup against a real shop", () => {
       const config = { ...admin.config, clientId: keys.clientId, clientSecret: keys.clientSecret };
       const limited: ToolContext = { client: new ShopwareClient(config), config };
       const report = await runDoctor(limited, { label: options.name, privileges: plan.privileges });
+      // The role reads everything the campaign check loads, associations included.
+      await expect(
+        checkPromotions(limited.client, { until: new Date(Date.now() + 14 * 86_400_000) }),
+      ).resolves.toMatchObject({ complete: true });
       const blocked = report.tools.filter((item) => item.status !== "ready");
       // Everything but the settings tool, which needs the opt-in --settings.
       expect(blocked.map((item) => item.tool)).toEqual(["shop_settings"]);

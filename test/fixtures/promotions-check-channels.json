@@ -1,0 +1,23 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "translated": {
+        "name": "Storefront",
+        "customFields": {},
+        "homeSlotConfig": null,
+        "homeEnabled": true,
+        "homeName": null,
+        "homeMetaTitle": null,
+        "homeMetaDescription": null,
+        "homeKeywords": null
+      },
+      "name": "Storefront",
+      "active": true,
+      "maintenance": false,
+      "id": "01994d25627d7303ba92b97e96becd52",
+      "apiAlias": "sales_channel"
+    }
+  ],
+  "aggregations": []
+}

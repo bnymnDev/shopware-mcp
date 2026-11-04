@@ -1,0 +1,264 @@
+{
+  "total": 8,
+  "data": [
+    {
+      "translated": {
+        "name": "Autumn 10 % for everyone",
+        "customFields": {}
+      },
+      "name": "Autumn 10 % for everyone",
+      "active": true,
+      "validFrom": null,
+      "validUntil": null,
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": false,
+      "useIndividualCodes": false,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": null,
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 10,
+          "maxValue": null,
+          "id": "01a1a7a2f51771f18d58a41adb3db401",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f51771f18d58a41ada9659db",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "VIP 60 %",
+        "customFields": {}
+      },
+      "name": "VIP 60 %",
+      "active": true,
+      "validFrom": null,
+      "validUntil": null,
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": true,
+      "useIndividualCodes": false,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": "VIP60",
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 60,
+          "maxValue": null,
+          "id": "01a1a7a2f5f2704c8a48812bd70fba38",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f5f2704c8a48812bd6b90a1e",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "Influencer codes",
+        "customFields": {}
+      },
+      "name": "Influencer codes",
+      "active": true,
+      "validFrom": null,
+      "validUntil": null,
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": true,
+      "useIndividualCodes": true,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": null,
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 15,
+          "maxValue": null,
+          "id": "01a1a7a2f6607167ab567a92097554fe",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f65f701da82a3db2d373ce1e",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "Newsletter 10 %",
+        "customFields": {}
+      },
+      "name": "Newsletter 10 %",
+      "active": true,
+      "validFrom": null,
+      "validUntil": null,
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": true,
+      "useIndividualCodes": false,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": "NEWS10",
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 10,
+          "maxValue": null,
+          "id": "01a1a7a2f6cb7108abd50d08f34465ac",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f6ca70128ec57cac17d69e84",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "App only 5 %",
+        "customFields": {}
+      },
+      "name": "App only 5 %",
+      "active": true,
+      "validFrom": null,
+      "validUntil": null,
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": true,
+      "useIndividualCodes": false,
+      "salesChannels": [],
+      "code": "APP5",
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 5,
+          "maxValue": null,
+          "id": "01a1a7a2f73a7396a3095697bb22e031",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f73a7396a3095697baad8cda",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "Black Week 15 % automatic",
+        "customFields": {}
+      },
+      "name": "Black Week 15 % automatic",
+      "active": true,
+      "validFrom": "2026-11-23T00:00:00.000+00:00",
+      "validUntil": "2026-11-30T23:59:59.000+00:00",
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": false,
+      "useIndividualCodes": false,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": null,
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 15,
+          "maxValue": null,
+          "id": "01a1a7a2f592726387ad3fe308fb53dd",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f591722ead09df3a8bdd2645",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "Black Friday 30 %",
+        "customFields": {}
+      },
+      "name": "Black Friday 30 %",
+      "active": false,
+      "validFrom": "2026-11-27T00:00:00.000+00:00",
+      "validUntil": "2026-11-30T23:59:59.000+00:00",
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": true,
+      "useIndividualCodes": false,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": "BF30",
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 30,
+          "maxValue": null,
+          "id": "01a1a7a2f3c671a0bfaa198141e0e99c",
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "orderCount": 0,
+      "id": "01a1a7a2f3c5730c9c1545f0e0eeb992",
+      "apiAlias": "promotion"
+    },
+    {
+      "translated": {
+        "name": "Free shipping weekend",
+        "customFields": {}
+      },
+      "name": "Free shipping weekend",
+      "active": true,
+      "validFrom": "2026-11-27T00:00:00.000+00:00",
+      "validUntil": "2026-11-29T23:59:59.000+00:00",
+      "maxRedemptionsGlobal": null,
+      "exclusive": false,
+      "useCodes": false,
+      "useIndividualCodes": false,
+      "salesChannels": [
+        {
+          "salesChannelId": "01994d25627d7303ba92b97e96becd52",
+          "apiAlias": "promotion_sales_channel"
+        }
+      ],
+      "code": null,
+      "discounts": [],
+      "orderCount": 0,
+      "id": "01a1a7a2f4a9736391aefca5234fdbaa",
+      "apiAlias": "promotion"
+    }
+  ],
+  "aggregations": []
+}

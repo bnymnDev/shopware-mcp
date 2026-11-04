@@ -1,6 +1,6 @@
 import { describeItem } from "./format.js";
 import type { runAudit } from "./tools/audit.js";
-import { comparedWeeks, type Pulse } from "./tools/pulse.js";
+import { baselineText, comparedWeeks, type Pulse } from "./tools/pulse.js";
 import type { buildSalesReport } from "./tools/reports.js";
 import { localDate } from "./tools/zone.js";
 
@@ -288,7 +288,7 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
   const history = [...pulse.history].reverse();
   const historyLabels = dayLabels(history.map((week) => week.date));
   const byTime = columnChart({
-    caption: `Orders by ${now} on the last ${weeks} ${day}s and today`,
+    caption: `Orders by ${now} on ${baselineText(pulse, day)} and today`,
     valueHeader: "Orders",
     format: (value) => integer.format(value),
     reference: {
@@ -318,7 +318,10 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
             // The compared weeks are the oldest ones: a week reaching into the silence is left out.
             ...silence.sameGapInPreviousWeeks
               .map((count, index, all) => ({
-                date: pulse.history[weeks - all.length + 1 + index]?.date ?? "",
+                date:
+                  pulse.history.find(
+                    (week) => week.weeksAgo === silence.comparedWeeksAgo[index] && all.length > 0,
+                  )?.date ?? "",
                 value: count,
               }))
               .reverse()
@@ -333,7 +336,7 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
 
   return `<section>
 <h2>Right now</h2>
-<p class="lede">${esc(day)}, ${esc(now)} (${esc(tz)}). Today against the same hours of the last ${weeks} ${esc(day)}s.</p>
+<p class="lede">${esc(day)}, ${esc(now)} (${esc(tz)}). Today against the same hours of ${esc(baselineText(pulse, day))}.</p>
 ${banner}
 <div class="tiles">${tiles}</div>
 <div class="charts">${byTime}${gap}</div>
