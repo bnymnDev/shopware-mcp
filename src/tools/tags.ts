@@ -1,8 +1,9 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { associations, equalsAny } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
 import { badRequest } from "../errors.js";
-import { dryRunField, idSchema, newId, rawList, str } from "./shared.js";
+import { dryRunField, idSchema, rawList, str } from "./shared.js";
 import { type DryRunResult, defineTool, type WouldSend } from "./types.js";
 
 const TAGGABLE = ["customer", "order", "product"] as const;
@@ -17,6 +18,20 @@ const tagName = z
 
 /** Shopware compares tag names case-insensitively (utf8mb4_unicode_ci), so this does too. */
 const fold = (name: string) => name.toLocaleLowerCase("en");
+
+/**
+ * The id of a tag this tool creates, derived from its folded name (a name-based, version-5 style
+ * UUID). The dry run and the real write therefore send the same request, and two calls that create
+ * the same tag agree on its id instead of creating it twice.
+ */
+export function newTagId(name: string): string {
+  const hex = createHash("sha1")
+    .update(`shopware-mcp:tag:${fold(name)}`)
+    .digest("hex")
+    .slice(0, 32);
+  const variant = ((Number.parseInt(hex[16] ?? "0", 16) & 0x3) | 0x8).toString(16);
+  return `${hex.slice(0, 12)}5${hex.slice(13, 16)}${variant}${hex.slice(17)}`;
+}
 
 /** First spelling wins; duplicates that differ only in case are dropped. */
 function unique(names: string[]): string[] {
@@ -91,7 +106,7 @@ export const tagAssign = defineTool({
     const runs: (() => Promise<unknown>)[] = [];
     const assign = toAdd.map((name) => {
       const known = byKey.get(fold(name));
-      return known ? { id: known.id } : { id: newId(), name };
+      return known ? { id: known.id } : { id: newTagId(name), name };
     });
     if (assign.length > 0) {
       const path = `/api/${input.entity}/${input.id}`;
