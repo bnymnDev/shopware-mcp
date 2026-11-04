@@ -34,6 +34,7 @@ import { buildSalesReport } from "./tools/reports.js";
 import { fetchShopInfo } from "./tools/shop.js";
 import { startHttp } from "./transport/http.js";
 import { NAME, VERSION } from "./version.js";
+import { readWatchState, watchTick, writeWatchState } from "./watch.js";
 
 const HELP = `${NAME} ${VERSION} — MCP server for the Shopware 6 Admin API
 
@@ -52,6 +53,9 @@ Usage:
   shopware-mcp brief [--json] [--html <file>] [--slack <url>] [--tz <zone>]
                                     The shop right now, the audit and the last 7 days in one
                                     page: Markdown, JSON, or a self-contained HTML file
+  shopware-mcp watch [--every <min>] [--once [--state <file>]] [--slack <url>] [--expect <n>]
+                                    Keep an eye on orders and payments; alert Slack when they
+                                    stop or fail unusually, and again when they recover
 
 Options:
   --allow-write        Register write tools (stock_set, product_update, ...). Default: read-only.
@@ -79,7 +83,12 @@ Options:
                        not when the role leaves a check out on purpose)
   --html <file>        audit, report, brief: also write a self-contained HTML page ("-" for stdout)
   --json-file <file>   audit, report, brief: also write the JSON to a file, next to the Markdown
-  --slack <url>        audit, brief: post a short summary to a Slack incoming webhook
+  --slack <url>        audit, brief, watch: post a short summary to a Slack incoming webhook
+  --every <minutes>    watch: minutes between two looks at the shop (5)
+  --once               watch: look once and exit (for cron); 1 when the state is critical
+  --state <file>       watch: remember the last state between runs, so --once alerts only on change
+  --baseline <b>       watch: recent (the last 8 weeks) | last-year (the same weekday last year)
+  --expect <factor>    watch: today should bring this many times the usual orders, e.g. 3
   --tz <zone>          brief, audit, report: IANA time zone for days and "today" (default: TZ or
                        the system's); report reads --from/--to as local days in it
   --from, --to <date>  report: period, ISO dates (default: the last 30 days)
@@ -95,7 +104,8 @@ Environment:
   SHOPWARE_ADMIN_USER, SHOPWARE_ADMIN_PASSWORD             setup only; never stored
 `;
 
-const COMMANDS = ["serve", "doctor", "init", "setup", "audit", "report", "brief"] as const;
+const COMMANDS = ["serve", "doctor", "init", "setup", "audit", "report", "brief", "watch"] as const;
+const BASELINES = ["recent", "last-year"] as const;
 const SEVERITIES = ["critical", "warning", "none"] as const;
 const INTERVALS = ["day", "week", "month"] as const;
 export type Command = (typeof COMMANDS)[number];
@@ -119,6 +129,11 @@ export interface CliOptions {
   jsonFile: string | undefined;
   slack: string | undefined;
   tz: string | undefined;
+  every: number;
+  once: boolean;
+  state: string | undefined;
+  baseline: (typeof BASELINES)[number];
+  expect: number;
   from: string | undefined;
   to: string | undefined;
   interval: (typeof INTERVALS)[number];
@@ -173,6 +188,21 @@ function timeZoneOption(value: string | undefined): string | undefined {
   return value;
 }
 
+function baselineOption(value: string | undefined): (typeof BASELINES)[number] {
+  if (value === undefined) return "recent";
+  if (!BASELINES.includes(value as (typeof BASELINES)[number])) {
+    throw new Error(`Invalid --baseline: ${value} (use ${BASELINES.join(", ")})`);
+  }
+  return value as (typeof BASELINES)[number];
+}
+
+function expectOption(value: string | undefined): number {
+  if (value === undefined) return 1;
+  const parsed = /^\d+(\.\d+)?$/.test(value) ? Number(value) : Number.NaN;
+  if (!(parsed >= 0.1 && parsed <= 20)) throw new Error(`Invalid --expect: ${value} (0.1 to 20)`);
+  return parsed;
+}
+
 function labelOption(value: string | undefined): string {
   if (value === undefined) return "shopware-mcp";
   const label = value.trim();
@@ -213,6 +243,11 @@ export function parseCli(argv: string[]): CliOptions {
       "json-file": { type: "string" },
       slack: { type: "string" },
       tz: { type: "string" },
+      every: { type: "string" },
+      once: { type: "boolean", default: false },
+      state: { type: "string" },
+      baseline: { type: "string" },
+      expect: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
     },
@@ -268,6 +303,11 @@ export function parseCli(argv: string[]): CliOptions {
     jsonFile: values["json-file"],
     slack: webhookOption(values.slack),
     tz: timeZoneOption(values.tz),
+    every: positiveInt("every", values.every, 5, 1440),
+    once: values.once ?? false,
+    state: values.state,
+    baseline: baselineOption(values.baseline),
+    expect: expectOption(values.expect),
     from: isoDateOption("from", values.from),
     to: isoDateOption("to", values.to),
     interval: interval as (typeof INTERVALS)[number],
@@ -627,6 +667,51 @@ async function verifySetup(
   return ok;
 }
 
+/** `shopware-mcp watch`: a look at the shop every few minutes, Slack only when it changes. */
+async function runWatch(
+  cli: CliOptions,
+  client: ShopwareClient,
+  timeZone: string,
+  notify: (text: string) => Promise<void>,
+): Promise<void> {
+  const options = { timeZone, baseline: cli.baseline, expectFactor: cli.expect };
+  let state = cli.state ? readWatchState(cli.state) : null;
+  const look = async () => {
+    const tick = await watchTick(client, options, state);
+    state = tick.state;
+    if (cli.state) writeWatchState(cli.state, state);
+    process.stdout.write(`${tick.line}\n`);
+    if (tick.alert) await notify(tick.alert);
+    return tick;
+  };
+  if (cli.once) {
+    const tick = await look();
+    process.exitCode = process.exitCode || (tick.state.level === "critical" ? 1 : 0);
+    return;
+  }
+  process.stderr.write(
+    `Watching ${client.baseUrl} every ${cli.every} min (${timeZone}${cli.expect === 1 ? "" : `, expecting ${cli.expect}x`}${cli.baseline === "last-year" ? ", against last year" : ""}). Ctrl-C stops.\n`,
+  );
+  let stopped = false;
+  let timer: NodeJS.Timeout | null = null;
+  let wake: (() => void) | null = null;
+  const stop = () => {
+    stopped = true;
+    if (timer) clearTimeout(timer);
+    wake?.();
+  };
+  process.once("SIGINT", stop);
+  process.once("SIGTERM", stop);
+  while (!stopped) {
+    await look();
+    if (stopped) break;
+    await new Promise<void>((resolve) => {
+      wake = resolve;
+      timer = setTimeout(resolve, cli.every * 60_000);
+    });
+  }
+}
+
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
   let cli: CliOptions;
   try {
@@ -774,6 +859,11 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
         ? 2
         : 0;
     await notify(briefSlackText(brief));
+    return;
+  }
+
+  if (cli.command === "watch") {
+    await runWatch(cli, ctx.client, timeZone, notify);
     return;
   }
 
