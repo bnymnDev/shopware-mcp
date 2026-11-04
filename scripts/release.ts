@@ -173,8 +173,12 @@ async function main(): Promise<void> {
       }).status === 0;
     header("git", tagged ? `${tag} exists` : `tag ${tag} and push`);
     if (!tagged && !dryRun) git("tag", "-a", tag, "-m", tag);
-    live("git", ["push", "--quiet", "origin", "main", tag]);
+    live("git", ["push", "--quiet", "origin", "main"]);
   }
+  // The tag on its own: where a remote refuses tags, the branch is out and the rest still runs.
+  await channel("git", () => {
+    live("git", ["push", "--quiet", "origin", tag]);
+  });
 
   await channel("npm", () => {
     if (npmHas(version)) {
