@@ -1,0 +1,66 @@
+{
+  "total": 4,
+  "data": [
+    {
+      "global": true,
+      "config": {
+        "companyName": "Example Company",
+        "vatId": "",
+        "taxNumber": "",
+        "fileTypes": ["html", "pdf"]
+      },
+      "documentType": {
+        "technicalName": "storno",
+        "apiAlias": "document_type"
+      },
+      "id": "01994d23b00570569c2d71057eaa6d5a",
+      "apiAlias": "document_base_config"
+    },
+    {
+      "global": true,
+      "config": {
+        "companyName": "Example Company",
+        "vatId": "",
+        "taxNumber": "",
+        "fileTypes": ["html", "pdf"]
+      },
+      "documentType": {
+        "technicalName": "invoice",
+        "apiAlias": "document_type"
+      },
+      "id": "01994d23b00570569c2d71057ece76ee",
+      "apiAlias": "document_base_config"
+    },
+    {
+      "global": true,
+      "config": {
+        "companyName": "Example Company",
+        "vatId": "",
+        "taxNumber": "",
+        "fileTypes": ["html", "pdf"]
+      },
+      "documentType": {
+        "technicalName": "delivery_note",
+        "apiAlias": "document_type"
+      },
+      "id": "01994d23b00570569c2d71057fbd7ed8",
+      "apiAlias": "document_base_config"
+    },
+    {
+      "global": true,
+      "config": {
+        "companyName": "Example Company",
+        "vatId": "",
+        "taxNumber": "",
+        "fileTypes": ["html", "pdf"]
+      },
+      "documentType": {
+        "technicalName": "credit_note",
+        "apiAlias": "document_type"
+      },
+      "id": "01994d23b00570569c2d7105804cc473",
+      "apiAlias": "document_base_config"
+    }
+  ],
+  "aggregations": []
+}

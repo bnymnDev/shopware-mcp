@@ -17,6 +17,7 @@ import { orderDeliveryTransition, ordersSearch } from "../src/tools/orders.js";
 import { productCreate, productsSearch } from "../src/tools/products.js";
 import { promotionCreate, promotionsList } from "../src/tools/promotions.js";
 import { checkPromotions } from "../src/tools/promotions-check.js";
+import { buildReturnsReport } from "../src/tools/returns.js";
 import { reviewModerate, reviewsSearch } from "../src/tools/reviews.js";
 import { salesChannelsList } from "../src/tools/sales-channels.js";
 import { shopSettings } from "../src/tools/settings.js";
@@ -174,6 +175,14 @@ describe.skipIf(!E2E_ENABLED)("extended tools against dockware", () => {
       );
     } finally {
       await ctx.client.request(`/api/promotion/${id}`, { method: "DELETE" });
+    }
+  });
+
+  it("returns_report reads returns from the delivery states", async () => {
+    const report = await buildReturnsReport(ctx.client, { topProducts: 5, minOrders: 1 });
+    expect(report.totals.orders).toBeGreaterThanOrEqual(report.totals.returnedOrders);
+    for (const product of report.products) {
+      expect(product.returnedOrders).toBeLessThanOrEqual(product.orders);
     }
   });
 

@@ -1,0 +1,27 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "01a1a7a99f5a7231ac92f5fc4845ddef",
+      "apiAlias": "order_line_item"
+    }
+  ],
+  "aggregations": {
+    "byProduct": {
+      "name": "byProduct",
+      "buckets": [
+        {
+          "key": "11dc680240b04f469ccba354cbf0b967",
+          "count": 4,
+          "apiAlias": "aggregation_bucket"
+        },
+        {
+          "key": "3ac014f329884b57a2cce5a29f34779c",
+          "count": 1,
+          "apiAlias": "aggregation_bucket"
+        }
+      ],
+      "apiAlias": "byProduct_aggregation"
+    }
+  }
+}

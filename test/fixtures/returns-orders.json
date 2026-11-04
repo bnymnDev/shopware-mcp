@@ -1,0 +1,26 @@
+{
+  "total": 12,
+  "data": [
+    {
+      "id": "01a1a7a97f7570e2bcc32795145fcfa6",
+      "apiAlias": "order"
+    }
+  ],
+  "aggregations": {
+    "returnedCount": {
+      "name": "returnedCount",
+      "count": 4,
+      "apiAlias": "returnedCount_aggregation"
+    },
+    "returnedSum": {
+      "name": "returnedSum",
+      "sum": 2898,
+      "apiAlias": "returnedSum_aggregation"
+    },
+    "partialCount": {
+      "name": "partialCount",
+      "count": 1,
+      "apiAlias": "partialCount_aggregation"
+    }
+  }
+}

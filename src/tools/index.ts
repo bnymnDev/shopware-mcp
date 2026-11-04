@@ -27,6 +27,7 @@ import { promotionCreate, promotionsList, promotionToggle } from "./promotions.j
 import { promotionsCheck } from "./promotions-check.js";
 import { shopPulse } from "./pulse.js";
 import { salesReport } from "./reports.js";
+import { returnsReport } from "./returns.js";
 import { reviewModerate, reviewsSearch } from "./reviews.js";
 import { salesChannelsList } from "./sales-channels.js";
 import { shopSettings } from "./settings.js";
@@ -65,6 +66,7 @@ export const tools: ToolDefinition[] = [
   checkoutSimulate,
   salesReport,
   customerReport,
+  returnsReport,
   shopPulse,
   shopAudit,
   entitySchema,

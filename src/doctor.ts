@@ -161,6 +161,9 @@ export const REQUIREMENTS: Record<string, Requirement> = {
       "state_machine_state",
     ],
   },
+  returns_report: {
+    reads: ["order", "order_delivery", "order_line_item", "product", "state_machine_state"],
+  },
   customer_report: {
     reads: ["customer", "order", "customer_group", "order_customer", "state_machine_state"],
   },
@@ -178,6 +181,7 @@ export const REQUIREMENTS: Record<string, Requirement> = {
       "currency",
       "customer",
       "document",
+      "document_base_config",
       "document_type",
       "media",
       "order_customer",

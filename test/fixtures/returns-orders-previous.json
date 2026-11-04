@@ -1,0 +1,21 @@
+{
+  "total": 0,
+  "data": [],
+  "aggregations": {
+    "returnedCount": {
+      "name": "returnedCount",
+      "count": 0,
+      "apiAlias": "returnedCount_aggregation"
+    },
+    "returnedSum": {
+      "name": "returnedSum",
+      "sum": 0,
+      "apiAlias": "returnedSum_aggregation"
+    },
+    "partialCount": {
+      "name": "partialCount",
+      "count": 0,
+      "apiAlias": "partialCount_aggregation"
+    }
+  }
+}

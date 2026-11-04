@@ -12,7 +12,7 @@ import { mapPromotion } from "./promotions.js";
 import { comparedWeeks, computePulse, defaultTimeZone, isTimeZone, type Pulse } from "./pulse.js";
 import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
 import { mapSalesChannel } from "./sales-channels.js";
-import { translated } from "./shared.js";
+import { raw, str, translated } from "./shared.js";
 import { fetchShopInfo } from "./shop.js";
 import { listScheduledTasks } from "./tasks.js";
 import { defineTool } from "./types.js";
@@ -78,6 +78,63 @@ export interface DutyCoverage {
   /** null when the extension list could not be read. */
   covered: boolean | null;
   detectedExtensions: string[];
+  /** What the shop's own configuration says, where Shopware itself covers the duty. */
+  notes?: string[];
+}
+
+const ZUGFERD_TYPES = ["zugferd_invoice", "zugferd_embedded_invoice"];
+
+/**
+ * Shopware 6.7 creates ZUGFeRD e-invoices itself, once a document configuration for them exists
+ * and the seller's VAT ID or tax number is filled in. Older versions need an extension.
+ */
+export async function eInvoiceReadiness(client: ShopwareClient) {
+  const [types, configs] = await Promise.all([
+    client.search<Raw>("document-type", {
+      page: 1,
+      limit: 10,
+      filter: [equalsAny("technicalName", [...ZUGFERD_TYPES, "invoice"])],
+      includes: { document_type: ["id", "technicalName"] },
+    }),
+    client.search<Raw>("document-base-config", {
+      page: 1,
+      limit: 50,
+      associations: associations(["documentType"]),
+      includes: {
+        document_base_config: ["id", "global", "config", "documentType"],
+        document_type: ["technicalName"],
+      },
+    }),
+  ]);
+  const technical = (entry: Raw) => str(raw(entry.documentType)?.technicalName);
+  const core = types.items.some((type) => ZUGFERD_TYPES.includes(str(type.technicalName) ?? ""));
+  const configured = configs.items.some((config) =>
+    ZUGFERD_TYPES.includes(technical(config) ?? ""),
+  );
+  const sellerIds = configs.items
+    .filter((config) => [...ZUGFERD_TYPES, "invoice"].includes(technical(config) ?? ""))
+    .some((config) => {
+      const values = raw(config.config) ?? {};
+      return [values.vatId, values.taxNumber].some(
+        (value) => typeof value === "string" && value.trim() !== "",
+      );
+    });
+  const notes: string[] = [];
+  if (!core) {
+    notes.push(
+      "This Shopware version cannot create e-invoices itself (ZUGFeRD arrived in 6.7); an extension is needed",
+    );
+  } else if (!configured) {
+    notes.push(
+      "Shopware can create ZUGFeRD e-invoices, but no document configuration for them exists yet (Settings → Shop → Documents)",
+    );
+  }
+  if (!sellerIds) {
+    notes.push(
+      "The invoice configuration has neither a VAT ID nor a tax number; an e-invoice needs one",
+    );
+  }
+  return { core, configured, sellerIds, notes };
 }
 
 export interface Finding {
@@ -134,16 +191,25 @@ export interface AuditInput {
   pulse?: Pulse;
 }
 
-function dutyCoverage(extensions: ExtensionInfo[] | null): DutyCoverage[] {
+function dutyCoverage(
+  extensions: ExtensionInfo[] | null,
+  eInvoice: Awaited<ReturnType<typeof eInvoiceReadiness>> | null,
+): DutyCoverage[] {
   return EU_DUTIES.map(({ id, duty, applies, pattern }) => {
-    if (!extensions) return { id, duty, applies, covered: null, detectedExtensions: [] };
+    const notes = id === "e_invoicing" && eInvoice ? { notes: eInvoice.notes } : {};
+    const native =
+      id === "e_invoicing" && eInvoice?.core && eInvoice.configured && eInvoice.sellerIds;
+    if (!extensions) {
+      return { id, duty, applies, covered: native ? true : null, detectedExtensions: [], ...notes };
+    }
     const hits = extensions
       .filter(
         (extension) =>
           extension.active && (pattern.test(extension.name) || pattern.test(extension.label ?? "")),
       )
       .map((extension) => extension.name);
-    return { id, duty, applies, covered: hits.length > 0, detectedExtensions: hits };
+    if (native) hits.unshift("Shopware (ZUGFeRD)");
+    return { id, duty, applies, covered: hits.length > 0, detectedExtensions: hits, ...notes };
   });
 }
 
@@ -522,7 +588,7 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
           "Duties for shops selling into the EU. Coverage is guessed from the names of installed " +
           "extensions, so it shows whether something plausible is installed, not whether the shop " +
           "is compliant. Not legal advice.",
-        items: dutyCoverage(await extensions),
+        items: dutyCoverage(await extensions, await eInvoiceReadiness(client).catch(() => null)),
       }
     : undefined;
 

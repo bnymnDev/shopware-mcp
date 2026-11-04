@@ -1,0 +1,42 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "translated": {
+        "metaDescription": null,
+        "name": "Main product with advanced prices",
+        "keywords": null,
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.",
+        "metaTitle": null,
+        "packUnit": null,
+        "packUnitPlural": null,
+        "customFields": {},
+        "slotConfig": null,
+        "customSearchKeywords": null
+      },
+      "productNumber": "SWDEMO10002",
+      "name": "Main product with advanced prices",
+      "id": "11dc680240b04f469ccba354cbf0b967",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "metaDescription": null,
+        "name": "Main product, free shipping with highlighting",
+        "keywords": null,
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.",
+        "metaTitle": null,
+        "packUnit": null,
+        "packUnitPlural": null,
+        "customFields": {},
+        "slotConfig": null,
+        "customSearchKeywords": null
+      },
+      "productNumber": "SWDEMO10006",
+      "name": "Main product, free shipping with highlighting",
+      "id": "3ac014f329884b57a2cce5a29f34779c",
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": []
+}

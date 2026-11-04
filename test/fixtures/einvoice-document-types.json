@@ -1,0 +1,21 @@
+{
+  "total": 3,
+  "data": [
+    {
+      "technicalName": "invoice",
+      "id": "01994d2399df73be972c5d2e1b3c3d62",
+      "apiAlias": "document_type"
+    },
+    {
+      "technicalName": "zugferd_embedded_invoice",
+      "id": "01994d2513ad7242a8e47f9ec96bcbdd",
+      "apiAlias": "document_type"
+    },
+    {
+      "technicalName": "zugferd_invoice",
+      "id": "01994d2513ad7242a8e47f9ec88126a0",
+      "apiAlias": "document_type"
+    }
+  ],
+  "aggregations": []
+}

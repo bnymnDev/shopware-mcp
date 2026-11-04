@@ -1,7 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
 import { formatAuditMarkdown } from "../src/format.js";
-import { shopAudit } from "../src/tools/audit.js";
+import { eInvoiceReadiness, shopAudit } from "../src/tools/audit.js";
 import { entitySchema, entitySearch, scrub } from "../src/tools/entities.js";
 import { salesReport } from "../src/tools/reports.js";
 import { withFields } from "../src/tools/shared.js";
@@ -627,5 +627,57 @@ describe("entity_schema", () => {
     await expect(invoke(entitySchema, { entity: "user" }, ctx)).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+  });
+});
+
+describe("shop_audit e-invoice readiness", () => {
+  const base = () => fixture<{ data: Array<Record<string, unknown>> }>("einvoice-base-configs");
+  const types = () => fixture<{ data: Array<Record<string, unknown>> }>("einvoice-document-types");
+
+  it("says what is missing for Shopware's own ZUGFeRD e-invoices", async () => {
+    mock.use(searchHandler({ "document-type": types, "document-base-config": base }));
+    expect(await eInvoiceReadiness(ctx.client)).toEqual({
+      core: true,
+      configured: false,
+      sellerIds: false,
+      notes: [
+        "Shopware can create ZUGFeRD e-invoices, but no document configuration for them exists yet (Settings → Shop → Documents)",
+        "The invoice configuration has neither a VAT ID nor a tax number; an e-invoice needs one",
+      ],
+    });
+  });
+
+  it("counts a configured shop as covered by Shopware itself", async () => {
+    const configs = base();
+    const invoice = configs.data.find(
+      (config) => (config.documentType as { technicalName?: string }).technicalName === "invoice",
+    );
+    if (!invoice) throw new Error("fixture without invoice config");
+    (invoice.config as Record<string, unknown>).vatId = "DE123456789";
+    configs.data.push({
+      id: "z1",
+      global: true,
+      config: {},
+      documentType: { technicalName: "zugferd_invoice" },
+    });
+    mock.use(searchHandler({ "document-type": types, "document-base-config": () => configs }));
+    const audit = await invoke(shopAudit, {}, ctx);
+    expect(audit.compliance?.items[0]).toMatchObject({
+      id: "e_invoicing",
+      covered: true,
+      detectedExtensions: ["Shopware (ZUGFeRD)"],
+      notes: [],
+    });
+  });
+
+  it("points older Shopware versions to an extension", async () => {
+    mock.use(
+      searchHandler({
+        "document-type": () => ({ total: 1, data: [{ technicalName: "invoice" }] }),
+        "document-base-config": base,
+      }),
+    );
+    const readiness = await eInvoiceReadiness(ctx.client);
+    expect(readiness.notes[0]).toContain("cannot create e-invoices itself");
   });
 });
