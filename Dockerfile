@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY tsconfig.json tsup.config.ts ./
 COPY src ./src
-RUN pnpm build && pnpm prune --prod
+RUN pnpm build && pnpm prune --prod && mkdir -p /app/data
 
 FROM ${NODE_IMAGE}
 ENV NODE_ENV=production
@@ -28,8 +28,9 @@ COPY docs/brand ./site/brand
 COPY docs/video ./site/video
 COPY docs/brief/example.html ./site/brief/index.html
 COPY docs/brief/brief.png ./site/brief/brief.png
-# `hosted` keeps its connections here; mount a volume on it to keep them across restarts.
-RUN mkdir -p /data && chown node:node /data
+# `hosted` keeps its connections here; mount a volume on it to keep them across restarts. Copied
+# rather than created, so this stage runs no command and needs no emulation for arm64.
+COPY --from=build --chown=node:node /app/data /data
 ENV SHOPWARE_MCP_SITE_DIR=/app/site SHOPWARE_MCP_DATA_DIR=/data
 USER node
 EXPOSE 3333
