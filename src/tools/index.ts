@@ -1,3 +1,4 @@
+import { shopDiagnose } from "../diagnose.js";
 import { shopAudit } from "./audit.js";
 import { categoriesList } from "./categories.js";
 import { customerReport } from "./customer-report.js";
@@ -11,6 +12,7 @@ import {
 import { entitySchema, entitySearch } from "./entities.js";
 import { stockForecast } from "./forecast.js";
 import { orderHistory } from "./history.js";
+import { journeysRun } from "./journeys.js";
 import { productCoverSet } from "./media.js";
 import { paymentMethodsList, shippingMethodsList } from "./methods.js";
 import {
@@ -64,6 +66,8 @@ export const tools: ToolDefinition[] = [
   stockForecast,
   storefrontSearch,
   checkoutSimulate,
+  journeysRun,
+  shopDiagnose,
   salesReport,
   customerReport,
   returnsReport,

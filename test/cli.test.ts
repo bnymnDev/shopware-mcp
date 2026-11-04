@@ -45,6 +45,8 @@ describe("parseCli", () => {
       state: undefined,
       baseline: "recent",
       expect: 1,
+      journeys: undefined,
+      diagnose: true,
       from: undefined,
       to: undefined,
       interval: "day",

@@ -15,6 +15,7 @@ import {
 } from "./brief.js";
 import { ShopwareClient } from "./client/index.js";
 import { type Config, ConfigError, loadConfig } from "./config.js";
+import { diagnose, diagnosisText } from "./diagnose.js";
 import { formatDoctorReport, runDoctor } from "./doctor.js";
 import { formatAuditMarkdown, formatSalesReportMarkdown } from "./format.js";
 import { defaultConfigPath, HOSTS, type Host, mergeHostConfig, snippetFor } from "./init.js";
@@ -29,9 +30,11 @@ import {
   toolsLeftOut,
 } from "./setup.js";
 import { runAudit } from "./tools/audit.js";
+import { loadJourneys, runJourneys } from "./tools/journeys.js";
 import { defaultTimeZone, isTimeZone } from "./tools/pulse.js";
 import { buildSalesReport } from "./tools/reports.js";
 import { fetchShopInfo } from "./tools/shop.js";
+import type { ToolContext } from "./tools/types.js";
 import { startHttp } from "./transport/http.js";
 import { NAME, VERSION } from "./version.js";
 import { readWatchState, watchTick, writeWatchState } from "./watch.js";
@@ -89,6 +92,8 @@ Options:
   --state <file>       watch: remember the last state between runs, so --once alerts only on change
   --baseline <b>       watch: recent (the last 8 weeks) | last-year (the same weekday last year)
   --expect <factor>    watch: today should bring this many times the usual orders, e.g. 3
+  --journeys <file>    watch: also run these synthetic customer journeys (JSON) on every look
+  --no-diagnose        watch: alert without looking up likely causes
   --tz <zone>          brief, audit, report: IANA time zone for days and "today" (default: TZ or
                        the system's); report reads --from/--to as local days in it
   --from, --to <date>  report: period, ISO dates (default: the last 30 days)
@@ -134,6 +139,8 @@ export interface CliOptions {
   state: string | undefined;
   baseline: (typeof BASELINES)[number];
   expect: number;
+  journeys: string | undefined;
+  diagnose: boolean;
   from: string | undefined;
   to: string | undefined;
   interval: (typeof INTERVALS)[number];
@@ -248,6 +255,8 @@ export function parseCli(argv: string[]): CliOptions {
       state: { type: "string" },
       baseline: { type: "string" },
       expect: { type: "string" },
+      journeys: { type: "string" },
+      "no-diagnose": { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
     },
@@ -308,6 +317,8 @@ export function parseCli(argv: string[]): CliOptions {
     state: values.state,
     baseline: baselineOption(values.baseline),
     expect: expectOption(values.expect),
+    journeys: values.journeys,
+    diagnose: !(values["no-diagnose"] ?? false),
     from: isoDateOption("from", values.from),
     to: isoDateOption("to", values.to),
     interval: interval as (typeof INTERVALS)[number],
@@ -670,11 +681,19 @@ async function verifySetup(
 /** `shopware-mcp watch`: a look at the shop every few minutes, Slack only when it changes. */
 async function runWatch(
   cli: CliOptions,
-  client: ShopwareClient,
+  ctx: ToolContext,
   timeZone: string,
   notify: (text: string) => Promise<void>,
 ): Promise<void> {
-  const options = { timeZone, baseline: cli.baseline, expectFactor: cli.expect };
+  const { client } = ctx;
+  const journeys = cli.journeys ? loadJourneys(cli.journeys) : null;
+  const options = {
+    timeZone,
+    baseline: cli.baseline,
+    expectFactor: cli.expect,
+    ...(journeys ? { journeys: () => runJourneys(ctx, journeys) } : {}),
+    ...(cli.diagnose ? { diagnose: async () => diagnosisText(await diagnose(ctx)) } : {}),
+  };
   let state = cli.state ? readWatchState(cli.state) : null;
   const look = async () => {
     const tick = await watchTick(client, options, state);
@@ -863,7 +882,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
   }
 
   if (cli.command === "watch") {
-    await runWatch(cli, ctx.client, timeZone, notify);
+    await runWatch(cli, ctx, timeZone, notify);
     return;
   }
 

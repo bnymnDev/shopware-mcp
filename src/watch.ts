@@ -20,6 +20,13 @@ export interface WatchOptions {
   expectFactor: number;
   /** After this many ticks without an answer the shop itself counts as down. */
   failuresBeforeAlarm?: number;
+  /** Synthetic customers to run on every look; a broken one is critical. */
+  journeys?: () => Promise<{
+    failed: number;
+    results: { name: string; ok: boolean; failures: string[] }[];
+  }>;
+  /** Likely causes, looked up only when an alert goes out. */
+  diagnose?: () => Promise<string>;
 }
 
 export interface WatchTick {
@@ -84,7 +91,20 @@ export async function watchTick(
   }
 
   const headline = pulseHeadline(pulse);
-  const level: WatchLevel = headline.level;
+  let level: WatchLevel = headline.level;
+  let alarm = headline.text;
+  const journeys = options.journeys ? await options.journeys().catch(() => null) : null;
+  const broken = journeys?.results.filter((journey) => !journey.ok) ?? [];
+  if (broken.length > 0) {
+    level = "critical";
+    const lines = broken.map((journey) => `${journey.name}: ${journey.failures.join("; ")}`);
+    alarm =
+      `${broken.length} of ${journeys?.results.length} customer journeys broke` +
+      (headline.level === "ok"
+        ? ""
+        : `, and ${headline.text.charAt(0).toLowerCase()}${headline.text.slice(1)}`) +
+      `\n${lines.map((line) => `• ${line}`).join("\n")}`;
+  }
   const last = pulse.lastOrder;
   const summary =
     `${pulse.today.orders} orders today${signed(pulse.change.orders)}` +
@@ -96,7 +116,14 @@ export async function watchTick(
   };
   let alert: string | null = null;
   if (RANK[level] > RANK[before.level]) {
-    alert = `${ICON[level]} *${headline.text}*\n${summary}. Check the checkout: checkout_simulate, maintenance mode, payment provider, error log.`;
+    const diagnosis = options.diagnose ? await options.diagnose().catch(() => null) : null;
+    alert =
+      `${ICON[level]} *${alarm.split("\n")[0]}*` +
+      (alarm.includes("\n") ? `\n${alarm.split("\n").slice(1).join("\n")}` : "") +
+      `\n${summary}.` +
+      (diagnosis
+        ? `\n${diagnosis}`
+        : " Check the checkout: checkout_simulate, maintenance mode, payment provider, error log.");
   } else if (level === "ok" && before.level !== "ok") {
     const lasted = Math.round((now.getTime() - Date.parse(before.since)) / 60_000);
     alert =
@@ -104,7 +131,10 @@ export async function watchTick(
       (last ? `: order #${last.orderNumber} at ${clock(last.at, options.timeZone)}` : "") +
       ".";
   }
-  return { state, line: `${stamp} ${level} · ${summary}`, alert, pulse };
+  const journeyNote = journeys
+    ? ` · journeys ${journeys.results.length - broken.length}/${journeys.results.length} ok`
+    : "";
+  return { state, line: `${stamp} ${level} · ${summary}${journeyNote}`, alert, pulse };
 }
 
 /** The state of a cron-driven watch, kept between runs; a missing or broken file starts fresh. */
