@@ -3,7 +3,8 @@ import { z } from "zod";
 import type { ShopwareFilter } from "../client/criteria.js";
 import { INHERITANCE_HEADERS, type Raw, type ShopwareClient } from "../client/index.js";
 import { badRequest } from "../errors.js";
-import { str, translated } from "./shared.js";
+import { isRulePack, RULE_PACK_NAMES, RULE_PACKS } from "./rule-packs.js";
+import { raw, str, translated } from "./shared.js";
 
 /**
  * A shop's own audit rule, without code: "records of this entity that match this filter are a
@@ -56,14 +57,39 @@ export function loadRules(file: string): AuditRule[] {
   return list as AuditRule[];
 }
 
-/** The rules named by SHOPWARE_MCP_RULES, or none. */
-export function rulesFromEnv(env: NodeJS.ProcessEnv = process.env): AuditRule[] {
-  const file = env.SHOPWARE_MCP_RULES?.trim();
-  return file ? loadRules(file) : [];
+/**
+ * Rules from a list of rule packs and files, e.g. "gpsr,eaa,./rules.json". A pack name stands
+ * for the ready-made rules of that duty, anything else is read as a file.
+ */
+export function resolveRules(spec: string): AuditRule[] {
+  const rules = spec
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part): AuditRule[] => (isRulePack(part) ? RULE_PACKS[part] : loadRules(part)));
+  const ids = rules.map((rule) => rule.id);
+  const twice = ids.find((id, index) => ids.indexOf(id) !== index);
+  if (twice) throw badRequest(`Audit rule ${twice} appears twice in ${spec}`);
+  return rules;
 }
+
+/** The rules named by SHOPWARE_MCP_RULES (packs and files), or none. */
+export function rulesFromEnv(env: NodeJS.ProcessEnv = process.env): AuditRule[] {
+  const spec = env.SHOPWARE_MCP_RULES?.trim();
+  return spec ? resolveRules(spec) : [];
+}
+
+export { RULE_PACK_NAMES };
 
 /** A record as a short line: its number or name, whatever the entity has. */
 function describe(record: Raw): Record<string, unknown> {
+  // A product image: which product, which file.
+  const product = raw(record.product);
+  const media = raw(record.media);
+  if (product || media) {
+    const parts = [str(product?.productNumber), str(media?.fileName)].filter(Boolean);
+    return { id: str(record.id), ...(parts.length > 0 ? { label: parts.join(" · ") } : {}) };
+  }
   const label =
     str(record.productNumber) ??
     str(record.orderNumber) ??
@@ -88,6 +114,7 @@ export async function runRule(client: ShopwareClient, rule: ParsedRule, limit: n
       limit,
       "total-count-mode": 1,
       filter: rule.filter as unknown as ShopwareFilter[],
+      ...(rule.entity === "product-media" ? { associations: { product: {}, media: {} } } : {}),
     },
     rule.entity === "product" ? INHERITANCE_HEADERS : undefined,
   );

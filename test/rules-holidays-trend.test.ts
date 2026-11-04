@@ -227,3 +227,46 @@ describe("health trend on the page", () => {
     expect(html).toContain("1 critical, 1 warning, 4 orders");
   });
 });
+
+describe("rule packs", () => {
+  it("expands pack names and files, and refuses an id twice", async () => {
+    const { resolveRules } = await import("../src/tools/rules.js");
+    const { RULE_PACKS } = await import("../src/tools/rule-packs.js");
+    const dir = scratch();
+    const own = join(dir, "own.json");
+    writeFileSync(
+      own,
+      JSON.stringify([
+        { id: "mine", title: "Mine", entity: "order", filter: [{ type: "equals", field: "x" }] },
+      ]),
+    );
+    const rules = resolveRules(`gpsr, eaa,${own}`);
+    expect(rules.map((rule) => rule.id)).toEqual([
+      ...RULE_PACKS.gpsr.map((rule) => rule.id),
+      ...RULE_PACKS.eaa.map((rule) => rule.id),
+      "mine",
+    ]);
+    expect(() => resolveRules("gpsr,gpsr")).toThrow(/appears twice/);
+    expect(rulesFromEnv({ SHOPWARE_MCP_RULES: "feeds" })).toHaveLength(3);
+  });
+
+  it("names the product and the file of an image without alt text", async () => {
+    let body: unknown;
+    mock.use(
+      http.post(`${SHOP_URL}/api/search/product-media`, async ({ request }) => {
+        body = await request.clone().json();
+        return HttpResponse.json({
+          total: 1,
+          data: [{ id: "pm1", product: { productNumber: "SW1" }, media: { fileName: "shirt" } }],
+        });
+      }),
+    );
+    const { runRule, parseRule } = await import("../src/tools/rules.js");
+    const { RULE_PACKS } = await import("../src/tools/rule-packs.js");
+    const rule = RULE_PACKS.eaa[0];
+    if (!rule) throw new Error("no rule");
+    const result = await runRule(ctx.client, parseRule(rule), 5);
+    expect(result).toEqual({ count: 1, items: [{ id: "pm1", label: "SW1 · shirt" }] });
+    expect(body).toMatchObject({ associations: { product: {}, media: {} } });
+  });
+});

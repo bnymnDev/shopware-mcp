@@ -33,7 +33,7 @@ import { runAudit } from "./tools/audit.js";
 import { loadJourneys, runJourneys } from "./tools/journeys.js";
 import { defaultTimeZone, isTimeZone } from "./tools/pulse.js";
 import { buildSalesReport } from "./tools/reports.js";
-import { loadRules, rulesFromEnv } from "./tools/rules.js";
+import { resolveRules, rulesFromEnv } from "./tools/rules.js";
 import { fetchShopInfo } from "./tools/shop.js";
 import type { ToolContext } from "./tools/types.js";
 import { startHttp } from "./transport/http.js";
@@ -95,8 +95,8 @@ Options:
   --expect <factor>    watch: today should bring this many times the usual orders, e.g. 3
   --journeys <file>    watch: also run these synthetic customer journeys (JSON) on every look
   --no-diagnose        watch: alert without looking up likely causes
-  --rules <file>       audit, brief: also run the shop's own checks from this JSON file
-                       (default: SHOPWARE_MCP_RULES)
+  --rules <list>       audit, brief: also run rule packs and the shop's own checks, e.g.
+                       gpsr,eaa,feeds,./rules.json (default: SHOPWARE_MCP_RULES)
   --history <file>     brief: keep one health score per day in this file and show the trend
   --tz <zone>          brief, audit, report: IANA time zone for days and "today" (default: TZ or
                        the system's); report reads --from/--to as local days in it
@@ -110,7 +110,7 @@ Environment:
   SHOPWARE_MCP_ALLOW_WRITE, SHOPWARE_MCP_MAX_WRITES, SHOPWARE_MCP_DEFAULT_LIMIT
   SHOPWARE_LANGUAGE_ID, SHOPWARE_MCP_EXTENSIONS, SHOPWARE_MCP_TIMEOUT_MS, SHOPWARE_MCP_LOG_LEVEL
   SHOPWARE_MCP_HTTP_TOKEN   bearer token required on /mcp when serving --http
-  SHOPWARE_MCP_RULES        JSON file with the shop's own audit rules
+  SHOPWARE_MCP_RULES        rule packs and files for the audit, e.g. gpsr,eaa,./rules.json
   SHOPWARE_MCP_JOURNEYS     JSON file with customer journeys for journeys_run
   SHOPWARE_ADMIN_USER, SHOPWARE_ADMIN_PASSWORD             setup only; never stored
 `;
@@ -829,7 +829,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
         ? summary.critical + summary.warning > 0
         : false;
 
-  const rules = () => (cli.rules ? loadRules(cli.rules) : rulesFromEnv());
+  const rules = () => (cli.rules ? resolveRules(cli.rules) : rulesFromEnv());
 
   if (cli.command === "audit") {
     const report = await runAudit(ctx.client, {

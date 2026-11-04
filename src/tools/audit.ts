@@ -12,6 +12,7 @@ import { mapPromotion } from "./promotions.js";
 import { checkPromotions } from "./promotions-check.js";
 import { comparedWeeks, computePulse, defaultTimeZone, isTimeZone, type Pulse } from "./pulse.js";
 import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
+import { RULE_PACK_NAMES, rulesOfPacks } from "./rule-packs.js";
 import { type AuditRule, auditRuleSchema, parseRule, rulesFromEnv, runRule } from "./rules.js";
 import { mapSalesChannel } from "./sales-channels.js";
 import { raw, str, translated } from "./shared.js";
@@ -675,7 +676,8 @@ export const shopAudit = defineTool({
     "labelling) appear to be covered by an installed extension, guessed from extension names, " +
     "and whether Shopware itself is set up for ZUGFeRD e-invoices. " +
     "The shop's own rules (Shopware filters, e.g. 'active products without a manufacturer') run " +
-    "too: pass them as rules, or point SHOPWARE_MCP_RULES at a JSON file. " +
+    "too: pass them as rules, or point SHOPWARE_MCP_RULES at a JSON file. Ready-made packs check " +
+    "product data for the GPSR, the accessibility act and shopping feeds (rulePacks). " +
     "Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.",
   inputSchema: {
     stuckOrderDays: z.number().int().min(1).max(365).default(7),
@@ -705,11 +707,24 @@ export const shopAudit = defineTool({
         "The shop's own checks: { id, title, severity, entity, filter[], hint }, the filter in " +
           "Shopware criteria. Default: the rules in SHOPWARE_MCP_RULES, if set",
       ),
+    rulePacks: z
+      .array(z.enum(RULE_PACK_NAMES as [string, ...string[]]))
+      .optional()
+      .describe(
+        "Ready-made rules: gpsr (manufacturer data, EU product safety), eaa (alt texts and " +
+          "descriptions, accessibility), feeds (GTIN, MPN, weight for shopping feeds and AI agents)",
+      ),
   },
   handler: (input, ctx) => {
     if (input.timeZone && !isTimeZone(input.timeZone)) {
       throw badRequest(`Unknown time zone "${input.timeZone}"`);
     }
-    return runAudit(ctx.client, { ...input, rules: input.rules ?? rulesFromEnv() });
+    const { rulePacks, ...rest } = input;
+    const rules = [...(input.rules ?? rulesFromEnv()), ...rulesOfPacks(rulePacks ?? [])];
+    const seen = new Set<string>();
+    return runAudit(ctx.client, {
+      ...rest,
+      rules: rules.filter((rule) => !seen.has(rule.id) && seen.add(rule.id)),
+    });
   },
 });
