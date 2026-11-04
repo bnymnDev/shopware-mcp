@@ -206,8 +206,8 @@ describe.skipIf(!E2E_ENABLED)("setup against a real shop", () => {
         checkPromotions(limited.client, { until: new Date(Date.now() + 14 * 86_400_000) }),
       ).resolves.toMatchObject({ complete: true });
       const blocked = report.tools.filter((item) => item.status !== "ready");
-      // Everything but the settings tool, which needs the opt-in --settings.
-      expect(blocked.map((item) => item.tool)).toEqual(["shop_settings"]);
+      // Everything but the tools behind an opt-in: --settings and --plugin-updates.
+      expect(blocked.map((item) => item.tool)).toEqual(["shop_settings", "update_check"]);
 
       const channels = await admin.client.search<Raw>("sales-channel", {
         page: 1,
