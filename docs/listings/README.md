@@ -22,6 +22,7 @@ Two ways to run it, and the directories that take each:
 | mcp.so, PulseMCP, MCP Market | local | ready | their submit forms take the repository URL |
 | Claude Connectors Directory | hosted | ready | claude.ai/directory/manage, see below |
 | ChatGPT apps directory | hosted | ready | platform.openai.com, see below |
+| Agensi (agent skills) | skill | ready | `skills/shopware-shop-manager/SKILL.md`, see below |
 
 ## Docker MCP Catalog
 
@@ -83,3 +84,11 @@ At claude.ai/directory/manage (any paid Claude plan):
 At platform.openai.com (verified developer): the same server URL; the pulse, the audit, the
 brief and the sales report come with MCP Apps pages that ChatGPT shows inline. The directory
 asks for test prompts and a short demo video; `docs/video/` has one.
+
+## Agensi
+
+Agensi sells and lists skills for Claude, Codex, Cursor and Gemini; there was no Shopware skill
+when this was written. `skills/shopware-shop-manager/SKILL.md` walks an assistant through the
+morning check, the no-orders diagnosis, campaign preparation, EU duties, agent readiness and
+updates with shopware-mcp's tools. Switch on creator mode at agensi.io/dashboard#settings, then
+submit the folder; free brings users to the server, a price needs payouts connected.
