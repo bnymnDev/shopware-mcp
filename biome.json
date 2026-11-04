@@ -15,6 +15,7 @@
       "!CHANGELOG.md",
       "!server.json",
       "!manifest.json",
+      "!gemini-extension.json",
       "!docs/demo/*.json"
     ]
   },

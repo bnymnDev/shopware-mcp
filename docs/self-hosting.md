@@ -6,6 +6,7 @@
 |---|---|---|
 | stdio (default) | `npx shopware-mcp` | The MCP host starts the server itself (Claude Desktop, Claude Code, Cursor). |
 | Streamable HTTP | `npx shopware-mcp --http --port 3333` | Several hosts share one server, or the host only speaks HTTP. Endpoint: `/mcp`. Health: `/healthz`. |
+| Hosted, many shops | `npx shopware-mcp hosted --port 3333` | A public server for anyone: each person connects their own shop through OAuth. Read-only. See [Hosted mode](#hosted-mode). |
 
 The HTTP transport runs **stateless**: every request gets a fresh MCP server instance, there are no sessions to expire, and it can sit behind any load balancer.
 
@@ -63,6 +64,55 @@ stdio inside Docker (for hosts that spawn a process):
 Passing any argument replaces the default `--http ...` command, so the example above runs stdio.
 
 Build locally: `docker build -t shopware-mcp .`
+
+## Hosted mode
+
+`shopware-mcp hosted` serves many shops from one address, the way Claude, ChatGPT and other
+assistants add a connector: the person pastes the server's URL, the assistant opens a page
+where they enter their shop's address and an Integration's keys, and from then on the
+assistant holds a token for that shop.
+
+```bash
+docker run -d -p 3333:3333 -v shopware-mcp:/data \
+  -e SHOPWARE_MCP_PUBLIC_URL=https://mcp.example.com \
+  -e SHOPWARE_MCP_SECRET_KEY=$(openssl rand -hex 32) \
+  ghcr.io/bnymndev/shopware-mcp hosted --host 0.0.0.0 --port 3333
+```
+
+| Variable | Notes |
+|---|---|
+| `SHOPWARE_MCP_PUBLIC_URL` | The https address in front of the server; it is the OAuth issuer and the resource the tokens are for |
+| `SHOPWARE_MCP_SECRET_KEY` | 32 bytes (`openssl rand -hex 32`) that seal the stored Integration keys. Keep it: without it, every connected shop has to connect again |
+| `SHOPWARE_MCP_DATA_DIR` | Where clients, connections and token hashes live (the image uses `/data`; mount a volume) |
+| `SHOPWARE_MCP_SITE_DIR` | A folder served under `/`; the image ships the website there |
+
+What it implements, as the MCP authorization spec of 2025-11-25 asks:
+
+- Discovery: a 401 on `/mcp` points to `/.well-known/oauth-protected-resource`, which names
+  this server as the authorization server (`/.well-known/oauth-authorization-server`).
+- Clients: dynamic registration (`/register`) and client ID metadata documents (an https
+  `client_id`). Public clients only, with PKCE S256; a redirect URI must be https, a loopback
+  address or an app's own scheme, and the server never redirects to one a client did not
+  register.
+- Tokens: access tokens live an hour, refresh tokens 30 days and rotate on use; codes are
+  single-use and expire after ten minutes. `/revoke` ends a token early.
+- Storage: one JSON file with the Integration keys sealed by AES-256-GCM and every token only as
+  its SHA-256. A copy of the file hands out no access.
+- The consent page checks the keys against the shop before anything is stored, and the server
+  refuses shop addresses on private networks (no requests into the network it runs in).
+- Read-only, always: write tools are not registered in hosted mode.
+
+Put TLS in front (the image speaks plain HTTP) and do not buffer `/mcp` (server-sent events).
+
+## Releasing without CI
+
+Everything the release workflow does also runs from a laptop: `pnpm verify` runs every check CI
+runs, and `pnpm release:local` turns pending changesets into a version, tags it, and publishes
+npm (with `NPM_TOKEN`), the GitHub release with the `.mcpb` bundle, the multi-platform image on
+GHCR and the MCP registry entry (with `GITHUB_TOKEN`). Each step checks first whether its part is
+out already, so a second run repairs a release that stopped halfway; `--only=docker,registry`
+runs single steps. Where Docker Hub limits anonymous pulls, set
+`NODE_IMAGE=public.ecr.aws/docker/library/node:22-alpine`, the same image from a mirror.
 
 ## Checking a deployment
 

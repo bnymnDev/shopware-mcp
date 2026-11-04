@@ -192,6 +192,14 @@
       "description": "Run customer journeys"
     },
     {
+      "name": "agent_readiness",
+      "description": "Ready for AI shopping agents?"
+    },
+    {
+      "name": "update_check",
+      "description": "Ready for the next Shopware update?"
+    },
+    {
       "name": "shop_diagnose",
       "description": "Why are orders not coming in?"
     },
@@ -210,6 +218,10 @@
     {
       "name": "shop_pulse",
       "description": "Shop pulse"
+    },
+    {
+      "name": "shop_brief",
+      "description": "Shop brief"
     },
     {
       "name": "shop_audit",

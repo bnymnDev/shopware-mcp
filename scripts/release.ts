@@ -119,6 +119,19 @@ function npmHas(version: string): boolean {
 
 const header = (step: Step, text: string) => console.log(`\n▸ ${step}: ${text}`);
 
+/** Publishing steps that failed; the others still run, and the script exits 1 at the end. */
+const failed: string[] = [];
+async function channel(step: Step, run: () => Promise<void> | void): Promise<void> {
+  if (!wanted(step)) return;
+  try {
+    await run();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`  ✗ ${step} failed: ${detail}`);
+    failed.push(step);
+  }
+}
+
 async function main(): Promise<void> {
   const branch = git("rev-parse", "--abbrev-ref", "HEAD");
   if (branch !== "main") throw new Error(`Release from main, not ${branch}`);
@@ -163,7 +176,7 @@ async function main(): Promise<void> {
     live("git", ["push", "--quiet", "origin", "main", tag]);
   }
 
-  if (wanted("npm")) {
+  await channel("npm", () => {
     if (npmHas(version)) {
       header("npm", `shopware-mcp@${version} is published`);
     } else if (!npmToken) {
@@ -186,11 +199,11 @@ async function main(): Promise<void> {
         rmSync(config, { force: true });
       }
     }
-  }
+  });
 
   const { owner, repo } = repository();
 
-  if (wanted("github")) {
+  await channel("github", async () => {
     const existing = await github(`/repos/${owner}/${repo}/releases/tags/${tag}`);
     let release = existing.ok
       ? ((await existing.json()) as {
@@ -221,9 +234,9 @@ async function main(): Promise<void> {
         rmSync(join(root, "shopware-mcp.mcpb"), { force: true });
       }
     }
-  }
+  });
 
-  if (wanted("docker")) {
+  await channel("docker", () => {
     const image = `ghcr.io/${owner.toLowerCase()}/${repo.toLowerCase()}`;
     header("docker", `${image}:${version} for amd64 and arm64`);
     if (githubToken) {
@@ -259,9 +272,9 @@ async function main(): Promise<void> {
       "--push",
       ".",
     ]);
-  }
+  });
 
-  if (wanted("registry")) {
+  await channel("registry", () => {
     if (!npmHas(version)) {
       header("registry", `skipped: npm does not serve ${version} yet, and the registry checks it`);
     } else {
@@ -278,8 +291,13 @@ async function main(): Promise<void> {
       live(publisher, ["login", "github", "-token", githubToken]);
       live(publisher, ["publish"]);
     }
-  }
+  });
 
+  if (failed.length > 0) {
+    throw new Error(
+      `${tag}: ${failed.join(", ")} failed; run again with --only=${failed.join(",")}`,
+    );
+  }
   console.log(`\n✓ ${tag} done`);
 }
 

@@ -71,6 +71,13 @@ const updates: { path: string; next: string; current: string }[] = [];
   updates.push({ path: "manifest.json", next: serialize(value), current: text });
 }
 
+// --- gemini-extension.json (Gemini and Antigravity CLI extensions) -----------------------------
+{
+  const { text, value } = readJson("gemini-extension.json");
+  value.version = pkg.version;
+  updates.push({ path: "gemini-extension.json", next: serialize(value), current: text });
+}
+
 if (problems.length > 0) {
   process.stderr.write(`${problems.map((problem) => `  - ${problem}`).join("\n")}\n`);
   process.exit(1);
@@ -87,7 +94,9 @@ if (process.argv.includes("--check")) {
     );
     process.exit(1);
   }
-  process.stderr.write(`server.json and manifest.json match package.json@${pkg.version}.\n`);
+  process.stderr.write(
+    `server.json, manifest.json and gemini-extension.json match package.json@${pkg.version}.\n`,
+  );
 } else {
   for (const update of stale) writeFileSync(update.path, update.next);
   process.stderr.write(

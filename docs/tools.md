@@ -33,11 +33,14 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`storefront_search`](#storefront_search) | read | Search like a customer |
 | [`checkout_simulate`](#checkout_simulate) | read | Simulate a checkout |
 | [`journeys_run`](#journeys_run) | read | Run customer journeys |
+| [`agent_readiness`](#agent_readiness) | read | Ready for AI shopping agents? |
+| [`update_check`](#update_check) | read | Ready for the next Shopware update? |
 | [`shop_diagnose`](#shop_diagnose) | read | Why are orders not coming in? |
 | [`sales_report`](#sales_report) | read | Sales report |
 | [`customer_report`](#customer_report) | read | Customer report |
 | [`returns_report`](#returns_report) | read | Returns report |
 | [`shop_pulse`](#shop_pulse) | read | Shop pulse |
+| [`shop_brief`](#shop_brief) | read | Shop brief |
 | [`shop_audit`](#shop_audit) | read | Shop health audit |
 | [`entity_schema`](#entity_schema) | read | Entity schema |
 | [`entity_search`](#entity_search) | read | Search any entity |
@@ -511,6 +514,34 @@ Synthetic customers: run fixed buying paths through the shop's real cart, e.g. '
 |---|---|---|---|
 | `journeys` | `{ name: string, items: { productNumber?: string, productId?: string, quantity?: integer }[], promotionCodes?: string[], salesChannel?: string, country?: string, customerNumber?: string, paymentMethod?: string, shippingMethod?: string, expect?: { canOrder?: boolean, paymentMethods?: string[], shippingMethods?: string[], promotionsApplied?: boolean, minTotal?: number, maxTotal?: number } }[]` | no | Journeys to run |
 
+## agent_readiness
+
+_Ready for AI shopping agents?_
+
+**Read tool** — always registered.
+
+Can AI shopping agents (ChatGPT, Gemini, Perplexity, Copilot) find and sell this shop's products? Builds the product feed agents read (Agentic Commerce feed fields, as Google Merchant) from the storefront's visible products and checks each row: name, description, brand, image and price are required; GTIN with a valid check digit, manufacturer number and weight help agents match and ship. Also checks HTTPS and the privacy, terms and revocation pages an agent checkout links to. Read-only. Returns { score (0 to 100), products, gaps[] with share and samples, shop[], checkoutReady, feedSample[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `salesChannelId` | `string` | no | Storefront to check; default: the first one |
+| `maxItems` | `integer` | no | Sample products per gap. default `5`, min 1, max 50 |
+
+## update_check
+
+_Ready for the next Shopware update?_
+
+**Read tool** — always registered.
+
+Before a Shopware update, a major one like 6.8 included: the version available next and the security issues it fixes, Shopware's own requirement checks, and for every extension whether it works with that version (compatible, update the extension first, a compatible version announced, not compatible, or not in the store so test it yourself), straight from Shopware's update service. Read-only: it never starts an update. Needs the privilege system:core:update (and system_config:read for the extensions), which setup grants with --plugin-updates. Returns { currentVersion, update, upToDate, requirements[], extensions[], summary, blockers[], notes[] }.
+
+### Input
+
+_No parameters._
+
+
 ## shop_diagnose
 
 _Why are orders not coming in?_
@@ -601,13 +632,27 @@ How is the shop doing right now? Orders and revenue since local midnight next to
 | `expectFactor` | `number` | no | Today should bring this many times the usual orders, e.g. 3 on a campaign day. default `1`, min 0.1, max 20 |
 | `holidays` | `"DE" \| "AT" \| "CH" \| "none"` | no | Leave public holidays of this country out of 'typical'; default: the time zone's country (Europe/Berlin: DE, Europe/Vienna: AT, Europe/Zurich: CH) |
 
+## shop_brief
+
+_Shop brief_
+
+**Read tool** — always registered.
+
+One look at the whole shop, as a manager wants it in the morning: orders and payments right now against a usual day, the audit's findings, and the last seven days' revenue. Hosts that show MCP Apps get it as an interactive page with charts. Read-only. Returns { headline, today, audit, last7Days } in short; use shop_pulse, shop_audit or sales_report for the details of one part.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `timeZone` | `string` | no | IANA time zone of the shop, e.g. Europe/Berlin; default: the server's |
+
 ## shop_audit
 
 _Shop health audit_
 
 **Read tool** — always registered.
 
-Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, promotions in the next 14 days that will not work, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names, and whether Shopware itself is set up for ZUGFeRD e-invoices. The shop's own rules (Shopware filters, e.g. 'active products without a manufacturer') run too: pass them as rules, or point SHOPWARE_MCP_RULES at a JSON file. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, promotions in the next 14 days that will not work, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names, and whether Shopware itself is set up for ZUGFeRD e-invoices. The shop's own rules (Shopware filters, e.g. 'active products without a manufacturer') run too: pass them as rules, or point SHOPWARE_MCP_RULES at a JSON file. Ready-made packs check product data for the GPSR, the accessibility act and shopping feeds (rulePacks). Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
 
 ### Input
 
@@ -620,6 +665,7 @@ Run a one-shot health check across the shop and return prioritised findings: pai
 | `complianceChecks` | `boolean` | no | Include the EU duty coverage map. Set false outside the EU. default `true` |
 | `timeZone` | `string` | no | IANA time zone of the shop for the order-silence check; default: the server's |
 | `rules` | `({ id: string, title: string, severity?: "critical" \| "warning" \| "info", entity: string, filter: object[], hint?: string })[]` | no | The shop's own checks: { id, title, severity, entity, filter[], hint }, the filter in Shopware criteria. Default: the rules in SHOPWARE_MCP_RULES, if set |
+| `rulePacks` | `("gpsr" \| "eaa" \| "feeds")[]` | no | Ready-made rules: gpsr (manufacturer data, EU product safety), eaa (alt texts and descriptions, accessibility), feeds (GTIN, MPN, weight for shopping feeds and AI agents) |
 
 ## entity_schema
 

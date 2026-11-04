@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shopware-mcp · Talk to your Shopware 6 shop</title>
-<meta name="description" content="An MCP server for the Shopware 6 Admin API. 50 tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
+<meta name="description" content="An MCP server for the Shopware 6 Admin API. 53 tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
 <meta property="og:title" content="shopware-mcp">
 <meta property="og:description" content="Talk to your Shopware 6 shop from Claude, Cursor, VS Code or any MCP host. Read-only by default, every write a dry run first.">
 <meta property="og:image" content="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/banner-dark.svg">
@@ -179,7 +179,7 @@
         </a>
       </div>
       <div class="facts">
-        <span>50 tools, 35 of them read-only</span>
+        <span>53 tools, 38 of them read-only</span>
         <span>Every write a dry run first</span>
         <span>Shopware 6.6 and 6.7</span>
         <span>No telemetry</span>
@@ -287,6 +287,16 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="m16 11 2 2 4-4"/></svg>
           <h3>Synthetic customers, and why</h3>
           <p><code>journeys_run</code> walks fixed buying paths through the real cart and names the one that broke. When orders stop, <code>shop_diagnose</code> looks at the usual suspects at once: maintenance mode, a test purchase of the best seller, an extension updated an hour ago, errors in the log. The watch sends both with its alarm.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+          <h3>Ready for AI shoppers</h3>
+          <p><code>agent_readiness</code> checks the product feed ChatGPT, Gemini and other shopping agents read: brand, images, GTIN check digits, weight, and the policy pages an agent checkout links to. <code>shopware-mcp feed</code> writes it. <code>update_check</code> says which extensions stand between the shop and 6.8.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+          <h3>Hosted, with pages in the chat</h3>
+          <p>Add <code>https://p-h07rka.project.space/mcp</code> as a connector and connect the shop through OAuth: nothing to install, read-only. In Claude, ChatGPT and VS Code the brief, the pulse and the audit open as interactive pages.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>

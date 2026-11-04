@@ -54,8 +54,12 @@ stop coming, and tries the checkout the way a customer would to find out why:
 | **Ready for the campaign** | `promotions_check` looks at every promotion that runs or starts before a date, switched on or not, and names what would stop it: inactive at its start, no discount, no channel or only channels in maintenance, no code left, the redemption limit, 60 % that was meant to be 6 %, two automatic discounts that add up. The `campaign_ready` prompt adds the checkout, stock and the plan for the day. |
 | **A watch that says why** | `shopware-mcp watch` looks at orders and payments every few minutes and writes to Slack only when something changes: orders stop, payments fail, the shop stops answering, and when it is back to normal. The alarm comes with the likely cause: `shop_diagnose` looks at the usual suspects in one go (a storefront in maintenance, a test purchase of the best seller, an extension updated an hour ago, errors in Shopware's log, a stopped worker). Public holidays in the compared weeks are left out of "usual". On Black Friday: `--baseline last-year --expect 3`. |
 | **Synthetic customers** | `journeys_run` walks fixed buying paths through the real cart, "Swiss guest with code SUMMER26", "regular customer pays by invoice", and names the one that broke and why. `watch --journeys journeys.json` runs them on every look, so a payment method that vanished after a plugin update raises the alarm before the first customer gives up. |
+| **Ready for AI shoppers** | `agent_readiness` builds the product feed that AI shopping agents read (the Agentic Commerce feed of OpenAI and Stripe, field for field like Google Merchant) and says what keeps products out: no brand, no image, a GTIN with a wrong check digit, no weight, a storefront without HTTPS or without the privacy, terms and revocation pages an agent checkout links to. `shopware-mcp feed --out feed.jsonl` writes the whole feed. |
+| **Before the next update** | `update_check` asks Shopware's own update service what comes next, which security issues it fixes, and for every extension whether it works with it: compatible, update the extension first, a compatible version announced, or not compatible. For 6.8 and every major after it. |
+| **Pages in the chat** | In hosts that show MCP Apps (Claude, ChatGPT, VS Code), `shop_brief`, `shop_pulse`, `shop_audit` and `sales_report` come with an interactive page next to the answer: tiles, charts and findings, in the host's light or dark theme. The model still gets compact JSON. |
+| **Hosted, nothing to install** | `shopware-mcp hosted` serves many shops from one address: an assistant adds the URL as a connector, the person connects their shop with an Integration's keys through OAuth, and that is it. Read-only, keys sealed with AES-256-GCM, tokens stored only as hashes. Try it at `https://p-h07rka.project.space/mcp`. |
 | **What a discount costs** | `promotion_impact` replays a discount, or an existing promotion, on the real orders of the last weeks: what it would have cost on every eligible order and at the shop's usual code uptake, and how often a cap kicks in. `margin_check` finds products sold below their purchase price, thin margins, and what the running automatic discount leaves of them. |
-| **An audit** | `shop_audit` runs eighteen checks in one call, plus the shop's own rules from a JSON file of Shopware filters ("active products without a manufacturer" for GPSR, no code needed): a checkout that went unusually silent, promotions in the next two weeks that will not work, paid orders that never shipped or never got an invoice, unpaid orders going stale, shipped orders never completed, products out of stock, running out at the current sales pace, without a cover, without a delivery time or invisible in every sales channel, promotions past their end date, channels in maintenance, storefronts missing a legal page, reviews waiting for moderation, scheduled tasks that stopped running, extensions with updates waiting, and which EU duties look covered, including whether Shopware itself is set up for ZUGFeRD e-invoices. Prioritised, with samples and a hint per finding. The same audit runs as `shopware-mcp audit` from cron or CI, no MCP host needed. |
+| **An audit** | `shop_audit` runs eighteen checks in one call, plus ready-made rule packs for the GPSR, the accessibility act and shopping feeds, and the shop's own rules from a JSON file of Shopware filters, no code needed: a checkout that went unusually silent, promotions in the next two weeks that will not work, paid orders that never shipped or never got an invoice, unpaid orders going stale, shipped orders never completed, products out of stock, running out at the current sales pace, without a cover, without a delivery time or invisible in every sales channel, promotions past their end date, channels in maintenance, storefronts missing a legal page, reviews waiting for moderation, scheduled tasks that stopped running, extensions with updates waiting, and which EU duties look covered, including whether Shopware itself is set up for ZUGFeRD e-invoices. Prioritised, with samples and a hint per finding. The same audit runs as `shopware-mcp audit` from cron or CI, no MCP host needed. |
 | **Reports and a forecast** | `sales_report` asks Shopware to aggregate: gross, net, average order, revenue per currency and channel, orders per state, a day/week/month timeline, the top products and, on request, the change against the period before. `customer_report` does the same for people: new accounts, guest share, repeat share, top customers by revenue. `stock_forecast` turns sales velocity and stock into days of cover, run-out dates and reorder quantities. `returns_report` says how many orders came back and which products come back most, from Shopware's own delivery states. The figures were checked against SQL on the same database. |
 | **An escape hatch** | `entity_schema` describes any of the 200+ entities, a plugin's custom entities included, and `entity_search` queries them with the same filters and lets Shopware aggregate over the match: orders per payment method, revenue per month, anything a terms, sum or histogram can say. Entities that hold credentials are refused, secrets in the rest are scrubbed. |
 | **A brake** | Read-only unless you start it with `--allow-write`. Even then every write is a dry run that shows the exact request first, and a write budget can cap how many real writes a process may make. Ship, mark paid, remind, refund, correct stock, note, generate a document, create a product or a promotion, give a product a picture, moderate a review, update a customer, invoice fifty orders in one go, tag a record: fifteen narrow writes, nothing else. Secrets never appear in output, logs or errors. |
@@ -257,7 +261,7 @@ the order for the team, creating the tag on the way.
 | **Shopware's vocabulary** | Filters are Shopware Criteria filters (`equals`, `contains`, `range`, `equalsAny`) on Shopware field paths, including associations like `manufacturer.name`. State names are the technical names you already know. |
 | **Portable schemas** | Every tool schema is checked to avoid constructs that some MCP clients misread, so the same server works in every host. |
 | **A solid client** | OAuth client credentials with early token refresh, one retry on 401 and on 429/5xx with `Retry-After`, a per-request timeout, exact totals, inheritance and language headers, a cached entity schema. |
-| **Two transports** | stdio for desktop hosts, stateless Streamable HTTP for everything else, with an optional bearer token. |
+| **Three ways to serve** | stdio for desktop hosts, stateless Streamable HTTP with an optional bearer token, and a hosted mode for many shops behind OAuth 2.1 (PKCE, dynamic client registration, client ID metadata documents). |
 | **Packaged four ways** | npm with build provenance, a Docker image on GHCR for amd64 and arm64, a one-click `.mcpb` bundle for Claude Desktop that asks for the credentials and a write budget, and a listing in the official MCP registry. |
 
 ---
@@ -439,6 +443,10 @@ The image serves Streamable HTTP on `http://127.0.0.1:3333/mcp`. Point any HTTP-
 | "What would 20 % off over 50 euro have cost us last month?" | `promotion_impact { discount: { type: "percentage", value: 20 }, minCartValue: 50 }` |
 | "Do we sell anything below cost?" | `margin_check` |
 | "Is the shop getting better or worse?" | `shopware-mcp brief --history health.json` keeps a score per day |
+| "How is the shop doing?" | `shop_brief`, a page in hosts that show MCP Apps |
+| "Can ChatGPT and Gemini sell our products?" | `agent_readiness`, then `shopware-mcp feed --out feed.jsonl` |
+| "Can we update to 6.8 yet?" | `update_check` |
+| "Are we ready for the GPSR?" | `shop_audit { rulePacks: ["gpsr", "eaa"] }` |
 | "Mail me the audit every Monday." | not a tool either: `shopware-mcp audit --fail-on warning` in cron |
 
 ---
@@ -497,11 +505,14 @@ The full [cheat sheet](docs/quickstart.md#filters-cheat-sheet) has more.
 | [`storefront_search`](docs/tools.md#storefront_search) | read | Search like a customer |
 | [`checkout_simulate`](docs/tools.md#checkout_simulate) | read | Simulate a checkout |
 | [`journeys_run`](docs/tools.md#journeys_run) | read | Run customer journeys |
+| [`agent_readiness`](docs/tools.md#agent_readiness) | read | Ready for AI shopping agents? |
+| [`update_check`](docs/tools.md#update_check) | read | Ready for the next Shopware update? |
 | [`shop_diagnose`](docs/tools.md#shop_diagnose) | read | Why are orders not coming in? |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
 | [`customer_report`](docs/tools.md#customer_report) | read | Customer report |
 | [`returns_report`](docs/tools.md#returns_report) | read | Returns report |
 | [`shop_pulse`](docs/tools.md#shop_pulse) | read | Shop pulse |
+| [`shop_brief`](docs/tools.md#shop_brief) | read | Shop brief |
 | [`shop_audit`](docs/tools.md#shop_audit) | read | Shop health audit |
 | [`entity_schema`](docs/tools.md#entity_schema) | read | Entity schema |
 | [`entity_search`](docs/tools.md#entity_search) | read | Search any entity |
@@ -585,7 +596,7 @@ Found something? See [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_HTTP_TOKEN` | no | Bearer token the HTTP transport requires on `/mcp` (at least 16 characters). Default: none |
 | `SHOPWARE_MCP_LOG_LEVEL` | no | `error` (default), `warn`, `info`, `debug`. Logs go to stderr only |
 | `TZ` | no | Time zone for "today" in `shop_pulse` and `brief`, e.g. `Europe/Berlin`. Default: the system's. It also picks the public holidays the pulse leaves out (DE, AT, CH) |
-| `SHOPWARE_MCP_RULES` | no | JSON file with the shop's own audit rules ([example](docs/examples/rules.json)) |
+| `SHOPWARE_MCP_RULES` | no | Rule packs and files for the audit, e.g. `gpsr,eaa,feeds,./rules.json` ([example](docs/examples/rules.json)) |
 | `SHOPWARE_MCP_JOURNEYS` | no | JSON file with customer journeys for `journeys_run` ([example](docs/examples/journeys.json)) |
 | `SHOPWARE_ADMIN_USER`, `SHOPWARE_ADMIN_PASSWORD` | `setup` only | The admin login `setup` uses once to create the role and integration. Never stored; without them `setup` asks |
 

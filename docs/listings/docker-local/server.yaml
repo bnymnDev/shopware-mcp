@@ -1,0 +1,42 @@
+name: shopware
+type: server
+meta:
+  category: ecommerce
+  tags:
+    - ecommerce
+    - shopware
+    - shop
+about:
+  title: Shopware
+  description: >-
+    Talk to a Shopware 6 shop: orders, products, customers, a health audit, a live pulse that
+    notices when orders stop, sales reports and campaign checks. Read-only by default.
+  icon: https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/icon-400.png
+source:
+  project: https://github.com/bnymnDev/shopware-mcp
+  commit: COMMIT_OF_THE_RELEASE_TAG
+config:
+  description: Connect to the Admin API with the keys of a Shopware Integration
+  secrets:
+    - name: shopware.client_secret
+      env: SHOPWARE_CLIENT_SECRET
+      example: <secret access key of the Integration>
+  env:
+    - name: SHOPWARE_URL
+      example: https://shop.example.com
+      value: "{{shopware.url}}"
+    - name: SHOPWARE_CLIENT_ID
+      example: SWIAEXAMPLEEXAMPLEEXAMPLE
+      value: "{{shopware.client_id}}"
+  parameters:
+    type: object
+    properties:
+      url:
+        type: string
+        description: Your shop's address
+      client_id:
+        type: string
+        description: Access key ID of the Integration
+    required:
+      - url
+      - client_id

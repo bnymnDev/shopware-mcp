@@ -1,0 +1,35 @@
+{
+  "name": "shopware-mcp",
+  "version": "0.10.0",
+  "description": "Talk to a Shopware 6 shop: orders, products, customers, a health audit, a live pulse, sales reports, campaign checks. Read-only by default.",
+  "mcpServers": {
+    "shopware": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "shopware-mcp"
+      ]
+    }
+  },
+  "contextFileName": "GEMINI.md",
+  "settings": [
+    {
+      "name": "Shop URL",
+      "description": "Your shop's address, e.g. https://shop.example.com",
+      "envVar": "SHOPWARE_URL",
+      "sensitive": false
+    },
+    {
+      "name": "Access key ID",
+      "description": "Of a Shopware Integration (npx shopware-mcp setup creates one)",
+      "envVar": "SHOPWARE_CLIENT_ID",
+      "sensitive": false
+    },
+    {
+      "name": "Secret access key",
+      "description": "Of the same Integration",
+      "envVar": "SHOPWARE_CLIENT_SECRET",
+      "sensitive": true
+    }
+  ]
+}

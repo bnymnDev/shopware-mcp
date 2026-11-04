@@ -1,0 +1,19 @@
+name: shopware-remote
+type: remote
+dynamic:
+  tools: true
+meta:
+  category: ecommerce
+  tags:
+    - ecommerce
+    - shopware
+    - remote
+about:
+  title: Shopware (hosted)
+  description: >-
+    A Shopware 6 shop for your assistant, without installing anything: connect with an
+    Integration's keys on the first use. Read-only.
+  icon: https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/icon-400.png
+remote:
+  transport_type: streamable-http
+  url: https://p-h07rka.project.space/mcp

@@ -6,9 +6,12 @@ import { buildBrief } from "../src/brief.js";
 import type { Raw } from "../src/client/index.js";
 import { diagnose } from "../src/diagnose.js";
 import { runAudit } from "../src/tools/audit.js";
+import { agentReadiness } from "../src/tools/feed.js";
 import { runJourneys } from "../src/tools/journeys.js";
 import { checkMargins, promotionImpact } from "../src/tools/margins.js";
 import type { ToolContext } from "../src/tools/types.js";
+import { updateCheck } from "../src/tools/updates.js";
+import { shopBrief, VIEW_DATA } from "../src/views.js";
 import { E2E_ENABLED, e2eContext } from "./setup.js";
 
 describe.skipIf(!E2E_ENABLED)("journeys, diagnosis, margins and the brief against dockware", () => {
@@ -95,5 +98,29 @@ describe.skipIf(!E2E_ENABLED)("journeys, diagnosis, margins and the brief agains
     const brief = await buildBrief(ctx.client, { timeZone: "Europe/Berlin", history: file });
     expect(brief.trend?.days).toHaveLength(1);
     expect(brief.trend?.today.score).toBeGreaterThanOrEqual(0);
+  });
+
+  it("agent_readiness builds a feed row for every visible product", async () => {
+    const result = await agentReadiness(ctx.client, { maxItems: 2 });
+    expect(result.products.checked).toBeGreaterThan(0);
+    expect(result.feedSample[0]).toMatchObject({
+      item_id: expect.any(String),
+      price: expect.stringMatching(/^\d+\.\d{2} [A-Z]{3}$/),
+      availability: expect.stringMatching(/^(in_stock|out_of_stock|backorder)$/),
+    });
+    expect(result.score).toBeGreaterThanOrEqual(0);
+  });
+
+  it("update_check reads the current version and says what it could not check", async () => {
+    const result = await updateCheck(ctx.client);
+    expect(result.currentVersion).toMatch(/^6\.\d+\.\d+/);
+    expect(Array.isArray(result.notes)).toBe(true);
+  });
+
+  it("shop_brief keeps the whole brief for its page and a summary for the model", async () => {
+    const result = await shopBrief.handler({ timeZone: "Europe/Berlin" }, ctx);
+    expect(result.headline.text).toEqual(expect.any(String));
+    expect(result[VIEW_DATA]?.pulse).toBeDefined();
+    expect(JSON.stringify(result)).not.toContain("history");
   });
 });

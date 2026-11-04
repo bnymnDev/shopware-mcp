@@ -280,3 +280,23 @@ A Whit Monday among the compared Mondays drags the typical count down, and a qui
 ## The health score is simple on purpose
 
 `brief --history` stores one score per day: 100, minus 20 per critical finding, 5 per warning and 20 for an unusual quiet spell or payment failures. The weights are crude, but a shop manager can say why the number moved, which a model-fitted score would not allow. The file keeps 90 days, is written atomically, and starts fresh when it cannot be read.
+
+## Hosted mode holds keys it cannot read back without its own key
+
+A hosted server that stores many shops' Integration keys is a target, so it keeps as little as it can and nothing in the clear: the keys sealed with AES-256-GCM under a key that only lives in the environment, every token as its SHA-256, codes in memory for ten minutes. It never asks for an admin password, only for an Integration's keys, which the shop owner can scope with `shopware-mcp setup` and revoke in Shopware at any time. Write tools are not registered at all, so a stolen token reads and cannot act. The consent page tests the keys against the shop before storing them, and the server refuses shop addresses that resolve to private networks, because it would otherwise fetch whatever a stranger types into the network it runs in. OAuth follows the MCP authorization spec as clients implement it: protected resource metadata for discovery, dynamic registration and client ID metadata documents for clients, PKCE S256 for every public client, rotating refresh tokens.
+
+## Pages in the chat are rendered by the server
+
+MCP Apps let a host show a tool's result as a page. Instead of a second, client-side renderer for every view, one generic page receives HTML the server rendered with the same code as the HTML brief, in the result's `_meta`, which the host gives to the page and not to the model. The page loads nothing, so the host's default policy of no connections suffices. Over stdio the server sends a page only when the client says it shows apps; over stateless HTTP it cannot know and always sends it, since those are the hosts that do. `shop_brief` returns a short summary for the model and keeps the whole brief for its page, under a symbol key that JSON never serialises.
+
+## The agent feed uses the strictest public spec
+
+AI shopping agents read product feeds; the Agentic Commerce feed of OpenAI and Stripe states its fields and rules most precisely and overlaps with Google Merchant, so `agent_readiness` checks against it: what rejects a row (no name, description, brand, image or price) separately from what costs visibility (no GTIN, a GTIN with a wrong check digit, no weight). Shop-level checks are the pages an agent checkout links to. The score is a plain weighting, required fields first, so a manager can tell why it moved.
+
+## The update check reads, but needs a privilege that could write
+
+Shopware guards its update routes with one privilege, `system:core:update`, for reading what is available and for starting an update alike. shopware-mcp never calls the routes that change anything, but the privilege allows it, so setup grants it only with `--plugin-updates`, next to plugin maintenance. Shopware answers the extension compatibility check only for an admin user, never for an integration; the tool says so and lists the active extensions to check instead of pretending.
+
+## Releases do not depend on a CI service
+
+Every step of the release workflow also runs on a laptop with `pnpm release:local`, after `pnpm verify` ran the same checks as CI. Each step looks first whether its part is out already, so a release that stopped halfway is repaired by running the script again rather than by hand. CI remains the convenient path, not the only one.
