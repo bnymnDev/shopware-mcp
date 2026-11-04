@@ -1,5 +1,11 @@
 # shopware-mcp
 
+## 0.11.1
+
+### Patch Changes
+
+- 163aa1e: The hosted consent page says plainly why keys could not be tried: wrong keys, no Shopware Admin API at that address, or a shop that did not answer, instead of showing what the address returned.
+
 ## 0.11.0
 
 ### Minor Changes
