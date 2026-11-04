@@ -2,6 +2,7 @@ import { z } from "zod";
 import { equals, type ShopwareFilter } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
 import { badRequest } from "../errors.js";
+import { HOLIDAY_COUNTRIES, type HolidayCountry, holidayCountryOf, holidayOn } from "./holidays.js";
 import { notCancelled } from "./periods.js";
 import { idSchema, num, raw, rawList, str } from "./shared.js";
 import { defineTool } from "./types.js";
@@ -38,6 +39,11 @@ export interface PulseOptions {
   /** Today is expected to bring this many times the usual orders, e.g. 3 on Black Friday. */
   expectFactor?: number;
   timeZone: string;
+  /**
+   * Leave compared days that were public holidays in this country out of "usual"; default: the
+   * country of the time zone (Europe/Berlin: DE), "none" to keep every day.
+   */
+  holidays?: HolidayCountry | "none" | undefined;
   salesChannelId?: string | undefined;
   now?: Date;
 }
@@ -80,7 +86,27 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   const { weeks, timeZone } = options;
   const baseline = options.baseline ?? "recent";
   const factor = options.expectFactor ?? 1;
-  const offsets = baselineWeeks(baseline, weeks);
+  const country =
+    options.holidays === "none" ? null : (options.holidays ?? holidayCountryOf(timeZone));
+  // Same weekday, same clock time, stepped on the local calendar: across a daylight saving
+  // change a week is not 168 hours.
+  const weekBack = (date: Date, weeksAgo: number) =>
+    weeksAgo === 0 ? date : shiftDays(date, -7 * weeksAgo, timeZone);
+  // A holiday in the compared weeks would drag "usual" down (or up, before Christmas): it
+  // is left out, as long as one week remains to compare with.
+  const skippedHolidays: Array<{ date: string; name: string }> = [];
+  const allOffsets = baselineWeeks(baseline, weeks);
+  const offsets = allOffsets.filter((weeksAgo) => {
+    const date = localDate(weekBack(now, weeksAgo), timeZone);
+    const name = holidayOn(date, country);
+    if (name) skippedHolidays.push({ date, name });
+    return !name;
+  });
+  if (offsets.length === 0) {
+    offsets.push(...allOffsets);
+    skippedHolidays.length = 0;
+  }
+  const todayHoliday = holidayOn(localDate(now, timeZone), country);
   const scope: ShopwareFilter[] = options.salesChannelId
     ? [equals("salesChannelId", options.salesChannelId)]
     : [];
@@ -97,10 +123,6 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
   const lastTime = lastAt ? Date.parse(lastAt) : null;
 
   const dayStart = startOfDay(now, timeZone);
-  // Same weekday, same clock time, stepped on the local calendar: across a daylight saving
-  // change a week is not 168 hours.
-  const weekBack = (date: Date, weeksAgo: number) =>
-    weeksAgo === 0 ? date : shiftDays(date, -7 * weeksAgo, timeZone);
   const windows = [0, ...offsets].map((weeksAgo) => {
     const to = weekBack(now, weeksAgo);
     return { weeksAgo, from: startOfDay(to, timeZone), to };
@@ -206,6 +228,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
       since: dayStart.toISOString(),
       orders: today.orders,
       revenue: today.revenue,
+      ...(todayHoliday ? { holiday: todayHoliday } : {}),
     },
     typical: {
       weeks: offsets.length,
@@ -217,6 +240,7 @@ export async function computePulse(client: ShopwareClient, options: PulseOptions
         min: Math.min(...previous.map((week) => week.orders)),
         max: Math.max(...previous.map((week) => week.orders)),
       },
+      ...(skippedHolidays.length > 0 ? { skippedHolidays } : {}),
     },
     change: {
       orders: pct(today.orders, typicalOrders),
@@ -279,7 +303,8 @@ export const shopPulse = defineTool({
     "payment or storefront may be broken; follow up with checkout_simulate. Also compares " +
     "today's failed or cancelled payments with their usual share. On a campaign day compare " +
     "with last year (baseline 'last-year') or raise the expectation (expectFactor 3 on Black " +
-    "Friday), so a quiet spell is judged against what the day should bring. Read-only. Returns { today, " +
+    "Friday), so a quiet spell is judged against what the day should bring. Public holidays in " +
+    "the compared weeks are left out (DE, AT, CH). Read-only. Returns { today, " +
     "typical, change, lastOrder, silence, payments, history[] }.",
   inputSchema: {
     weeks: z
@@ -305,6 +330,13 @@ export const shopPulse = defineTool({
       .max(20)
       .default(1)
       .describe("Today should bring this many times the usual orders, e.g. 3 on a campaign day"),
+    holidays: z
+      .enum([...HOLIDAY_COUNTRIES, "none"])
+      .optional()
+      .describe(
+        "Leave public holidays of this country out of 'typical'; default: the time zone's " +
+          "country (Europe/Berlin: DE, Europe/Vienna: AT, Europe/Zurich: CH)",
+      ),
   },
   handler: async (input, ctx) => {
     const timeZone = input.timeZone ?? defaultTimeZone();
@@ -315,6 +347,7 @@ export const shopPulse = defineTool({
       salesChannelId: input.salesChannelId,
       baseline: input.baseline,
       expectFactor: input.expectFactor,
+      holidays: input.holidays,
     });
   },
 });

@@ -1,0 +1,37 @@
+{
+  "rules": [
+    {
+      "id": "products_without_manufacturer",
+      "title": "Active products without a manufacturer",
+      "severity": "warning",
+      "entity": "product",
+      "filter": [
+        { "type": "equals", "field": "active", "value": true },
+        { "type": "equals", "field": "manufacturerId", "value": null }
+      ],
+      "hint": "The EU product safety regulation (GPSR) asks for the manufacturer's name and address on every product page."
+    },
+    {
+      "id": "products_without_ean",
+      "title": "Active products without an EAN",
+      "severity": "info",
+      "entity": "product",
+      "filter": [
+        { "type": "equals", "field": "active", "value": true },
+        { "type": "equals", "field": "ean", "value": null }
+      ],
+      "hint": "Marketplaces and shopping feeds reject products without a GTIN."
+    },
+    {
+      "id": "media_without_alt",
+      "title": "Product images without alt text",
+      "severity": "info",
+      "entity": "media",
+      "filter": [
+        { "type": "equals", "field": "mediaFolder.defaultFolder.entity", "value": "product" },
+        { "type": "equals", "field": "alt", "value": null }
+      ],
+      "hint": "Screen readers need an alt text; the European Accessibility Act applies to shops since June 2025."
+    }
+  ]
+}

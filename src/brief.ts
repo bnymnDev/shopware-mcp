@@ -8,11 +8,14 @@ import {
   pulseSection,
   renderPage,
   salesSection,
+  trendSection,
 } from "./html.js";
 import { runAudit } from "./tools/audit.js";
 import { comparedWeeks, computePulse, type Pulse } from "./tools/pulse.js";
 import { buildSalesReport } from "./tools/reports.js";
+import type { AuditRule } from "./tools/rules.js";
 import { shiftDays, startOfDay } from "./tools/zone.js";
+import { recordTrend, type Trend, trendText } from "./trend.js";
 
 type AuditReport = Awaited<ReturnType<typeof runAudit>>;
 type SalesReport = Awaited<ReturnType<typeof buildSalesReport>>;
@@ -25,12 +28,21 @@ export interface Brief {
   pulse: Pulse;
   audit: AuditReport;
   sales: SalesReport;
+  /** The health score day by day, when the brief keeps a history file. */
+  trend?: Trend;
 }
 
 /** The pulse, the audit and the last seven days: what a shop manager wants before coffee. */
 export async function buildBrief(
   client: ShopwareClient,
-  options: { timeZone: string; now?: Date },
+  options: {
+    timeZone: string;
+    now?: Date;
+    /** The shop's own audit rules. */
+    rules?: AuditRule[];
+    /** A JSON file that keeps one health score per day, for the trend. */
+    history?: string;
+  },
 ): Promise<Brief> {
   const now = options.now ?? new Date();
   const { timeZone } = options;
@@ -48,6 +60,7 @@ export async function buildBrief(
         complianceChecks: false,
         timeZone,
         pulse,
+        rules: options.rules ?? [],
       }),
     ),
     buildSalesReport(client, {
@@ -61,7 +74,7 @@ export async function buildBrief(
     }),
     client.currencyCode(DEFAULT_CURRENCY_ID).catch(() => null),
   ]);
-  return {
+  const brief: Brief = {
     shop: audit.shop?.url ?? client.baseUrl,
     generatedAt: now.toISOString(),
     timeZone: options.timeZone,
@@ -70,6 +83,8 @@ export async function buildBrief(
     audit,
     sales,
   };
+  if (options.history) brief.trend = recordTrend(options.history, brief);
+  return brief;
 }
 
 const stamp = (iso: string, timeZone: string) =>
@@ -128,6 +143,13 @@ export function formatBriefMarkdown(brief: Brief): string {
     `- Revenue today: ${money(pulse.today.revenue, currency)}${pct(pulse.change.revenue)}`,
     `- Last order: ${pulse.lastOrder ? `#${pulse.lastOrder.orderNumber}, ${duration(pulse.lastOrder.minutesAgo ?? 0)} ago` : "none yet"}`,
     `- Failed payments today: ${pulse.payments.today.failedOrCancelled} of ${pulse.payments.today.total}`,
+    ...(pulse.today.holiday ? [`- Today is ${pulse.today.holiday}`] : []),
+    ...(pulse.typical.skippedHolidays
+      ? [
+          `- Left out of "typical": ${pulse.typical.skippedHolidays.map((day) => `${day.name} (${day.date})`).join(", ")}`,
+        ]
+      : []),
+    ...(brief.trend ? ["", `**${trendText(brief.trend)}**`] : []),
     "",
     "## Audit",
     "",
@@ -153,6 +175,7 @@ export function renderBriefHtml(brief: Brief): string {
     generatedAt: `${stamp(brief.generatedAt, brief.timeZone)} (${brief.timeZone})`,
     sections: [
       pulseSection(brief.pulse, brief.currency),
+      ...(brief.trend ? [trendSection(brief.trend)] : []),
       auditSection(brief.audit, 3, { foldInfo: true }),
       salesSection(brief.sales),
     ],
@@ -211,6 +234,7 @@ export function briefSlackText(brief: Brief): string {
   return [
     `${MARKS[headline.level]} *Shop brief · ${slack(brief.shop)}* · ${slack(stamp(brief.generatedAt, brief.timeZone))}`,
     slack(headline.text),
+    ...(brief.trend ? [slack(trendText(brief.trend))] : []),
     `Today: ${pulse.today.orders} orders${pct(pulse.change.orders)}, ${slack(money(pulse.today.revenue, currency))}`,
     `Last 7 days: ${slack(money(sales.totals.revenueGross, currency))}${pct(sales.change?.revenueGross.percent)}, ${sales.totals.orders} orders`,
     "",

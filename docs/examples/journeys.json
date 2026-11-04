@@ -1,0 +1,17 @@
+{
+  "journeys": [
+    {
+      "name": "German guest pays with PayPal",
+      "items": [{ "productNumber": "SW10005" }],
+      "country": "DE",
+      "expect": { "paymentMethods": ["PayPal"] }
+    },
+    {
+      "name": "Swiss guest with code",
+      "items": [{ "productNumber": "SW10005" }],
+      "country": "CH",
+      "promotionCodes": ["WELCOME10"],
+      "expect": { "maxTotal": 100 }
+    }
+  ]
+}

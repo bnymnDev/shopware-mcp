@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { associations, equals, equalsAny, type ShopwareFilter } from "../client/criteria.js";
 import type { Raw, ShopwareClient } from "../client/index.js";
 import { badRequest } from "../errors.js";

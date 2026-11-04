@@ -12,6 +12,7 @@ import { mapPromotion } from "./promotions.js";
 import { checkPromotions } from "./promotions-check.js";
 import { comparedWeeks, computePulse, defaultTimeZone, isTimeZone, type Pulse } from "./pulse.js";
 import { mapReview, REVIEW_ASSOCIATIONS } from "./reviews.js";
+import { type AuditRule, auditRuleSchema, parseRule, rulesFromEnv, runRule } from "./rules.js";
 import { mapSalesChannel } from "./sales-channels.js";
 import { raw, str, translated } from "./shared.js";
 import { fetchShopInfo } from "./shop.js";
@@ -146,6 +147,8 @@ export interface Finding {
   count: number;
   items: unknown[];
   hint: string;
+  /** Set on findings from the shop's own rules file. */
+  custom?: true;
 }
 
 const ORDER_ASSOCIATIONS = associations([
@@ -174,6 +177,7 @@ interface Check {
    * check is reported as not covered instead of failed.
    */
   privilege?: string;
+  custom?: true;
   run(): Promise<{ count: number; items: unknown[] }>;
 }
 
@@ -190,6 +194,8 @@ export interface AuditInput {
   timeZone?: string;
   /** A pulse computed already (the brief has one), so the silence check does not repeat it. */
   pulse?: Pulse;
+  /** The shop's own rules: Shopware filters whose matches count as findings. */
+  rules?: AuditRule[];
 }
 
 function dutyCoverage(
@@ -569,6 +575,19 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
     },
   ];
 
+  for (const entry of input.rules ?? []) {
+    const rule = parseRule(entry);
+    checks.push({
+      id: rule.id,
+      severity: rule.severity,
+      title: rule.title,
+      hint: rule.hint,
+      privilege: `${rule.entity.replace(/-/g, "_")}:read`,
+      custom: true,
+      run: () => runRule(client, rule, limit),
+    });
+  }
+
   const warnings: string[] = [];
   const notCovered: string[] = [];
   const settled = await Promise.allSettled(checks.map((check) => check.run()));
@@ -595,6 +614,7 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       count: result.value.count,
       items: result.value.items,
       hint: check.hint,
+      ...(check.custom ? { custom: true as const } : {}),
     });
   });
 
@@ -629,6 +649,7 @@ export async function runAudit(client: ShopwareClient, input: AuditInput) {
       forecastDays: input.forecastDays,
       maxItems: input.maxItems,
       complianceChecks: input.complianceChecks,
+      ...(input.rules && input.rules.length > 0 ? { customRules: input.rules.length } : {}),
     },
     summary,
     findings,
@@ -653,6 +674,8 @@ export const shopAudit = defineTool({
     "Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI " +
     "labelling) appear to be covered by an installed extension, guessed from extension names, " +
     "and whether Shopware itself is set up for ZUGFeRD e-invoices. " +
+    "The shop's own rules (Shopware filters, e.g. 'active products without a manufacturer') run " +
+    "too: pass them as rules, or point SHOPWARE_MCP_RULES at a JSON file. " +
     "Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.",
   inputSchema: {
     stuckOrderDays: z.number().int().min(1).max(365).default(7),
@@ -674,11 +697,19 @@ export const shopAudit = defineTool({
       .trim()
       .optional()
       .describe("IANA time zone of the shop for the order-silence check; default: the server's"),
+    rules: z
+      .array(auditRuleSchema)
+      .max(50)
+      .optional()
+      .describe(
+        "The shop's own checks: { id, title, severity, entity, filter[], hint }, the filter in " +
+          "Shopware criteria. Default: the rules in SHOPWARE_MCP_RULES, if set",
+      ),
   },
   handler: (input, ctx) => {
     if (input.timeZone && !isTimeZone(input.timeZone)) {
       throw badRequest(`Unknown time zone "${input.timeZone}"`);
     }
-    return runAudit(ctx.client, input);
+    return runAudit(ctx.client, { ...input, rules: input.rules ?? rulesFromEnv() });
   },
 });

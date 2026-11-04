@@ -3,6 +3,7 @@ import type { runAudit } from "./tools/audit.js";
 import { baselineText, comparedWeeks, type Pulse } from "./tools/pulse.js";
 import type { buildSalesReport } from "./tools/reports.js";
 import { localDate } from "./tools/zone.js";
+import type { Trend } from "./trend.js";
 
 type AuditReport = Awaited<ReturnType<typeof runAudit>>;
 type SalesReport = Awaited<ReturnType<typeof buildSalesReport>>;
@@ -238,7 +239,6 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
   const day = weekday(pulse.now, tz);
   const silence = pulse.silence;
   const verdict = silence?.verdict ?? "normal";
-  const weeks = pulse.typical.weeks;
 
   let banner = "";
   if (silence && pulse.lastOrder && verdict !== "normal") {
@@ -340,6 +340,35 @@ export function pulseSection(pulse: Pulse, currency: string | null): string {
 ${banner}
 <div class="tiles">${tiles}</div>
 <div class="charts">${byTime}${gap}</div>
+</section>`;
+}
+
+export function trendSection(trend: Trend): string {
+  const labels = dayLabels(trend.days.map((day) => day.date));
+  const chart = columnChart({
+    caption: "Health score per day (100: no critical or warning finding, orders as usual)",
+    valueHeader: "Score",
+    format: (value) => integer.format(value),
+    columns: trend.days.map((day, index) => ({
+      label: labels[index] ?? "",
+      value: day.score,
+      detail: `${day.critical} critical, ${day.warning} warning, ${day.orders} orders`,
+      emphasis: index === trend.days.length - 1,
+      labelled: index === trend.days.length - 1,
+    })),
+  });
+  const change =
+    trend.changeOverWeek === null
+      ? `<span class="muted">a week of history needed for a comparison</span>`
+      : `<span class="delta ${trend.changeOverWeek > 0 ? "up" : trend.changeOverWeek < 0 ? "down" : "flat"}">${trend.changeOverWeek > 0 ? "▲ +" : trend.changeOverWeek < 0 ? "▼ −" : "± "}${Math.abs(trend.changeOverWeek)}</span> <span class="muted">points vs a week ago</span>`;
+  const fresh =
+    trend.newFindings.length > 0
+      ? `<p class="lede">New since the last brief: ${trend.newFindings.map(esc).join(", ")}</p>`
+      : "";
+  return `<section>
+<h2>Health trend</h2>
+<div class="tiles">${tile("Health today", `${esc(trend.today.score)} <span class="unit">/ 100</span>`, change)}</div>
+${fresh}<div class="charts">${chart}</div>
 </section>`;
 }
 
