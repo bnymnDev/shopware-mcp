@@ -106,6 +106,7 @@ describe("MCP server", () => {
     expect(resources.map((resource) => resource.uri).sort()).toEqual([
       "shopware://sales-channels",
       "shopware://shop",
+      "ui://shopware-mcp/dashboard",
     ]);
     const shop = await client.readResource({ uri: "shopware://shop" });
     expect(shop.contents[0]?.mimeType).toBe("application/json");

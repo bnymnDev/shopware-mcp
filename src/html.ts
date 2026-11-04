@@ -495,7 +495,7 @@ ${skipped}
  * Page
  * ---------------------------------------------------------------------------------------- */
 
-const STYLE = `
+export const STYLE = `
 :root{color-scheme:light;--page:#f9f9f7;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--base:#c3c2b7;--ring:rgba(11,11,11,.10);--accent:#2a78d6;--accentSoft:#86b6ef;--context:#c3c2b7;--good:#0ca30c;--goodText:#006300;--warning:#fab219;--critical:#d03b3b;--badText:#b42c2c}
 @media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#fff;--ink2:#c3c2b7;--grid:#2c2c2a;--base:#383835;--ring:rgba(255,255,255,.10);--accent:#3987e5;--accentSoft:#184f95;--context:#5a5955;--goodText:#0ca30c;--badText:#e66767}}
 :root[data-theme="dark"]{color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#fff;--ink2:#c3c2b7;--grid:#2c2c2a;--base:#383835;--ring:rgba(255,255,255,.10);--accent:#3987e5;--accentSoft:#184f95;--context:#5a5955;--goodText:#0ca30c;--badText:#e66767}
@@ -559,10 +559,11 @@ footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--grid);color:v
 `;
 
 /** Tooltips enhance, never gate: values sit in the table views and native titles too. */
-const SCRIPT = `
-(() => {
-  const tip = document.createElement("div");
-  tip.id = "tip"; tip.hidden = true; document.body.appendChild(tip);
+/** Tooltips for every [data-tip] element; safe to run again after new content was inserted. */
+export const TIPS_SCRIPT = `
+function bindTips() {
+  let tip = document.getElementById("tip");
+  if (!tip) { tip = document.createElement("div"); tip.id = "tip"; tip.hidden = true; document.body.appendChild(tip); }
   const show = (el, x, y) => {
     const [head, value, ...rest] = (el.getAttribute("data-tip") || "").split("\\n");
     tip.textContent = "";
@@ -574,15 +575,18 @@ const SCRIPT = `
     tip.style.left = Math.min(window.innerWidth - w - 8, x + 14) + "px";
     tip.style.top = Math.max(8, y - h - 12) + "px";
   };
-  document.querySelectorAll("[data-tip]").forEach((el) => {
+  document.querySelectorAll("[data-tip]:not([data-bound])").forEach((el) => {
+    el.setAttribute("data-bound", "");
     el.querySelector("title")?.remove();
     el.addEventListener("pointermove", (e) => show(el, e.clientX, e.clientY));
     el.addEventListener("pointerleave", () => { tip.hidden = true; });
     el.addEventListener("focus", () => { const r = el.getBoundingClientRect(); show(el, r.left + r.width / 2, r.top); });
     el.addEventListener("blur", () => { tip.hidden = true; });
   });
-})();
+}
 `;
+
+const SCRIPT = `${TIPS_SCRIPT}\nbindTips();`;
 
 export interface PageOptions {
   title: string;

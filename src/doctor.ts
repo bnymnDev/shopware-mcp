@@ -427,6 +427,19 @@ export const REQUIREMENTS: Record<string, Requirement> = {
   },
 };
 
+/** The brief is the pulse, the audit and the sales report in one, so it needs what they need. */
+function combined(...names: string[]): Requirement {
+  const parts = names.map((name) => REQUIREMENTS[name] ?? { reads: [] });
+  const unique = (values: string[]) => [...new Set(values)];
+  return {
+    reads: unique(parts.flatMap((part) => part.reads)),
+    optional: unique(parts.flatMap((part) => part.optional ?? [])),
+    routes: unique(parts.flatMap((part) => part.routes ?? [])),
+    optionalRoutes: unique(parts.flatMap((part) => part.optionalRoutes ?? [])),
+  };
+}
+REQUIREMENTS.shop_brief = combined("shop_pulse", "shop_audit", "sales_report");
+
 export type Readiness = "ready" | "blocked" | "unknown";
 
 export interface ToolReadiness {

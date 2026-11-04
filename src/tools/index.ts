@@ -1,4 +1,5 @@
 import { shopDiagnose } from "../diagnose.js";
+import { shopBrief } from "../views.js";
 import { shopAudit } from "./audit.js";
 import { categoriesList } from "./categories.js";
 import { customerReport } from "./customer-report.js";
@@ -79,6 +80,7 @@ export const tools: ToolDefinition[] = [
   customerReport,
   returnsReport,
   shopPulse,
+  shopBrief,
   shopAudit,
   entitySchema,
   entitySearch,

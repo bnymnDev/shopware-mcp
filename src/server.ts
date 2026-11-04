@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { registerApps, toolUiMeta, VIEW_META_KEY, wantsViews } from "./apps.js";
 import { toErrorShape } from "./errors.js";
 import { detectExtensionTools } from "./extensions/index.js";
 import { logger } from "./logger.js";
@@ -8,6 +9,7 @@ import { registerResources } from "./resources/index.js";
 import { tools } from "./tools/index.js";
 import type { Attachment, ToolContext, ToolDefinition } from "./tools/types.js";
 import { NAME, VERSION } from "./version.js";
+import { VIEWS } from "./views.js";
 import { chargeWrites } from "./writes.js";
 
 export const SERVER_INSTRUCTIONS =
@@ -44,9 +46,8 @@ function splitAttachments(value: unknown): { json: unknown; attachments: Attachm
 
 function toolResult(value: unknown, isError = false): CallToolResult {
   const { json, attachments } = splitAttachments(value);
-  const result: CallToolResult = {
-    content: [{ type: "text", text: JSON.stringify(json, null, 2) }],
-  };
+  const text = JSON.stringify(json, null, 2);
+  const result: CallToolResult = { content: [{ type: "text", text }] };
   for (const attachment of attachments) {
     result.content.push({
       type: "resource",
@@ -54,7 +55,8 @@ function toolResult(value: unknown, isError = false): CallToolResult {
     });
   }
   if (json && typeof json === "object" && !Array.isArray(json)) {
-    result.structuredContent = json as Record<string, unknown>;
+    // Parsed back from the text: exactly what the model reads, without data only a view needs.
+    result.structuredContent = JSON.parse(text) as Record<string, unknown>;
   }
   if (isError) result.isError = true;
   return result;
@@ -75,6 +77,7 @@ function registerTool(server: McpServer, tool: ToolDefinition, ctx: ToolContext)
   registered.set(server, names);
   if (names.has(tool.name)) return false;
   names.add(tool.name);
+  const view = VIEWS[tool.name];
   server.registerTool(
     tool.name,
     {
@@ -82,13 +85,20 @@ function registerTool(server: McpServer, tool: ToolDefinition, ctx: ToolContext)
       description: tool.description,
       inputSchema: tool.inputSchema,
       annotations: { title: tool.title, ...tool.annotations },
+      ...(view ? { _meta: toolUiMeta() } : {}),
     },
     async (args) => {
       try {
         // The SDK has already validated `args` against `tool.inputSchema`.
         chargeWrite(tool, args, ctx);
         const value = await tool.handler(args as Parameters<typeof tool.handler>[0], ctx);
-        return toolResult(value);
+        const result = toolResult(value);
+        if (view && wantsViews(server)) {
+          // A view that fails costs the page, never the answer.
+          const html = await view(value, ctx).catch(() => null);
+          if (html) result._meta = { ...result._meta, [VIEW_META_KEY]: html };
+        }
+        return result;
       } catch (error) {
         const shape = toErrorShape(error);
         logger.warn(`tool ${tool.name} failed`, { ...shape.error });
@@ -136,6 +146,7 @@ export function createServer(ctx: ToolContext): McpServer {
     count += 1;
   }
   registerResources(server, ctx);
+  registerApps(server);
   registerPrompts(server);
   logger.debug("server created", { tools: count, allowWrite: ctx.config.allowWrite });
 
