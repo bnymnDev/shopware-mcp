@@ -10,6 +10,7 @@ import {
   orderDocumentsList,
 } from "./documents.js";
 import { entitySchema, entitySearch } from "./entities.js";
+import { agentReadinessTool } from "./feed.js";
 import { stockForecast } from "./forecast.js";
 import { orderHistory } from "./history.js";
 import { journeysRun } from "./journeys.js";
@@ -70,6 +71,7 @@ export const tools: ToolDefinition[] = [
   storefrontSearch,
   checkoutSimulate,
   journeysRun,
+  agentReadinessTool,
   shopDiagnose,
   salesReport,
   customerReport,

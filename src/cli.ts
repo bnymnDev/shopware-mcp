@@ -30,6 +30,7 @@ import {
   toolsLeftOut,
 } from "./setup.js";
 import { runAudit } from "./tools/audit.js";
+import { buildFeed } from "./tools/feed.js";
 import { loadJourneys, runJourneys } from "./tools/journeys.js";
 import { defaultTimeZone, isTimeZone } from "./tools/pulse.js";
 import { buildSalesReport } from "./tools/reports.js";
@@ -57,6 +58,9 @@ Usage:
   shopware-mcp brief [--json] [--html <file>] [--slack <url>] [--tz <zone>] [--history <file>]
                                     The shop right now, the audit and the last 7 days in one
                                     page: Markdown, JSON, or a self-contained HTML file
+  shopware-mcp feed [--out <file>] [--channel <id>]
+                                    Write the product feed AI shopping agents read (JSON Lines,
+                                    Agentic Commerce fields) for a storefront
   shopware-mcp watch [--every <min>] [--once [--state <file>]] [--slack <url>] [--expect <n>]
                                     Keep an eye on orders and payments; alert Slack when they
                                     stop or fail unusually, and again when they recover
@@ -98,6 +102,8 @@ Options:
   --rules <list>       audit, brief: also run rule packs and the shop's own checks, e.g.
                        gpsr,eaa,feeds,./rules.json (default: SHOPWARE_MCP_RULES)
   --history <file>     brief: keep one health score per day in this file and show the trend
+  --out <file>         feed: where to write the JSON Lines (default: stdout)
+  --channel <id>       feed: the storefront (default: the first one)
   --tz <zone>          brief, audit, report: IANA time zone for days and "today" (default: TZ or
                        the system's); report reads --from/--to as local days in it
   --from, --to <date>  report: period, ISO dates (default: the last 30 days)
@@ -115,7 +121,17 @@ Environment:
   SHOPWARE_ADMIN_USER, SHOPWARE_ADMIN_PASSWORD             setup only; never stored
 `;
 
-const COMMANDS = ["serve", "doctor", "init", "setup", "audit", "report", "brief", "watch"] as const;
+const COMMANDS = [
+  "serve",
+  "doctor",
+  "init",
+  "setup",
+  "audit",
+  "report",
+  "brief",
+  "watch",
+  "feed",
+] as const;
 const BASELINES = ["recent", "last-year"] as const;
 const SEVERITIES = ["critical", "warning", "none"] as const;
 const INTERVALS = ["day", "week", "month"] as const;
@@ -149,6 +165,8 @@ export interface CliOptions {
   diagnose: boolean;
   rules: string | undefined;
   history: string | undefined;
+  out: string | undefined;
+  channel: string | undefined;
   from: string | undefined;
   to: string | undefined;
   interval: (typeof INTERVALS)[number];
@@ -267,6 +285,8 @@ export function parseCli(argv: string[]): CliOptions {
       "no-diagnose": { type: "boolean", default: false },
       rules: { type: "string" },
       history: { type: "string" },
+      out: { type: "string" },
+      channel: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
       version: { type: "boolean", short: "v", default: false },
     },
@@ -331,6 +351,8 @@ export function parseCli(argv: string[]): CliOptions {
     diagnose: !(values["no-diagnose"] ?? false),
     rules: values.rules,
     history: values.history,
+    out: values.out,
+    channel: values.channel,
     from: isoDateOption("from", values.from),
     to: isoDateOption("to", values.to),
     interval: interval as (typeof INTERVALS)[number],
@@ -855,6 +877,20 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
         ? 2
         : 0;
     await notify(auditSlackText(report));
+    return;
+  }
+
+  if (cli.command === "feed") {
+    const feed = await buildFeed(ctx.client, cli.channel ? { salesChannelId: cli.channel } : {});
+    const lines = feed.rows.map((row) => JSON.stringify(row)).join("\n");
+    if (cli.out) {
+      writeFileSync(cli.out, `${lines}\n`);
+      process.stderr.write(
+        `Wrote ${feed.rows.length} products of ${feed.channel.name} to ${cli.out}\n`,
+      );
+    } else {
+      process.stdout.write(`${lines}\n`);
+    }
     return;
   }
 

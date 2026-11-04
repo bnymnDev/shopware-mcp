@@ -1,0 +1,812 @@
+{
+  "total": 13,
+  "data": [
+    {
+      "id": "01994d25986b70c6b9f95df5f6d584f3",
+      "productNumber": "SWDEMO10005.1",
+      "parentId": "43a23e0c03bf4ceabc6055a2185faa87",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Variant product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.5,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+          "fileName": "shirt_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+            "fileName": "shirt_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "Blue"
+          },
+          "group": {
+            "translated": {
+              "name": "Colour"
+            }
+          }
+        },
+        {
+          "translated": {
+            "name": "M"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Variant-product/SWDEMO10005.1"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986b70c6b9f95df5f7bb3b58",
+      "productNumber": "SWDEMO10005.2",
+      "parentId": "43a23e0c03bf4ceabc6055a2185faa87",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Variant product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.5,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+          "fileName": "shirt_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+            "fileName": "shirt_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "Blue"
+          },
+          "group": {
+            "translated": {
+              "name": "Colour"
+            }
+          }
+        },
+        {
+          "translated": {
+            "name": "XL"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Variant-product/SWDEMO10005.2"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b6916013035019467c",
+      "productNumber": "SWDEMO10005.3",
+      "parentId": "43a23e0c03bf4ceabc6055a2185faa87",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Variant product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.5,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+          "fileName": "shirt_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+            "fileName": "shirt_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "M"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        },
+        {
+          "translated": {
+            "name": "Red"
+          },
+          "group": {
+            "translated": {
+              "name": "Colour"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Variant-product/SWDEMO10005.3"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b69160130350e92fcc",
+      "productNumber": "SWDEMO10005.4",
+      "parentId": "43a23e0c03bf4ceabc6055a2185faa87",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Variant product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.5,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+          "fileName": "shirt_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+            "fileName": "shirt_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "XL"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        },
+        {
+          "translated": {
+            "name": "Red"
+          },
+          "group": {
+            "translated": {
+              "name": "Colour"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Variant-product/SWDEMO10005.4"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b69160130351be66fd",
+      "productNumber": "SWDEMO10005.5",
+      "parentId": "43a23e0c03bf4ceabc6055a2185faa87",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Variant product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.5,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+          "fileName": "shirt_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+            "fileName": "shirt_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "M"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        },
+        {
+          "translated": {
+            "name": "White"
+          },
+          "group": {
+            "translated": {
+              "name": "Colour"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Variant-product/SWDEMO10005.5"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b69160130352b3d21b",
+      "productNumber": "SWDEMO10005.6",
+      "parentId": "43a23e0c03bf4ceabc6055a2185faa87",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Variant product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.5,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+          "fileName": "shirt_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/01/9e/ea/1757935932/shirt_600x600.jpg?ts=1757935932",
+            "fileName": "shirt_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "XL"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        },
+        {
+          "translated": {
+            "name": "White"
+          },
+          "group": {
+            "translated": {
+              "name": "Colour"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Variant-product/SWDEMO10005.6"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b69160130354d90fd7",
+      "productNumber": "SWDEMO10007.1",
+      "parentId": "c7bca22753c84d08b6178a50052b4146",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product with properties",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": null,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+          "fileName": "hemd_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+            "fileName": "hemd_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "S"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product-with-properties/SWDEMO10007.1"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b69160130354fe1094",
+      "productNumber": "SWDEMO10007.2",
+      "parentId": "c7bca22753c84d08b6178a50052b4146",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product with properties",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": null,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+          "fileName": "hemd_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+            "fileName": "hemd_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "L"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product-with-properties/SWDEMO10007.2"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b6916013035543419f",
+      "productNumber": "SWDEMO10007.3",
+      "parentId": "c7bca22753c84d08b6178a50052b4146",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product with properties",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": null,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+          "fileName": "hemd_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+            "fileName": "hemd_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "M"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product-with-properties/SWDEMO10007.3"
+        }
+      ]
+    },
+    {
+      "id": "01994d25986c70b691601303558bd2f4",
+      "productNumber": "SWDEMO10007.4",
+      "parentId": "c7bca22753c84d08b6178a50052b4146",
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product with properties",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true
+        }
+      ],
+      "availableStock": 50,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": null,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+          "fileName": "hemd_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/f7/g0/65/1757935932/hemd_600x600.jpg?ts=1757935932",
+            "fileName": "hemd_600x600"
+          }
+        }
+      ],
+      "options": [
+        {
+          "translated": {
+            "name": "XL"
+          },
+          "group": {
+            "translated": {
+              "name": "Size"
+            }
+          }
+        }
+      ],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product-with-properties/SWDEMO10007.4"
+        }
+      ]
+    },
+    {
+      "id": "11dc680240b04f469ccba354cbf0b967",
+      "productNumber": "SWDEMO10002",
+      "parentId": null,
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product with advanced prices",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 798.3199999999999,
+          "gross": 950,
+          "linked": true
+        }
+      ],
+      "availableStock": 496,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 45,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Freetime"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/a9/94/21/1757935932/waschmaschine_600x600.jpg?ts=1757935932",
+          "fileName": "waschmaschine_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/a9/94/21/1757935932/waschmaschine_600x600.jpg?ts=1757935932",
+            "fileName": "waschmaschine_600x600"
+          }
+        }
+      ],
+      "options": [],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product-with-advanced-prices/SWDEMO10002"
+        }
+      ]
+    },
+    {
+      "id": "2a88d9b59d474c7e869d8071649be43c",
+      "productNumber": "SWDEMO10001",
+      "parentId": null,
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 416.76,
+          "gross": 495.95,
+          "linked": true
+        }
+      ],
+      "availableStock": 498,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.17,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Fashion"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/24/e9/9f/1757935932/mobile_600x600.jpg?ts=1757935932",
+          "fileName": "mobile_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/24/e9/9f/1757935932/mobile_600x600.jpg?ts=1757935932",
+            "fileName": "mobile_600x600"
+          }
+        }
+      ],
+      "options": [],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product/SWDEMO10001"
+        }
+      ]
+    },
+    {
+      "id": "3ac014f329884b57a2cce5a29f34779c",
+      "productNumber": "SWDEMO10006",
+      "parentId": null,
+      "childCount": 0,
+      "active": true,
+      "translated": {
+        "name": "Main product, free shipping with highlighting",
+        "description": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labor"
+      },
+      "price": [
+        {
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 15,
+          "gross": 20,
+          "linked": true
+        }
+      ],
+      "availableStock": 496,
+      "isCloseout": false,
+      "ean": null,
+      "manufacturerNumber": null,
+      "weight": 0.15,
+      "manufacturer": {
+        "translated": {
+          "name": "Shopware Freetime"
+        }
+      },
+      "cover": {
+        "media": {
+          "url": "http://127.0.0.1:8000/media/74/9b/90/1757935932/handschuh_600x600.jpg?ts=1757935932",
+          "fileName": "handschuh_600x600"
+        }
+      },
+      "media": [
+        {
+          "media": {
+            "url": "http://127.0.0.1:8000/media/74/9b/90/1757935932/handschuh_600x600.jpg?ts=1757935932",
+            "fileName": "handschuh_600x600"
+          }
+        }
+      ],
+      "options": [],
+      "seoUrls": [
+        {
+          "seoPathInfo": "Main-product-free-shipping-with-highlighting/SWDEMO10006"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "id": "01994d25627d7303ba92b97e96becd52",
+      "name": "Storefront",
+      "translated": {
+        "name": "Storefront"
+      },
+      "typeId": "8a243080f92e4c719546314b577cf82b",
+      "active": true,
+      "domains": [
+        {
+          "url": "http://localhost"
+        }
+      ],
+      "currency": {
+        "isoCode": "EUR"
+      }
+    }
+  ],
+  "aggregations": []
+}

@@ -106,6 +106,22 @@ export const REQUIREMENTS: Record<string, Requirement> = {
     ],
   },
   margin_check: { reads: ["product", "promotion", "promotion_discount"] },
+  agent_readiness: {
+    reads: [
+      "sales_channel",
+      "sales_channel_domain",
+      "currency",
+      "product",
+      "product_visibility",
+      "product_manufacturer",
+      "product_media",
+      "media",
+      "property_group_option",
+      "property_group",
+      "seo_url",
+    ],
+    optional: ["system_config:read"],
+  },
   promotions_check: {
     reads: [
       "promotion",

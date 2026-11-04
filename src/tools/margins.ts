@@ -12,7 +12,7 @@ import { defineTool } from "./types.js";
 const MAX_ROWS = 5000;
 const PAGE = 500;
 
-async function readAll(
+export async function readAll(
   client: ShopwareClient,
   entity: string,
   criteria: Record<string, unknown>,
@@ -34,7 +34,7 @@ async function readAll(
 }
 
 /** The price in the default currency, as Shopware stores it: a list with one entry per currency. */
-function defaultPrice(value: unknown): { net: number; gross: number } | null {
+export function defaultPrice(value: unknown): { net: number; gross: number } | null {
   const entries = rawList(value);
   const entry = entries.find((price) => price.currencyId === DEFAULT_CURRENCY_ID) ?? entries[0];
   const net = num(entry?.net);

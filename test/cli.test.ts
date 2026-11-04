@@ -49,6 +49,8 @@ describe("parseCli", () => {
       diagnose: true,
       rules: undefined,
       history: undefined,
+      out: undefined,
+      channel: undefined,
       from: undefined,
       to: undefined,
       interval: "day",

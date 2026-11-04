@@ -1,0 +1,16 @@
+{
+  "total": 2,
+  "data": [
+    {
+      "productNumber": "SWDEMO10005",
+      "id": "43a23e0c03bf4ceabc6055a2185faa87",
+      "apiAlias": "product"
+    },
+    {
+      "productNumber": "SWDEMO10007",
+      "id": "c7bca22753c84d08b6178a50052b4146",
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": []
+}
