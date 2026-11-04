@@ -1,0 +1,24 @@
+{
+  "total": 1,
+  "data": [
+    {
+      "translated": {
+        "name": "Autumn 10 % for everyone",
+        "customFields": {}
+      },
+      "name": "Autumn 10 % for everyone",
+      "exclusive": false,
+      "discounts": [
+        {
+          "scope": "cart",
+          "type": "percentage",
+          "value": 10,
+          "apiAlias": "promotion_discount"
+        }
+      ],
+      "id": "01a1a7d0a404730fb5e1860b35c657ce",
+      "apiAlias": "promotion"
+    }
+  ],
+  "aggregations": []
+}

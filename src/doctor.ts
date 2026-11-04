@@ -95,6 +95,17 @@ export const REQUIREMENTS: Record<string, Requirement> = {
   },
   categories_list: { reads: ["category"] },
   promotions_list: { reads: ["promotion", "promotion_discount"] },
+  promotion_impact: {
+    reads: [
+      "order",
+      "order_line_item",
+      "promotion",
+      "promotion_discount",
+      "promotion_sales_channel",
+      "state_machine_state",
+    ],
+  },
+  margin_check: { reads: ["product", "promotion", "promotion_discount"] },
   promotions_check: {
     reads: [
       "promotion",

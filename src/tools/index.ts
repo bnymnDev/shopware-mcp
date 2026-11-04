@@ -13,6 +13,7 @@ import { entitySchema, entitySearch } from "./entities.js";
 import { stockForecast } from "./forecast.js";
 import { orderHistory } from "./history.js";
 import { journeysRun } from "./journeys.js";
+import { marginCheck, promotionImpactTool } from "./margins.js";
 import { productCoverSet } from "./media.js";
 import { paymentMethodsList, shippingMethodsList } from "./methods.js";
 import {
@@ -57,6 +58,8 @@ export const tools: ToolDefinition[] = [
   categoriesList,
   promotionsList,
   promotionsCheck,
+  promotionImpactTool,
+  marginCheck,
   reviewsSearch,
   paymentMethodsList,
   shippingMethodsList,

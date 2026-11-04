@@ -1,0 +1,341 @@
+{
+  "total": 13,
+  "data": [
+    {
+      "translated": {
+        "name": "Variant product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10005.1",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986b70c6b9f95df5f6d584f3",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Variant product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10005.2",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986b70c6b9f95df5f7bb3b58",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Variant product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10005.3",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b6916013035019467c",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Variant product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10005.4",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b69160130350e92fcc",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Variant product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10005.5",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b69160130351be66fd",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Variant product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10005.6",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b69160130352b3d21b",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product with properties"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10007.1",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b69160130354d90fd7",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product with properties"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10007.2",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b69160130354fe1094",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product with properties"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10007.3",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b6916013035543419f",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product with properties"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 16.799999999999997,
+          "gross": 19.99,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10007.4",
+      "purchasePrices": null,
+      "name": null,
+      "id": "01994d25986c70b691601303558bd2f4",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product with advanced prices"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 798.3199999999999,
+          "gross": 950,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10002",
+      "purchasePrices": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 700,
+          "gross": 833,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "name": "Main product with advanced prices",
+      "id": "11dc680240b04f469ccba354cbf0b967",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 416.76,
+          "gross": 495.95,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10001",
+      "purchasePrices": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 3,
+          "gross": 3.57,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "name": "Main product",
+      "id": "2a88d9b59d474c7e869d8071649be43c",
+      "apiAlias": "product"
+    },
+    {
+      "translated": {
+        "name": "Main product, free shipping with highlighting"
+      },
+      "price": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 15,
+          "gross": 20,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "productNumber": "SWDEMO10006",
+      "purchasePrices": [
+        {
+          "extensions": [],
+          "currencyId": "b7d2554b0ce847cd82f3ac9bd1c0dfca",
+          "net": 30,
+          "gross": 35.7,
+          "linked": true,
+          "listPrice": null,
+          "percentage": null,
+          "regulationPrice": null,
+          "apiAlias": "price"
+        }
+      ],
+      "name": "Main product, free shipping with highlighting",
+      "id": "3ac014f329884b57a2cce5a29f34779c",
+      "apiAlias": "product"
+    }
+  ],
+  "aggregations": []
+}
