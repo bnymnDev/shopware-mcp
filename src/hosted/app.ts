@@ -11,6 +11,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import type { FetchLike } from "../client/fetch.js";
 import { ShopwareClient } from "../client/index.js";
 import { type Config, DEFAULT_LIMIT, MAX_LIMIT } from "../config.js";
+import { ShopwareMcpError } from "../errors.js";
 import { logger } from "../logger.js";
 import { createServer } from "../server.js";
 import type { ToolContext } from "../tools/types.js";
@@ -190,6 +191,21 @@ class RateLimit {
     if (this.hits.size > 10_000) this.hits.clear();
     return true;
   }
+}
+
+/** Why the keys could not be tried, in words a shop owner can act on. */
+export function probeError(error: unknown, shopUrl: string): string {
+  const status = error instanceof ShopwareMcpError ? error.status : null;
+  if (status === 401 || status === 400) {
+    return "The shop did not accept these keys. Check the access key ID and the secret.";
+  }
+  if (status === 404 || status === 405 || (status !== null && status < 500)) {
+    return `No Shopware Admin API answered at ${shopUrl}/api. Check the shop address.`;
+  }
+  if (error instanceof ShopwareMcpError && error.code === "TIMEOUT") {
+    return `${shopUrl} did not answer in time. Try again, or check that the shop is online.`;
+  }
+  return `${shopUrl} could not be reached. Check the address and that the shop is online.`;
 }
 
 /** Normalises what people paste as their shop's address. */
@@ -443,12 +459,7 @@ export function createHostedApp(options: HostedOptions): Server {
       const info = await probe.request<{ version?: string }>("/api/_info/version");
       version = info.version ?? null;
     } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      again(
-        /401|authentication/i.test(detail)
-          ? "The shop did not accept these keys. Check the access key ID and the secret."
-          : `The shop could not be reached: ${detail.slice(0, 160)}`,
-      );
+      again(probeError(error, shopUrl));
       return;
     }
     pending.delete(form.request ?? "");

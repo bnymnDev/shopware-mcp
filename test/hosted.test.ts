@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createHostedApp, shopAddress } from "../src/hosted/app.js";
+import { ShopwareMcpError } from "../src/errors.js";
+import { createHostedApp, probeError, shopAddress } from "../src/hosted/app.js";
 import { assertPublicUrl, __test as net } from "../src/hosted/net.js";
 import { open, parseSecretKey, seal } from "../src/hosted/store.js";
 import { mock } from "./helpers/shopware.js";
@@ -273,6 +274,18 @@ describe("hosted helpers", () => {
     expect(open(secretKey, sealed)).toBe("secret");
     expect(() => open(parseSecretKey(randomBytes(32).toString("base64")), sealed)).toThrow();
     expect(() => parseSecretKey("short")).toThrow(/32 bytes/);
+  });
+
+  it("says in words why the keys could not be tried", () => {
+    const shop = "https://shop.example";
+    expect(
+      probeError(new ShopwareMcpError(401, "4", "Client authentication failed"), shop),
+    ).toContain("did not accept these keys");
+    expect(probeError(new ShopwareMcpError(405, "HTTP_405", "<!doctype html>"), shop)).toBe(
+      "No Shopware Admin API answered at https://shop.example/api. Check the shop address.",
+    );
+    expect(probeError(new ShopwareMcpError(504, "TIMEOUT", "slow"), shop)).toContain("in time");
+    expect(probeError(new TypeError("fetch failed"), shop)).toContain("could not be reached");
   });
 
   it("cleans up a pasted shop address", () => {
