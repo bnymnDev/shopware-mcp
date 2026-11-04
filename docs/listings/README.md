@@ -27,7 +27,7 @@ Two ways to run it, and the directories that take each:
 
 1. Fork `github.com/docker/mcp-registry`.
 2. Copy `docker-local/server.yaml` to `servers/shopware/server.yaml` and set `source.commit` to
-   the commit of the release tag (`git rev-list -n 1 v0.11.0`). Docker builds the image from
+   the commit of the release tag (already set to the 0.11.1 release commit; `git rev-list -n 1 v0.11.1` for later ones). Docker builds the image from
    the repository's `Dockerfile`.
 3. Copy the three files of `docker-remote/` to `servers/shopware-remote/`.
 4. Open one pull request per server and fill in Docker's form for test credentials: a demo
@@ -41,7 +41,8 @@ npx -y @smithery/cli@latest mcp publish https://p-h07rka.project.space/mcp   # h
 npx -y @smithery/cli@latest mcp publish ./shopware-mcp.mcpb                    # local bundle
 ```
 
-The bundle is attached to every GitHub release.
+The bundle is attached to every GitHub release, and the hosted server serves the current one at
+`https://p-h07rka.project.space/shopware-mcp.mcpb`.
 
 ## Cline Marketplace
 

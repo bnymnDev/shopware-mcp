@@ -14,7 +14,7 @@ about:
   icon: https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/icon-400.png
 source:
   project: https://github.com/bnymnDev/shopware-mcp
-  commit: COMMIT_OF_THE_RELEASE_TAG
+  commit: 56783298a0a7831586c3fd3315d7f35ba2de1f83
 config:
   description: Connect to the Admin API with the keys of a Shopware Integration
   secrets:
