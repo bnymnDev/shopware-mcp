@@ -256,3 +256,27 @@ A shop sells more at eight in the evening than at eight in the morning and more 
 ## Returns are counted per delivery, and said so
 
 Shopware's core marks a delivery as returned or partially returned; which items came back lives only in a returns plugin. `returns_report` therefore ranks products by the share of their orders that came back, a strong hint and not proof, and says exactly that in its output instead of inventing item-level figures. Products need a minimum number of orders before they are ranked, so one return is never a 100 % rate.
+
+## A journey is a checkout simulation with expectations
+
+`journeys_run` adds nothing to the cart logic: each journey is the input of `checkout_simulate` plus what it must find, and a failure is said in the words the simulation already has, "PayPal is not offered: availability rule 'Germany only' does not match". Journeys run one after another, never in parallel, so a watch cannot load the shop it watches. A journey that cannot start, because its product or channel is gone, fails too: the path a customer would take no longer exists.
+
+## The diagnosis names suspects, not culprits
+
+When orders stop, `shop_diagnose` looks at what usually stops them: a channel in maintenance, a test purchase of the best seller of the last two weeks, extensions installed or updated in the last day, errors in Shopware's log in the last hours, scheduled tasks that stopped. Each look runs on its own and a refused one only leaves a gap, so a least-privilege role still gets a diagnosis. What looked fine is listed too, so nobody checks it twice. The watch adds it only when the state gets worse, never on recovery, and `--no-diagnose` leaves it out.
+
+## What a discount costs is replayed, not predicted
+
+`promotion_impact` takes the orders of the last weeks as they were and applies the discount to each eligible cart: the cost if every eligible order had used it, an upper bound, and the cost at the share of orders that used a code in that window, the shop's own uptake. It models what can be computed from an order, cart-wide percentage and absolute discounts with a cap and a minimum cart value, and names everything else it cannot model, such as delivery discounts or rules that limit who gets it, instead of guessing. `margin_check` compares the default net price with the purchase price. The running automatic discount is applied to the price, since that is what customers pay; coded promotions are not, because few orders use them.
+
+## The shop's own checks are Shopware filters
+
+An audit rule is the JSON the Admin API already takes, an entity and a filter, plus a title, a severity and a hint. There is no rule language to learn and nothing that runs code. Rules run next to the built-in checks with the same sample size; one the role may not read is reported as not covered, one with a broken filter as skipped, so a typo shows up and does not pass as healthy.
+
+## Holidays are left out of "usual"
+
+A Whit Monday among the compared Mondays drags the typical count down, and a quiet Monday then looks normal. The pulse leaves compared days that were nationwide public holidays out, in Germany, Austria and Switzerland, plus Christmas Eve and New Year's Eve, as long as one week remains. The country follows the time zone, so it needs no setting. Regional holidays are not used: they move a shop's numbers less than a national one, and guessing the region would be wrong more often than right.
+
+## The health score is simple on purpose
+
+`brief --history` stores one score per day: 100, minus 20 per critical finding, 5 per warning and 20 for an unusual quiet spell or payment failures. The weights are crude, but a shop manager can say why the number moved, which a model-fitted score would not allow. The file keeps 90 days, is written atomically, and starts fresh when it cannot be read.

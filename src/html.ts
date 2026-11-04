@@ -97,6 +97,8 @@ export interface ColumnChartOptions {
   /** Every column in the accent (a single series) instead of emphasis on some. */
   single?: boolean;
   valueHeader: string;
+  /** A fixed top of the scale, e.g. 100 for a score. */
+  max?: number;
 }
 
 function niceMax(value: number): number {
@@ -120,7 +122,7 @@ export function columnChart(options: ColumnChartOptions): string {
   const plotWidth = width - left - right;
   const plotHeight = height - top - bottom;
   const peak = Math.max(...columns.map((column) => column.value), options.reference?.value ?? 0);
-  const max = niceMax(peak * 1.1);
+  const max = options.max ?? niceMax(peak * 1.1);
   const y = (value: number) => top + plotHeight - (value / max) * plotHeight;
   const band = plotWidth / Math.max(1, columns.length);
   const barWidth = Math.min(24, band * 0.56);
@@ -348,6 +350,7 @@ export function trendSection(trend: Trend): string {
   const chart = columnChart({
     caption: "Health score per day (100: no critical or warning finding, orders as usual)",
     valueHeader: "Score",
+    max: 100,
     format: (value) => integer.format(value),
     columns: trend.days.map((day, index) => ({
       label: labels[index] ?? "",

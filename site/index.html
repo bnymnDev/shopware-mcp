@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shopware-mcp · Talk to your Shopware 6 shop</title>
-<meta name="description" content="An MCP server for the Shopware 6 Admin API. 46 tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
+<meta name="description" content="An MCP server for the Shopware 6 Admin API. 50 tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
 <meta property="og:title" content="shopware-mcp">
 <meta property="og:description" content="Talk to your Shopware 6 shop from Claude, Cursor, VS Code or any MCP host. Read-only by default, every write a dry run first.">
 <meta property="og:image" content="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/banner-dark.svg">
@@ -179,7 +179,7 @@
         </a>
       </div>
       <div class="facts">
-        <span>46 tools, 31 of them read-only</span>
+        <span>50 tools, 35 of them read-only</span>
         <span>Every write a dry run first</span>
         <span>Shopware 6.6 and 6.7</span>
         <span>No telemetry</span>
@@ -276,12 +276,22 @@
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           <h3>A pulse and an audit</h3>
-          <p><code>shop_pulse</code> weighs today against the same hours of recent weeks and says how unusual a quiet spell is. <code>shop_audit</code> runs eighteen checks in one call, from paid-but-unshipped orders and missing invoices to a checkout that went silent and a campaign code that will not work.</p>
+          <p><code>shop_pulse</code> weighs today against the same hours of recent weeks and says how unusual a quiet spell is. <code>shop_audit</code> runs eighteen checks in one call, from paid-but-unshipped orders and missing invoices to a checkout that went silent and a campaign code that will not work, plus the shop's own rules as Shopware filters.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
           <h3>Ready for Black Friday</h3>
           <p><code>promotions_check</code> finds the campaign that is still switched off, the code without a discount and the two automatic discounts that add up, before customers do. <code>shopware-mcp watch --baseline last-year --expect 3</code> writes to Slack when orders stop on the day, and again when they are back.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="m16 11 2 2 4-4"/></svg>
+          <h3>Synthetic customers, and why</h3>
+          <p><code>journeys_run</code> walks fixed buying paths through the real cart and names the one that broke. When orders stop, <code>shop_diagnose</code> looks at the usual suspects at once: maintenance mode, a test purchase of the best seller, an extension updated an hour ago, errors in the log. The watch sends both with its alarm.</p>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+          <h3>What a discount costs</h3>
+          <p><code>promotion_impact</code> replays a discount on last month's real orders before it goes live. <code>margin_check</code> finds products sold below cost and what the running discount leaves of a thin margin.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>

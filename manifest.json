@@ -144,6 +144,14 @@
       "description": "Check promotions before a campaign"
     },
     {
+      "name": "promotion_impact",
+      "description": "What would a discount cost?"
+    },
+    {
+      "name": "margin_check",
+      "description": "Margins: below cost and thin"
+    },
+    {
       "name": "reviews_search",
       "description": "Search product reviews"
     },
@@ -178,6 +186,14 @@
     {
       "name": "checkout_simulate",
       "description": "Simulate a checkout"
+    },
+    {
+      "name": "journeys_run",
+      "description": "Run customer journeys"
+    },
+    {
+      "name": "shop_diagnose",
+      "description": "Why are orders not coming in?"
     },
     {
       "name": "sales_report",

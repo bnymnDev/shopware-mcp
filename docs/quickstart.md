@@ -145,6 +145,8 @@ The brief, the audit and the sales report also run from the command line, for cr
 ```bash
 npx shopware-mcp brief                       # the pulse, the audit and the last 7 days as Markdown
 npx shopware-mcp brief --html brief.html     # the same as one self-contained HTML page
+npx shopware-mcp brief --history health.json # plus a health score per day and its trend
+npx shopware-mcp audit --rules rules.json    # the audit plus the shop's own checks
 npx shopware-mcp audit                       # Markdown, exit 1 when a critical finding exists
 npx shopware-mcp audit --fail-on warning     # exit 1 on warnings too; --days and --threshold tune the checks
 npx shopware-mcp audit --json | jq .summary  # the same report as JSON
@@ -169,7 +171,36 @@ On a campaign day, a watch that writes to Slack only when orders stop, payments 
 npx shopware-mcp watch --baseline last-year --expect 3 --slack https://hooks.slack.com/services/…
 ```
 
-or once per cron run, with a state file so a running alarm is not repeated:
+With synthetic customers, the watch also walks fixed buying paths through the real cart on every look and raises the alarm when one breaks, with the likely cause attached (`--no-diagnose` leaves it out):
+
+```
+npx shopware-mcp watch --journeys journeys.json --slack https://hooks.slack.com/services/…
+```
+
+A journeys file lists paths and what they must find; every field of `checkout_simulate` works ([example](examples/journeys.json)):
+
+```json
+{ "journeys": [
+  { "name": "German guest pays with PayPal", "items": [{ "productNumber": "SW10005" }],
+    "country": "DE", "expect": { "paymentMethods": ["PayPal"] } },
+  { "name": "Swiss guest with code", "items": [{ "productNumber": "SW10005" }],
+    "country": "CH", "promotionCodes": ["WELCOME10"], "expect": { "maxTotal": 100 } }
+] }
+```
+
+A rules file adds the shop's own audit checks, each a Shopware filter whose matches are findings ([example](examples/rules.json)):
+
+```json
+{ "rules": [
+  { "id": "products_without_manufacturer", "title": "Active products without a manufacturer",
+    "severity": "warning", "entity": "product",
+    "filter": [{ "type": "equals", "field": "active", "value": true },
+               { "type": "equals", "field": "manufacturerId", "value": null }],
+    "hint": "GPSR asks for the manufacturer on every product page." }
+] }
+```
+
+Or once per cron run, with a state file so a running alarm is not repeated:
 
 ```
 */5 * * * *  TZ=Europe/Berlin npx shopware-mcp watch --once --state /var/lib/shop-watch.json --slack https://hooks.slack.com/services/…

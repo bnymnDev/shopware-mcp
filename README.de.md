@@ -56,7 +56,9 @@ aus wie ein Kunde, um herauszufinden, warum:
 | **Die Sicht des Kunden** | `checkout_simulate` legt Produkte und Codes in einen Wegwerf-Warenkorb, über Shopwares eigene Store API, als Gast mit Lieferland oder als bestimmter Kunde mit Gruppe, Preisen und Regeln, und erklärt jeden Warenkorbfehler in Klartext: ein Land, in das der Kanal nicht liefert, ein abgelaufener Code, eine Zahlungsart, die eine Regel ausblendet, ein Hauptprodukt, das eine Variante braucht, ein Kunde, der sich dort nicht anmelden kann. `storefront_search` sucht wie ein Kunde und sagt, warum ein Produkt nicht auftaucht. Bestellt wird nichts; der Warenkorb wird gelöscht. |
 | **Ein Puls** | `shop_pulse` stellt heute neben dieselben Stunden desselben Wochentags der letzten Wochen und bewertet die aktuelle Stille: wie viele Bestellungen diese Stunden sonst bringen und wie wahrscheinlich es ist, zufällig keine zu sehen. „Seit sechs Stunden nichts, wo sonst immer drei bis sieben kamen" ist ein kaputter Checkout, kein ruhiger Sonntag. Am Aktionstag vergleicht er mit demselben Wochentag im Vorjahr oder mit dem, was der Tag bringen soll. |
 | **Bereit für die Aktion** | `promotions_check` prüft jede Aktion, die bis zu einem Stichtag läuft oder startet, eingeschaltet oder nicht, und nennt, was sie stoppen würde: inaktiv zum Start, kein Rabatt, kein Kanal oder nur Kanäle im Wartungsmodus, keine Codes mehr, das Einlöselimit, 60 % statt gemeinter 6 %, zwei automatische Rabatte, die sich addieren. Der Prompt `campaign_ready` nimmt Checkout, Bestand und den Plan für den Tag dazu. |
-| **Eine Wache** | `shopware-mcp watch` schaut alle paar Minuten auf Bestellungen und Zahlungen und schreibt nur bei einer Änderung nach Slack: Bestellungen bleiben aus, Zahlungen scheitern, der Shop antwortet nicht, und wenn alles wieder normal ist. Am Black Friday: `--baseline last-year --expect 3`. |
+| **Eine Wache, die sagt warum** | `shopware-mcp watch` schaut alle paar Minuten auf Bestellungen und Zahlungen und schreibt nur bei einer Änderung nach Slack: Bestellungen bleiben aus, Zahlungen scheitern, der Shop antwortet nicht, und wenn alles wieder normal ist. Der Alarm bringt die wahrscheinliche Ursache mit: `shop_diagnose` schaut auf die üblichen Verdächtigen auf einmal (ein Verkaufskanal im Wartungsmodus, ein Testkauf des Bestsellers, eine Erweiterung, die vor einer Stunde aktualisiert wurde, Fehler im Shopware-Log, ein stehender Worker). Feiertage in den Vergleichswochen zählen nicht als „üblich“. Am Black Friday: `--baseline last-year --expect 3`. |
+| **Synthetische Kunden** | `journeys_run` geht feste Kaufwege durch den echten Warenkorb, „Schweizer Gast mit Code SUMMER26“, „Stammkunde zahlt auf Rechnung“, und sagt, welcher gebrochen ist und warum. `watch --journeys journeys.json` prüft sie bei jedem Blick, damit eine nach einem Plugin-Update verschwundene Zahlungsart Alarm schlägt, bevor der erste Kunde aufgibt. |
+| **Was ein Rabatt kostet** | `promotion_impact` spielt einen Rabatt oder eine bestehende Aktion auf den echten Bestellungen der letzten Wochen durch: was er auf jeder berechtigten Bestellung und bei der üblichen Code-Nutzung gekostet hätte und wie oft eine Obergrenze greift. `margin_check` findet Produkte unter Einkaufspreis, dünne Margen und was der laufende automatische Rabatt davon übrig lässt. |
 | **Ein Audit** | `shop_audit` prüft achtzehn Dinge in einem Aufruf: einen Checkout, der ungewöhnlich still geworden ist, Aktionen der nächsten zwei Wochen, die nicht funktionieren werden, bezahlte Bestellungen, die nie versandt wurden oder keine Rechnung haben, unbezahlte Bestellungen, die alt werden, versandte Bestellungen, die nie abgeschlossen wurden, Produkte ohne Bestand, die beim aktuellen Absatz ausgehen, ohne Bild, ohne Lieferzeit oder in keinem Verkaufskanal sichtbar, abgelaufene Aktionen, Kanäle im Wartungsmodus, Storefronts ohne Impressum, AGB, Datenschutz, Widerruf oder Versandhinweise, Bewertungen, die auf Freigabe warten, geplante Aufgaben, die nicht mehr laufen, Erweiterungen mit Update, und welche EU-Pflichten abgedeckt scheinen, auch ob Shopware selbst für ZUGFeRD-E-Rechnungen eingerichtet ist. Priorisiert, mit Beispielen und einem Hinweis je Befund. Dasselbe Audit läuft als `shopware-mcp audit` aus Cron oder CI, ganz ohne MCP-Host. |
 | **Reports und eine Prognose** | `sales_report` lässt Shopware rechnen: brutto, netto, Durchschnittsbestellung, Umsatz je Währung und Kanal, Bestellungen je Status, eine Zeitreihe nach Tag, Woche oder Monat, die Top-Produkte und auf Wunsch die Veränderung zum Vorzeitraum. `customer_report` macht dasselbe für Menschen: neue Konten, Gastanteil, Wiederkäuferanteil, Top-Kunden nach Umsatz. `stock_forecast` macht aus Absatzgeschwindigkeit und Bestand Reichweite in Tagen, Ausverkaufsdatum und Nachbestellmenge. `returns_report` sagt, wie viele Bestellungen zurückkamen und welche Produkte am häufigsten, aus Shopwares eigenen Lieferzuständen. Die Zahlen wurden gegen SQL auf derselben Datenbank geprüft. |
 | **Eine Hintertür** | `entity_schema` beschreibt jede der über 200 Entitäten, auch die eigenen Entitäten von Plugins, und `entity_search` fragt sie mit denselben Filtern ab und lässt Shopware über die Treffermenge aggregieren: Bestellungen je Zahlungsart, Umsatz je Monat, alles, was terms, sum oder histogram hergeben. Entitäten mit Zugangsdaten werden verweigert, Geheimnisse im Rest entfernt. |
@@ -369,6 +371,11 @@ Das Image liefert Streamable HTTP unter `http://127.0.0.1:3333/mcp`. Mit `-e SHO
 | „Funktionieren unsere Black-Friday-Codes?" | `promotions_check` oder der Prompt `campaign_ready` |
 | „Sag Bescheid, wenn am Black Friday keine Bestellungen mehr kommen." | `shopware-mcp watch --baseline last-year --expect 3 --slack <webhook>` |
 | „Was schicken Kunden am häufigsten zurück?" | `returns_report` |
+| „Es kommen keine Bestellungen. Warum?" | `shop_diagnose` |
+| „Kann ein Schweizer Gast noch mit PayPal zahlen?" | `journeys_run`, oder `watch --journeys journeys.json` |
+| „Was hätten 20 % ab 50 Euro letzten Monat gekostet?" | `promotion_impact { discount: { type: "percentage", value: 20 }, minCartValue: 50 }` |
+| „Verkaufen wir etwas unter Einkaufspreis?" | `margin_check` |
+| „Wird der Shop besser oder schlechter?" | `shopware-mcp brief --history health.json` speichert einen Wert pro Tag |
 | „Schick mir jeden Montag das Audit." | auch kein Werkzeug: `shopware-mcp audit --fail-on warning` per Cron |
 
 Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`) auf Shopware-Feldpfaden, Assoziationen wie `manufacturer.name` eingeschlossen. Was sich in der Admin-API filtern lässt, lässt sich auch hier filtern. Der [Spickzettel](docs/quickstart.md#filters-cheat-sheet) zeigt die üblichen Fälle.
@@ -395,6 +402,8 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`categories_list`](docs/tools.md#categories_list) | read | List categories |
 | [`promotions_list`](docs/tools.md#promotions_list) | read | List promotions |
 | [`promotions_check`](docs/tools.md#promotions_check) | read | Check promotions before a campaign |
+| [`promotion_impact`](docs/tools.md#promotion_impact) | read | What would a discount cost? |
+| [`margin_check`](docs/tools.md#margin_check) | read | Margins: below cost and thin |
 | [`reviews_search`](docs/tools.md#reviews_search) | read | Search product reviews |
 | [`payment_methods_list`](docs/tools.md#payment_methods_list) | read | List payment methods |
 | [`shipping_methods_list`](docs/tools.md#shipping_methods_list) | read | List shipping methods |
@@ -404,6 +413,8 @@ Filter sind Shopware-Criteria-Filter (`equals`, `contains`, `range`, `equalsAny`
 | [`stock_forecast`](docs/tools.md#stock_forecast) | read | Stock forecast |
 | [`storefront_search`](docs/tools.md#storefront_search) | read | Search like a customer |
 | [`checkout_simulate`](docs/tools.md#checkout_simulate) | read | Simulate a checkout |
+| [`journeys_run`](docs/tools.md#journeys_run) | read | Run customer journeys |
+| [`shop_diagnose`](docs/tools.md#shop_diagnose) | read | Why are orders not coming in? |
 | [`sales_report`](docs/tools.md#sales_report) | read | Sales report |
 | [`customer_report`](docs/tools.md#customer_report) | read | Customer report |
 | [`returns_report`](docs/tools.md#returns_report) | read | Returns report |
@@ -486,7 +497,9 @@ Etwas gefunden? Siehe [SECURITY.md](SECURITY.md).
 | `SHOPWARE_MCP_TIMEOUT_MS` | nein | Timeout je Admin-API-Request in Millisekunden (Standard 30000, 1000 bis 600000) |
 | `SHOPWARE_MCP_HTTP_TOKEN` | nein | Bearer-Token, den der HTTP-Transport auf `/mcp` verlangt (mindestens 16 Zeichen). Standard: keiner |
 | `SHOPWARE_MCP_LOG_LEVEL` | nein | `error` (Standard), `warn`, `info`, `debug`. Logs gehen nur nach stderr |
-| `TZ` | nein | Zeitzone für „heute" in `shop_pulse` und `brief`, z. B. `Europe/Berlin`. Standard: die des Systems |
+| `TZ` | nein | Zeitzone für „heute" in `shop_pulse` und `brief`, z. B. `Europe/Berlin`. Standard: die des Systems. Sie wählt auch die Feiertage, die der Puls auslässt (DE, AT, CH) |
+| `SHOPWARE_MCP_RULES` | nein | JSON-Datei mit eigenen Audit-Regeln des Shops ([Beispiel](docs/examples/rules.json)) |
+| `SHOPWARE_MCP_JOURNEYS` | nein | JSON-Datei mit Kaufwegen für `journeys_run` ([Beispiel](docs/examples/journeys.json)) |
 | `SHOPWARE_ADMIN_USER`, `SHOPWARE_ADMIN_PASSWORD` | nur `setup` | Die Admin-Anmeldung, mit der `setup` einmal Rolle und Integration anlegt. Wird nie gespeichert; ohne sie fragt `setup` nach |
 
 CLI-Flags überschreiben die Umgebung: `--allow-write`, `--max-writes <n>`, `--no-extensions`, `--http`, `--port <n>`, `--host <addr>`, `--log-level <level>`. Befehle: `setup`, `doctor`, `init`, `brief`, `audit` und `report`; `npx shopware-mcp --help` zeigt ihre Optionen.

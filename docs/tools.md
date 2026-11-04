@@ -21,6 +21,8 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`categories_list`](#categories_list) | read | List categories |
 | [`promotions_list`](#promotions_list) | read | List promotions |
 | [`promotions_check`](#promotions_check) | read | Check promotions before a campaign |
+| [`promotion_impact`](#promotion_impact) | read | What would a discount cost? |
+| [`margin_check`](#margin_check) | read | Margins: below cost and thin |
 | [`reviews_search`](#reviews_search) | read | Search product reviews |
 | [`payment_methods_list`](#payment_methods_list) | read | List payment methods |
 | [`shipping_methods_list`](#shipping_methods_list) | read | List shipping methods |
@@ -30,6 +32,8 @@ All search tools accept the same paging/filter shape and return `{ total, page, 
 | [`stock_forecast`](#stock_forecast) | read | Stock forecast |
 | [`storefront_search`](#storefront_search) | read | Search like a customer |
 | [`checkout_simulate`](#checkout_simulate) | read | Simulate a checkout |
+| [`journeys_run`](#journeys_run) | read | Run customer journeys |
+| [`shop_diagnose`](#shop_diagnose) | read | Why are orders not coming in? |
 | [`sales_report`](#sales_report) | read | Sales report |
 | [`customer_report`](#customer_report) | read | Customer report |
 | [`returns_report`](#returns_report) | read | Returns report |
@@ -303,6 +307,39 @@ Before Black Friday or any sale: check every promotion that runs or starts befor
 |---|---|---|---|
 | `until` | `string` | no | End of the campaign window, ISO date (a date covers the whole day). Default: in 14 days |
 
+## promotion_impact
+
+_What would a discount cost?_
+
+**Read tool** — always registered.
+
+Before switching a promotion on: replay its cart discount (or one you describe) on the orders of the last days and say what it would have cost: if every eligible order had used it, and at the share of orders that used a promotion so far. Respects a percentage cap and a minimum cart value; rules that limit who gets it are not evaluated, so the result is an upper bound. Read-only. Returns { orders, revenue, eligibleOrders, scenarios, averagePerOrder, capReached, note }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `promotionId` | `string` | no | An existing promotion, e.g. from promotions_list |
+| `discount` | `{ type: "percentage" \| "absolute", value: number, maxValue?: number }` | no | Or a discount to try: 'what if 20 % off?' |
+| `minCartValue` | `number` | no | Only carts from this value (gross). min 0 |
+| `days` | `integer` | no | Orders of how many days to replay. default `30`, min 1, max 365 |
+| `salesChannelId` | `string` | no | Only this sales channel |
+
+## margin_check
+
+_Margins: below cost and thin_
+
+**Read tool** — always registered.
+
+Find active products whose net price is below their purchase price, products with a thin margin, and products that an automatic discount running right now pushes below cost: the '60 % instead of 6 %' mistake on the price side. Uses Shopware's purchase price; products without one are counted, not guessed. Read-only. Returns { checked, withoutPurchasePrice, automaticDiscount, summary, belowCost[], thin[], lossWithDiscount[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `minMargin` | `number` | no | Margin in % below which a product counts as thin. default `15`, min 0, max 100 |
+| `maxItems` | `integer` | no | default `20`, min 1, max 100 |
+
 ## reviews_search
 
 _Search product reviews_
@@ -460,6 +497,33 @@ See the checkout the way a customer does: puts products (and promotion codes) in
 | `paymentMethod` | `string` | no | Payment method name to select |
 | `shippingMethod` | `string` | no | Shipping method name to select |
 
+## journeys_run
+
+_Run customer journeys_
+
+**Read tool** — always registered.
+
+Synthetic customers: run fixed buying paths through the shop's real cart, e.g. 'Swiss guest with code SUMMER26', 'regular customer pays by invoice', and say which one broke and why. Each journey takes the inputs of checkout_simulate plus expectations: the cart can be ordered, given payment or shipping methods are offered, codes apply, the total stays in a range. Without journeys it runs the ones in SHOPWARE_MCP_JOURNEYS (a JSON file). Nothing is ordered; carts are deleted. Returns { ok, passed, failed, results[] }.
+
+### Input
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `journeys` | `{ name: string, items: { productNumber?: string, productId?: string, quantity?: integer }[], promotionCodes?: string[], salesChannel?: string, country?: string, customerNumber?: string, paymentMethod?: string, shippingMethod?: string, expect?: { canOrder?: boolean, paymentMethods?: string[], shippingMethods?: string[], promotionsApplied?: boolean, minTotal?: number, maxTotal?: number } }[]` | no | Journeys to run |
+
+## shop_diagnose
+
+_Why are orders not coming in?_
+
+**Read tool** — always registered.
+
+Look at the usual suspects in one call when orders stop or customers complain: storefronts in maintenance or inactive, a test purchase of the best seller of the last two weeks with the payment methods really offered, extensions installed or updated in the last 24 hours, errors in Shopware's log in the last 6 hours (failed mails included), and scheduled tasks that stopped. Nothing is ordered. Returns { causes[], fine[] }: likely causes first, and what was checked and found fine.
+
+### Input
+
+_No parameters._
+
+
 ## sales_report
 
 _Sales report_
@@ -524,7 +588,7 @@ _Shop pulse_
 
 **Read tool** — always registered.
 
-How is the shop doing right now? Orders and revenue since local midnight next to the same hours of the same weekday in previous weeks, the last order, and how unusual the current quiet spell is: the orders the same stretch brought in earlier weeks and the chance of seeing none by accident (a Poisson estimate). 'unusual' means the checkout, payment or storefront may be broken; follow up with checkout_simulate. Also compares today's failed or cancelled payments with their usual share. On a campaign day compare with last year (baseline 'last-year') or raise the expectation (expectFactor 3 on Black Friday), so a quiet spell is judged against what the day should bring. Read-only. Returns { today, typical, change, lastOrder, silence, payments, history[] }.
+How is the shop doing right now? Orders and revenue since local midnight next to the same hours of the same weekday in previous weeks, the last order, and how unusual the current quiet spell is: the orders the same stretch brought in earlier weeks and the chance of seeing none by accident (a Poisson estimate). 'unusual' means the checkout, payment or storefront may be broken; follow up with checkout_simulate. Also compares today's failed or cancelled payments with their usual share. On a campaign day compare with last year (baseline 'last-year') or raise the expectation (expectFactor 3 on Black Friday), so a quiet spell is judged against what the day should bring. Public holidays in the compared weeks are left out (DE, AT, CH). Read-only. Returns { today, typical, change, lastOrder, silence, payments, history[] }.
 
 ### Input
 
@@ -535,6 +599,7 @@ How is the shop doing right now? Orders and revenue since local midnight next to
 | `salesChannelId` | `string` | no | Only this sales channel |
 | `baseline` | `"recent" \| "last-year"` | no | Compare with recent weeks, or with the same weekday around this day last year. default `"recent"` |
 | `expectFactor` | `number` | no | Today should bring this many times the usual orders, e.g. 3 on a campaign day. default `1`, min 0.1, max 20 |
+| `holidays` | `"DE" \| "AT" \| "CH" \| "none"` | no | Leave public holidays of this country out of 'typical'; default: the time zone's country (Europe/Berlin: DE, Europe/Vienna: AT, Europe/Zurich: CH) |
 
 ## shop_audit
 
@@ -542,7 +607,7 @@ _Shop health audit_
 
 **Read tool** — always registered.
 
-Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, promotions in the next 14 days that will not work, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names, and whether Shopware itself is set up for ZUGFeRD e-invoices. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
+Run a one-shot health check across the shop and return prioritised findings: paid orders not shipped, old unpaid orders, shipped orders never completed, out-of-stock and low-stock products, products without cover image, delivery time or sales channel visibility, expired promotions still active, promotions in the next 14 days that will not work, sales channels in maintenance mode, storefronts missing legal pages (imprint, terms, privacy, revocation, shipping), reviews awaiting moderation, scheduled tasks overdue or failed, and extensions with pending updates. Each finding has a severity, total count, sample items and a hint. Also reports which EU duties (e-invoicing, accessibility, packaging reporting, AI labelling) appear to be covered by an installed extension, guessed from extension names, and whether Shopware itself is set up for ZUGFeRD e-invoices. The shop's own rules (Shopware filters, e.g. 'active products without a manufacturer') run too: pass them as rules, or point SHOPWARE_MCP_RULES at a JSON file. Start here when asked 'is everything okay with the shop?'. Read-only. Returns one object.
 
 ### Input
 
@@ -554,6 +619,7 @@ Run a one-shot health check across the shop and return prioritised findings: pai
 | `maxItems` | `integer` | no | Sample items per finding. default `10`, min 1, max 50 |
 | `complianceChecks` | `boolean` | no | Include the EU duty coverage map. Set false outside the EU. default `true` |
 | `timeZone` | `string` | no | IANA time zone of the shop for the order-silence check; default: the server's |
+| `rules` | `({ id: string, title: string, severity?: "critical" \| "warning" \| "info", entity: string, filter: object[], hint?: string })[]` | no | The shop's own checks: { id, title, severity, entity, filter[], hint }, the filter in Shopware criteria. Default: the rules in SHOPWARE_MCP_RULES, if set |
 
 ## entity_schema
 

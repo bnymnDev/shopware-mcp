@@ -120,7 +120,7 @@ describe("holidays", () => {
   });
 
   it("leaves a holiday out of what the pulse calls usual", async () => {
-    const bodies: Array<{ aggregations?: unknown[] }> = [];
+    const bodies: unknown[] = [];
     mock.use(
       http.post(`${SHOP_URL}/api/search/order`, async ({ request }) => {
         const body = (await request.clone().json()) as { sort?: unknown };
