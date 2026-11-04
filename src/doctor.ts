@@ -140,6 +140,11 @@ export const REQUIREMENTS: Record<string, Requirement> = {
     optionalRoutes: ["/api/_action/extension/installed"],
   },
   scheduled_tasks_list: { reads: ["scheduled_task"] },
+  update_check: {
+    reads: [],
+    routes: ["/api/_action/update/check-requirements"],
+    optional: ["system_config:read"],
+  },
   stock_get: { reads: ["product", "property_group", "property_group_option"] },
   shop_pulse: { reads: ["order", "order_transaction", "state_machine_state"] },
   storefront_search: {

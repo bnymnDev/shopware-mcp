@@ -67,17 +67,19 @@ describe("requiredPrivileges", () => {
     ).toBe(false);
   });
 
-  it("grants plugin maintenance and the whole system config only on request", () => {
-    expect(requiredPrivileges({ allowWrite: false, pluginUpdates: true })).toContain(
-      "system.plugin_maintain",
+  it("grants plugin maintenance, updates and the whole system config only on request", () => {
+    expect(requiredPrivileges({ allowWrite: false, pluginUpdates: true })).toEqual(
+      expect.arrayContaining(["system.plugin_maintain", "system:core:update"]),
     );
+    expect(requiredPrivileges({ allowWrite: false })).not.toContain("system:core:update");
     expect(requiredPrivileges({ allowWrite: false, settings: true })).toContain(
       "system_config:read",
     );
     expect(toolsLeftOut({ allowWrite: false })).toEqual([
       { tool: "shop_settings", flag: "--settings" },
+      { tool: "update_check", flag: "--plugin-updates" },
     ]);
-    expect(toolsLeftOut({ allowWrite: false, settings: true })).toEqual([]);
+    expect(toolsLeftOut({ allowWrite: false, settings: true, pluginUpdates: true })).toEqual([]);
   });
 
   it("grants the Merqo pack's reads only for the Merqo plugins that are installed", () => {

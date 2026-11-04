@@ -41,6 +41,7 @@ import { checkoutSimulate, storefrontSearch } from "./storefront.js";
 import { tagAssign } from "./tags.js";
 import { scheduledTasksList } from "./tasks.js";
 import type { ToolDefinition } from "./types.js";
+import { updateCheckTool } from "./updates.js";
 
 /** Every tool, in the order they appear in generated docs. */
 export const tools: ToolDefinition[] = [
@@ -72,6 +73,7 @@ export const tools: ToolDefinition[] = [
   checkoutSimulate,
   journeysRun,
   agentReadinessTool,
+  updateCheckTool,
   shopDiagnose,
   salesReport,
   customerReport,

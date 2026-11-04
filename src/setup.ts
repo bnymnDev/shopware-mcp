@@ -10,6 +10,7 @@ import { newId, rawList, str, strList } from "./tools/shared.js";
 /** Route prefixes behind which Shopware checks a privilege that is not an entity read. */
 const ROUTE_PRIVILEGES: [prefix: string, privilege: string][] = [
   ["/api/_action/system-config", "system_config:read"],
+  ["/api/_action/update", "system:core:update"],
 ];
 
 export interface PrivilegeOptions {
@@ -24,12 +25,19 @@ export interface PrivilegeOptions {
 
 /**
  * Privileges setup never grants unless asked, because they reach far beyond what the tools
- * show: `system.plugin_maintain` lets an integration install and update extensions, and
+ * show: `system.plugin_maintain` lets an integration install and update extensions,
+ * `system:core:update` also allows starting a Shopware update, and
  * `system_config:read` reads every setting, SMTP passwords and payment keys included, even
  * though shop_settings only ever shows a scrubbed selection.
  */
 export const OPT_IN: Record<string, { flag: string; enabled: (o: PrivilegeOptions) => boolean }> = {
   "system.plugin_maintain": {
+    flag: "--plugin-updates",
+    enabled: (options) => options.pluginUpdates === true,
+  },
+  // Shopware's update routes share one privilege: the one that reads what is available also
+  // allows starting an update, so it is granted only on request.
+  "system:core:update": {
     flag: "--plugin-updates",
     enabled: (options) => options.pluginUpdates === true,
   },

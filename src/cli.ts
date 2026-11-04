@@ -79,7 +79,9 @@ Options:
   --user <name>        setup: admin user name (or SHOPWARE_ADMIN_USER; default admin)
   --name <label>       setup: integration label, the role is named after it (default shopware-mcp)
   --rotate             setup: give an existing integration of that name new keys
-  --plugin-updates     setup: also grant system.plugin_maintain so plugins_list shows updates
+  --plugin-updates     setup: also grant system.plugin_maintain and system:core:update so
+                       plugins_list shows updates and update_check works (both also allow
+                       installing updates, which no tool does)
   --settings           setup: also grant system_config:read for shop_settings (it can read every
                        setting, SMTP and payment secrets included; the tool shows a scrubbed part)
   --dry-run            setup: show the role and privileges without creating anything
