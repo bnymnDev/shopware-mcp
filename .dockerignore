@@ -7,4 +7,11 @@ coverage
 test
 e2e
 docs
+!docs/demo/*.svg
+!docs/brand/*.svg
+!docs/video/*.mp4
+!docs/video/*.jpg
+!docs/video/*.vtt
+!docs/brief/example.html
+!docs/brief/brief.png
 *.md

@@ -251,6 +251,7 @@ async function main(): Promise<void> {
       "shopware-mcp",
       "--platform",
       "linux/amd64,linux/arm64",
+      ...(process.env.NODE_IMAGE ? ["--build-arg", `NODE_IMAGE=${process.env.NODE_IMAGE}`] : []),
       "--tag",
       `${image}:${version}`,
       "--tag",

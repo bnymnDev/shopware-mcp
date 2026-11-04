@@ -18,6 +18,7 @@ import { type Config, ConfigError, loadConfig } from "./config.js";
 import { diagnose, diagnosisText } from "./diagnose.js";
 import { formatDoctorReport, runDoctor } from "./doctor.js";
 import { formatAuditMarkdown, formatSalesReportMarkdown } from "./format.js";
+import { type HostedOptions, hostedOptionsFromEnv, startHosted } from "./hosted/app.js";
 import { defaultConfigPath, HOSTS, type Host, mergeHostConfig, snippetFor } from "./init.js";
 import { type LogLevel, logger, setLogLevel } from "./logger.js";
 import { createServer } from "./server.js";
@@ -58,6 +59,9 @@ Usage:
   shopware-mcp brief [--json] [--html <file>] [--slack <url>] [--tz <zone>] [--history <file>]
                                     The shop right now, the audit and the last 7 days in one
                                     page: Markdown, JSON, or a self-contained HTML file
+  shopware-mcp hosted [--port <n>] [--host <addr>]
+                                    Serve many shops over HTTPS with OAuth: each person connects
+                                    their own shop with an Integration's keys; read-only
   shopware-mcp feed [--out <file>] [--channel <id>]
                                     Write the product feed AI shopping agents read (JSON Lines,
                                     Agentic Commerce fields) for a storefront
@@ -121,6 +125,10 @@ Environment:
   SHOPWARE_MCP_RULES        rule packs and files for the audit, e.g. gpsr,eaa,./rules.json
   SHOPWARE_MCP_JOURNEYS     JSON file with customer journeys for journeys_run
   SHOPWARE_ADMIN_USER, SHOPWARE_ADMIN_PASSWORD             setup only; never stored
+  SHOPWARE_MCP_PUBLIC_URL, SHOPWARE_MCP_SECRET_KEY          hosted: its https address and the
+                            32-byte key that seals stored shop keys (openssl rand -hex 32)
+  SHOPWARE_MCP_DATA_DIR, SHOPWARE_MCP_SITE_DIR              hosted: where it keeps its data (./data),
+                            and a website folder served under /
 `;
 
 const COMMANDS = [
@@ -133,6 +141,7 @@ const COMMANDS = [
   "brief",
   "watch",
   "feed",
+  "hosted",
 ] as const;
 const BASELINES = ["recent", "last-year"] as const;
 const SEVERITIES = ["critical", "warning", "none"] as const;
@@ -794,6 +803,25 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
       );
       process.exitCode = 1;
     }
+    return;
+  }
+  if (cli.command === "hosted") {
+    setLogLevel(cli.logLevel ?? "info");
+    let options: HostedOptions;
+    try {
+      options = hostedOptionsFromEnv(process.env);
+    } catch (error) {
+      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+      process.exitCode = 2;
+      return;
+    }
+    const server = await startHosted(options, { port: cli.port, host: cli.host });
+    const shutdown = () => {
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(0), 2000).unref();
+    };
+    process.once("SIGINT", shutdown);
+    process.once("SIGTERM", shutdown);
     return;
   }
   if (cli.command === "setup") {
