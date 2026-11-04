@@ -244,3 +244,15 @@ A shop sells more at eight in the evening than at eight in the morning and more 
 
 `--html` writes a single page with its styles and a few lines of script inline. It loads no font, no chart library and no image from anywhere, so it can be mailed, archived or opened offline, and it cannot leak that someone opened it. Charts are plain SVG drawn on the server with the values in a table next to them; the script only adds tooltips, and without it the SVG titles show the same. The Slack message is deliberately short: a headline, today, the week and the non-info findings. The page has the rest.
 
+
+## A campaign is checked before it starts, inactive promotions included
+
+`promotions_check` reads every promotion that has not ended and starts before the end of the window, whether it is switched on or not, because the most common Black Friday failure is a campaign that was prepared and never activated. Each finding follows a rule Shopware itself applies when it decides whether a code or an automatic discount counts: active, assigned to a channel that serves customers, at least one discount, a code to redeem, redemptions left. Two things are judgement, marked as warnings rather than errors: 50 % or more off, and automatic promotions on the same channel that add up, which is sometimes intended. The audit only takes the critical findings of the next two weeks, so a cron job is not woken by a deliberate stack.
+
+## The watch speaks on change, not on every look
+
+`shopware-mcp watch` computes the pulse every few minutes but posts only when the state gets worse, when the shop stops answering three times in a row, and when it is back to normal, with how long the trouble lasted. A channel that hears from a monitor on every tick learns to ignore it. Run once per cron call, the state lives in a small file; a missing or broken file only costs one possibly repeated alert. On a campaign day the baseline is the same weekday last year, 52 weeks back so the weekday matches, or the usual hours times an expected factor; otherwise a busy day looks like a silent one.
+
+## Returns are counted per delivery, and said so
+
+Shopware's core marks a delivery as returned or partially returned; which items came back lives only in a returns plugin. `returns_report` therefore ranks products by the share of their orders that came back, a strong hint and not proof, and says exactly that in its output instead of inventing item-level figures. Products need a minimum number of orders before they are ranked, so one return is never a 100 % rate.

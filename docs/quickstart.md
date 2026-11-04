@@ -163,10 +163,22 @@ A brief every morning, as a page on your intranet and a few lines in Slack:
 0 7 * * *  TZ=Europe/Berlin npx shopware-mcp brief --html /var/www/brief.html --slack https://hooks.slack.com/services/…
 ```
 
+On a campaign day, a watch that writes to Slack only when orders stop, payments fail or the shop stops answering, and again when things are back to normal. Either in a loop:
+
+```
+npx shopware-mcp watch --baseline last-year --expect 3 --slack https://hooks.slack.com/services/…
+```
+
+or once per cron run, with a state file so a running alarm is not repeated:
+
+```
+*/5 * * * *  TZ=Europe/Berlin npx shopware-mcp watch --once --state /var/lib/shop-watch.json --slack https://hooks.slack.com/services/…
+```
+
 In GitHub Actions the repository is an action: it runs the audit with the shopware-mcp release of the tag you pin, puts the Markdown into the job summary and fails the job on the severity you choose. Checks the integration's role leaves out on purpose are reported as not covered and do not fail the job.
 
 ```yaml
-- uses: bnymnDev/shopware-mcp@v0.8.0
+- uses: bnymnDev/shopware-mcp@v0.9.0
   id: audit
   with:
     url: https://shop.example.com

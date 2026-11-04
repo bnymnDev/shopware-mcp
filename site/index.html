@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>shopware-mcp · Talk to your Shopware 6 shop</title>
-<meta name="description" content="An MCP server for the Shopware 6 Admin API. 35 curated tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
+<meta name="description" content="An MCP server for the Shopware 6 Admin API. 46 tools, a health audit, sales and customer reports, guarded writes with dry runs. Read-only by default, MIT licensed.">
 <meta property="og:title" content="shopware-mcp">
 <meta property="og:description" content="Talk to your Shopware 6 shop from Claude, Cursor, VS Code or any MCP host. Read-only by default, every write a dry run first.">
 <meta property="og:image" content="https://raw.githubusercontent.com/bnymnDev/shopware-mcp/main/docs/brand/banner-dark.svg">
@@ -179,7 +179,7 @@
         </a>
       </div>
       <div class="facts">
-        <span>44 tools, 29 of them read-only</span>
+        <span>46 tools, 31 of them read-only</span>
         <span>Every write a dry run first</span>
         <span>Shopware 6.6 and 6.7</span>
         <span>No telemetry</span>
@@ -217,7 +217,7 @@
         </div>
         <div class="card">
           <h3>In GitHub Actions</h3>
-<pre><code>- uses: bnymnDev/shopware-mcp@v0.8.0
+<pre><code>- uses: bnymnDev/shopware-mcp@v0.9.0
   with:
     url: https://shop.example.com
     client-id: ${{ secrets.SHOPWARE_CLIENT_ID }}
@@ -279,9 +279,14 @@
           <p><code>shop_pulse</code> weighs today against the same hours of recent weeks and says how unusual a quiet spell is. <code>shop_audit</code> runs eighteen checks in one call, from paid-but-unshipped orders and missing invoices to a checkout that went silent and a campaign code that will not work.</p>
         </div>
         <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+          <h3>Ready for Black Friday</h3>
+          <p><code>promotions_check</code> finds the campaign that is still switched off, the code without a discount and the two automatic discounts that add up, before customers do. <code>shopware-mcp watch --baseline last-year --expect 3</code> writes to Slack when orders stop on the day, and again when they are back.</p>
+        </div>
+        <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-6"/></svg>
           <h3>Reports and a forecast</h3>
-          <p><code>sales_report</code> and <code>customer_report</code> let Shopware aggregate: revenue by channel and state, timelines, top products, new and returning customers, the change against the period before. <code>stock_forecast</code> turns sales velocity into days of cover and reorder quantities.</p>
+          <p><code>sales_report</code> and <code>customer_report</code> let Shopware aggregate: revenue by channel and state, timelines, top products, new and returning customers, the change against the period before. <code>stock_forecast</code> turns sales velocity into days of cover and reorder quantities, <code>returns_report</code> shows what comes back.</p>
         </div>
         <div class="card">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -343,6 +348,9 @@
             <tr><td>"Set it up with the least rights it needs."</td><td>not a tool: <code>npx shopware-mcp setup</code></td></tr>
             <tr><td>"Which of my tools will fail with this integration?"</td><td>not a tool either: <code>npx shopware-mcp doctor</code></td></tr>
             <tr><td>"Send me one page every morning."</td><td><code>shopware-mcp brief --html brief.html --slack …</code> in cron</td></tr>
+            <tr><td>"Will our Black Friday codes work?"</td><td><code>promotions_check</code>, or the <code>campaign_ready</code> prompt</td></tr>
+            <tr><td>"Tell me if orders stop on Black Friday."</td><td><code>shopware-mcp watch --baseline last-year --expect 3 --slack …</code></td></tr>
+            <tr><td>"What do customers send back most?"</td><td><code>returns_report</code></td></tr>
           </tbody>
         </table>
       </div>
