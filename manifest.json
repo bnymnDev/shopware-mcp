@@ -140,6 +140,10 @@
       "description": "List promotions"
     },
     {
+      "name": "promotions_check",
+      "description": "Check promotions before a campaign"
+    },
+    {
       "name": "reviews_search",
       "description": "Search product reviews"
     },
@@ -182,6 +186,10 @@
     {
       "name": "customer_report",
       "description": "Customer report"
+    },
+    {
+      "name": "returns_report",
+      "description": "Returns report"
     },
     {
       "name": "shop_pulse",
